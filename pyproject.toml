@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragops-control-plane"
+version = "0.1.0"
+description = "Evaluation-gated, cost-aware control plane for production-style RAG systems."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "fastapi>=0.115.0",
+    "mlflow>=2.14.0",
+    "pydantic>=2.8.0",
+    "qdrant-client>=1.10.0",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=3.0.0",
+    "streamlit>=1.36.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "ruff>=0.5.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
