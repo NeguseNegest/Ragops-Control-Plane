@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from ragops_control_plane import __version__
+from ragops import __version__
 
 
 class HealthResponse(BaseModel):

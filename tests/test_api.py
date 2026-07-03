@@ -1,5 +1,5 @@
-from ragops_control_plane import __version__
-from ragops_control_plane.app import create_app
+from ragops import __version__
+from ragops.app import create_app
 
 
 def test_package_version_is_declared() -> None:

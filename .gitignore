@@ -39,9 +39,12 @@ projectPlan.pdf
 *.toc
 
 # Generated corpora, indexes, traces, and experiment state
-data/raw/
-data/processed/
-data/traces/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/traces/*
+!data/traces/.gitkeep
 mlruns/
 mlartifacts/
 qdrant_storage/

@@ -47,7 +47,7 @@ curl http://localhost:8000/health
 
 ```text
 .
-├── src/ragops_control_plane/   # Application package
+├── src/ragops/                 # Application package
 ├── tests/                      # Pytest suite
 ├── Dockerfile                  # Local API image
 ├── docker-compose.yml          # Local service launcher
