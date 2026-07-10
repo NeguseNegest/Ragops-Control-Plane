@@ -1,29 +1,50 @@
 # RAGOps Control Plane
 
-RAGOps Control Plane is a Python project for building a production-style control
-plane around Retrieval-Augmented Generation systems. The repository is intended
-to contain the application code, evaluation tooling, local infrastructure, and
-documentation needed to develop and compare RAG pipeline versions.
+This project will:
 
-The planned system includes document ingestion, deterministic chunking, dense
-retrieval with Qdrant, sparse BM25 retrieval, hybrid retrieval, reranking,
-citation-grounded generation, offline evaluation, MLflow experiment tracking,
-FastAPI serving, trace logging, query routing, semantic caching, canary
-simulation, evaluation gates, failure mining, and a dashboard.
+1. Ingest documentation from FastAPI, MLflow, and Qdrant.
+2. Build a RAG pipeline that can search those docs and answer with citations.
+3. Add evaluation, tracing, caching, and deployment checks around the pipeline.
 
-## Current Stage
+That is the whole idea: build the RAG system, then build the tooling around it
+so different versions can be compared instead of guessed at.
 
-The project is currently in the initial repository setup stage. It has a small
-FastAPI package, a health endpoint, basic tests, Python project metadata, Docker
-configuration, and Makefile commands. The core RAG, evaluation, tracing, routing,
-cache, canary, and dashboard features have not been implemented yet.
+## Current State
+
+So far the project has:
+
+- a basic FastAPI app with a `/health` endpoint
+- Docker Compose services for the API, Qdrant, and MLflow
+- raw docs downloaded into `data/raw`
+- a source manifest for the docs
+- document schemas
+- loaders and cleaners for docs/code files
+- a dry-run ingestion command
+- tests for the current ingestion behavior
+
+Run the current ingestion check:
+
+```bash
+python scripts/ingest.py --dry-run
+```
+
+## Tools
+
+- Python
+- FastAPI
+- Pydantic
+- Docker Compose
+- Qdrant
+- MLflow
+- sentence-transformers
+- rank-bm25
+- pytest
+- ruff
+- Streamlit later for the dashboard
 
 ## Quickstart
 
-Requirements:
-
-- Python 3.11, 3.12, or 3.13
-- Docker Desktop or a compatible Docker engine
+Set up the project:
 
 ```bash
 make setup
@@ -31,27 +52,38 @@ make lint
 make test
 ```
 
-Run the local API container:
+Start Qdrant and MLflow:
+
+```bash
+docker compose up qdrant mlflow
+```
+
+Run the API:
 
 ```bash
 make docker-up
 ```
 
-Check the health endpoint:
+Check the API:
 
 ```bash
 curl http://localhost:8000/health
 ```
 
-## Project Layout
+## Layout
 
 ```text
 .
-├── src/ragops/                 # Application package
-├── tests/                      # Pytest suite
-├── Dockerfile                  # Local API image
-├── docker-compose.yml          # Local service launcher
-├── Makefile                    # Setup, lint, test, Docker, and cleanup targets
-├── pyproject.toml              # Python metadata and dependencies
-└── README.md                   # Project overview
+├── configs/
+├── data/
+├── dashboard/
+├── docs/
+├── scripts/
+├── src/ragops/
+├── tests/
+├── Dockerfile
+├── docker-compose.yml
+├── Makefile
+├── pyproject.toml
+└── README.md
 ```

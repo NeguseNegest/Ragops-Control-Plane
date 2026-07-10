@@ -15,6 +15,7 @@ dist/
 .env
 .env.*
 !.env.example
+external/
 
 # OS and editor files
 .DS_Store
@@ -26,6 +27,7 @@ ProjectPlan.tex
 projectPlan.tex
 ProjectPlan.pdf
 projectPlan.pdf
+day_1_4_progress_notes.txt
 *.aux
 *.bbl
 *.bcf

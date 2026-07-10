@@ -1,0 +1,35 @@
+[
+  {
+    "source_name": "Qdrant documentation",
+    "source_type": "llms_full_txt",
+    "url": "https://qdrant.tech/llms-full.txt",
+    "raw_path": "data/raw/qdrant/qdrant_llms_full.txt",
+    "retrieval_date": "2026-07-06",
+    "license_notes": "Public documentation; verify redistribution terms before publishing raw corpus."
+  },
+  {
+    "source_name": "FastAPI documentation",
+    "source_type": "git_sparse_checkout",
+    "repo_url": "https://github.com/fastapi/fastapi",
+    "commit": "dd17e4f723a23854cfe4b9b6258e31efd86ea523",
+    "included_paths": [
+      "docs/en/docs",
+      "docs_src"
+    ],
+    "raw_path": "data/raw/fastapi",
+    "retrieval_date": "2026-07-06",
+    "license_notes": "MIT licensed project; verify documentation redistribution terms before publishing raw corpus."
+  },
+  {
+    "source_name": "MLflow documentation",
+    "source_type": "git_sparse_checkout",
+    "repo_url": "https://github.com/mlflow/mlflow",
+    "commit": "6dcba5418220557ca2256ac4252cb6b58aad89b3",
+    "included_paths": [
+      "docs"
+    ],
+    "raw_path": "data/raw/mlflow",
+    "retrieval_date": "2026-07-06",
+    "license_notes": "Apache-2.0 licensed project; verify documentation redistribution terms before publishing raw corpus."
+  }
+]
