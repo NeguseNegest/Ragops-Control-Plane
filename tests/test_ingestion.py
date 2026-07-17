@@ -1,6 +1,9 @@
+import json
 from pathlib import Path
 
-from ragops.ingestion.loaders import (is_supported_path,iter_documents,load_document,)
+from ragops.ingestion.loaders import is_supported_path, iter_documents, load_document
+from ragops.schemas import DocumentChunk
+from scripts.ingest import write_embedded_chunks
 
 
 def write_raw_file(raw_root: Path, relative_path: str, text: str) -> Path:
@@ -144,3 +147,52 @@ def test_document_ids_are_deterministic(tmp_path: Path) -> None:
     assert first_document is not None
     assert second_document is not None
     assert first_document.document_id == second_document.document_id
+
+
+def test_write_embedded_chunks_writes_jsonl_with_embedding_metadata(tmp_path: Path):
+    chunks = [
+        DocumentChunk(
+            chunk_id="chunk-1",
+            document_id="doc-1",
+            text="alpha beta",
+            token_count=2,
+            chunk_hash="hash-1",
+            metadata={"relative_path": "docs/a.md"},
+        ),
+        DocumentChunk(
+            chunk_id="chunk-2",
+            document_id="doc-1",
+            text="gamma delta",
+            token_count=2,
+            chunk_hash="hash-2",
+            metadata={"relative_path": "docs/a.md"},
+        ),
+    ]
+
+    def fake_embedder(texts, model_name, batch_size, show_progress_bar):
+        assert texts == ["alpha beta", "gamma delta"]
+        assert model_name == "fake-model"
+        assert batch_size == 2
+        assert show_progress_bar
+        return [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+
+    output_path = tmp_path / "processed" / "chunks.jsonl"
+
+    write_embedded_chunks(
+        chunks,
+        output_path,
+        embedding_model="fake-model",
+        embedding_batch_size=2,
+        embedder=fake_embedder,
+    )
+
+    rows = [
+        json.loads(line)
+        for line in output_path.read_text(encoding="utf-8").splitlines()
+    ]
+
+    assert len(rows) == 2
+    assert rows[0]["chunk_id"] == "chunk-1"
+    assert rows[0]["embedding"] == [0.1, 0.2, 0.3]
+    assert rows[0]["metadata"]["embedding_model"] == "fake-model"
+    assert rows[0]["metadata"]["embedding_dimension"] == 3
