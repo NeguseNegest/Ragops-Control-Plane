@@ -2,26 +2,59 @@
 
 ## Evaluation-Gated, Cost-Aware RAG Platform
 
-RAGOps Control Plane is a production-style RAG project built around technical documentation from FastAPI, MLflow, and Qdrant. The current system ingests and chunks documents, stores dense embeddings in Qdrant, retrieves relevant context, builds citations, and exposes the full path through FastAPI.
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-schemas-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![Qdrant](https://img.shields.io/badge/Qdrant-vector_search-DC244C?logo=qdrant&logoColor=white)](https://qdrant.tech/)
+[![Sentence Transformers](https://img.shields.io/badge/Sentence_Transformers-embeddings-FFD21E)](https://www.sbert.net/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![MLflow](https://img.shields.io/badge/MLflow-tracking-0194E2?logo=mlflow&logoColor=white)](https://mlflow.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![pytest](https://img.shields.io/badge/pytest-tested-0A9EDC?logo=pytest&logoColor=white)](https://pytest.org/)
+[![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-The long-term goal is to compare and safely promote RAG pipeline versions using measured quality, latency, and cost instead of guesswork.
+RAGOps Control Plane is an evaluation-gated, cost-aware platform for developing and operating Retrieval-Augmented Generation systems over technical documentation.
 
-## Current State
+## Project Objective
 
-The implemented pipeline supports:
+The project evaluates and compares versioned RAG pipelines across retrieval quality, generation quality, latency, and estimated cost. Candidate pipelines are promoted or rejected through explicit evaluation and canary gates.
 
-- local Markdown, MDX, RST, text, HTML, and selected Python source loading
-- deterministic heading-aware and overlapping chunking with stable IDs and hashes
+Target capabilities:
+
+- deterministic ingestion, chunking, embedding, and index versioning
+- dense, BM25, hybrid, and cross-encoder-reranked retrieval
+- citation-grounded generation with unsupported-query refusal
+- golden, adversarial, and failure-mined evaluation datasets
+- retrieval, generation, latency, and cost metrics tracked in MLflow
+- FastAPI serving with SQLite traces and component-level timings
+- rule-based query routing and corpus-aware semantic caching
+- production-versus-candidate canary simulation and automated promotion gates
+- failure mining, operational monitoring, Streamlit analytics, and CI evaluation checks
+
+The primary outputs are reproducible pipeline comparisons and promotion decisions supported by measurable quality, latency, and cost constraints.
+
+## Current Implementation
+
+Development is complete through Day 14 of the project plan. The current baseline includes:
+
+- loaders for Markdown, MDX, RST, text, HTML, and selected Python files
+- deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
 - batched `sentence-transformers/all-MiniLM-L6-v2` embeddings
-- Qdrant indexing and dense retrieval
-- ranked retrieved chunks with source metadata
-- deduplicated numbered citations
-- citation-required generation prompts
+- Qdrant indexing and cosine-similarity dense retrieval
+- ranked chunks, provenance metadata, and deduplicated citations
 - `GET /health`, `POST /retrieve`, and `POST /query`
-- a basic Streamlit playground for queries, citations, evidence, and latency
-- unit tests that do not require live Qdrant or an external model
+- Streamlit query interface with answers, citations, evidence, scores, and latency
+- local and Docker Qdrant configuration through `QDRANT_URL`
+- request validation, API error translation, and dashboard error handling
+- 65 passing tests and a verified Streamlit–FastAPI–Qdrant integration path
 
-`POST /query` currently uses a deterministic local template client. Retrieval and citation construction are real, but answer synthesis is still a placeholder for a future local or API-backed LLM.
+Current limitations:
+
+- `POST /query` uses a deterministic template client rather than an LLM.
+- Only dense retrieval is implemented.
+- Evaluation, MLflow tracking, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Quickstart
 
@@ -109,6 +142,6 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 - `tests`: unit, API, and dashboard client tests
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
-## Next Step
+## Next Milestone
 
-Days 1–14 are complete at their current acceptance level. The next planned step is Day 15: design the first golden QA evaluation dataset. Hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring come later in the plan.
+Day 15: define `data/eval/golden_qa.jsonl` and create the first manually reviewed supported, ambiguous, and unsupported evaluation questions.
