@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class RetrieveRequest(BaseModel):
     """Request body for POST /retrieve."""
     query: str = Field(..., description="The user query to retrieve context for.")
-    top_k: int = Field(5, description="The number of chunks to retrieve.")
+    top_k: int = Field(5, ge=1, le=20, description="The number of chunks to retrieve.")
 
 
 class RetrievedChunkResponse(BaseModel):
@@ -31,7 +31,7 @@ class RetrieveResponse(BaseModel):
 class QueryRequest(BaseModel):
     """Request body for POST /query."""
     query: str = Field(..., description="The user question to answer.")
-    top_k: int = Field(5, description="The number of retrieved chunks to use.")
+    top_k: int = Field(5, ge=1, le=20, description="The number of retrieved chunks to use.")
 
 
 class CitationResponse(BaseModel):

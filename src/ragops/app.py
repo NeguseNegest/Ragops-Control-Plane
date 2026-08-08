@@ -1,3 +1,4 @@
+import os
 import time
 
 from fastapi import FastAPI, HTTPException
@@ -6,7 +7,7 @@ from pydantic import BaseModel
 from ragops import __version__
 from ragops.api.schemas import CitationResponse, QueryRequest, QueryResponse, RetrievedChunkResponse, RetrieveRequest, RetrieveResponse
 from ragops.generation.client import generate_answer
-from ragops.indexing.qdrant import create_qdrant_client
+from ragops.indexing.qdrant import DEFAULT_QDRANT_URL, create_qdrant_client
 from ragops.retrieval.dense import retrieve_dense
 
 
@@ -33,9 +34,19 @@ def close_qdrant_client(client):
         close()
 
 
+def get_qdrant_url():
+    """Return the configured Qdrant URL with a stable local default."""
+    qdrant_url = os.getenv("QDRANT_URL", DEFAULT_QDRANT_URL).strip()
+
+    if not qdrant_url:
+        qdrant_url = DEFAULT_QDRANT_URL
+
+    return qdrant_url.rstrip("/")
+
+
 def retrieve_chunks(query, top_k):
     """Retrieve chunks from Qdrant and close the client afterward."""
-    client = create_qdrant_client()
+    client = create_qdrant_client(get_qdrant_url())
 
     try:
         return retrieve_dense(query=query, client=client, top_k=top_k)

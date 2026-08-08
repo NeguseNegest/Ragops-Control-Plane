@@ -25,6 +25,8 @@ The implemented pipeline supports:
 
 ## Quickstart
 
+Prerequisites: Python 3.12, Docker, and Docker Compose.
+
 Create the environment and run the checks:
 
 ```bash
@@ -33,35 +35,50 @@ make lint
 make test
 ```
 
-Start the local services:
+Start Qdrant and MLflow:
 
 ```bash
-docker compose up -d qdrant mlflow
+make services-up
 ```
 
-With the documentation corpus available in `data/raw`, inspect ingestion without writing embeddings:
+### Prepare the corpus and index
+
+Raw documentation and generated embeddings are intentionally excluded from Git. A fresh checkout must place the source snapshots recorded in `data/manifests/source_manifest.json` at these locations:
+
+```text
+data/raw/fastapi/docs
+data/raw/fastapi/docs_src
+data/raw/mlflow/docs
+data/raw/qdrant/qdrant_llms_full.txt
+```
+
+The manifest records the upstream URLs, selected paths, and exact FastAPI and MLflow commits. Once those files are present, inspect ingestion without writing anything:
 
 ```bash
-.venv/bin/python scripts/ingest.py --dry-run
+make ingest-dry-run
 ```
 
 Generate embeddings and build the Qdrant index:
 
 ```bash
-.venv/bin/python scripts/ingest.py
-.venv/bin/python scripts/build_index.py --recreate
+make ingest
+make index
 ```
+
+`make ingest` writes `data/processed/chunks.jsonl` and may download the embedding model on its first run. Use `make index-recreate` only when you intentionally want to delete and rebuild the existing `rag_chunks` collection.
+
+### Run the application
 
 Run the API:
 
 ```bash
-PYTHONPATH=src .venv/bin/uvicorn ragops.app:app --reload
+make serve
 ```
 
 In another terminal, run the dashboard:
 
 ```bash
-PYTHONPATH=src .venv/bin/streamlit run dashboard/app.py
+make dashboard
 ```
 
 Open `http://localhost:8501` for the playground. The API documentation remains available at `http://127.0.0.1:8000/docs`.
@@ -90,7 +107,8 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 - `dashboard/app.py`: Streamlit query playground
 - `scripts`: ingestion and index-building commands
 - `tests`: unit, API, and dashboard client tests
+- `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Step
 
-Days 1–12 are complete, and the Day 13 Streamlit playground is implemented. The next planned step is Week 2 stabilization: verify the browser workflow, fix integration issues, and keep the quickstart and architecture documentation aligned with the working system. Evaluation, hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring come later in the plan.
+Days 1–14 are complete at their current acceptance level. The next planned step is Day 15: design the first golden QA evaluation dataset. Hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring come later in the plan.

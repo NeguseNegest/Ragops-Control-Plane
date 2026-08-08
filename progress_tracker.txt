@@ -1,9 +1,9 @@
-RAGOps Control Plane progress notes: Days 1-13
+RAGOps Control Plane progress notes: Days 1-14
 
 Purpose
 - This file is a handoff note for future LLMs and future work sessions.
 - It records what has been implemented so far, what was verified, and what is still missing.
-- The project plan lives in ProjectPlan.tex. Week 1 covers Days 1-7: repository setup, local services, corpus, ingestion, chunking, embeddings, and dense indexing. Week 2 currently covers Day 8 dense retrieval, Day 9 citation formatting, Day 10 basic generation, Day 11 FastAPI endpoints, Day 12 the first end-to-end RAG path, and Day 13 the basic Streamlit playground.
+- The project plan lives in ProjectPlan.tex. Week 1 covers Days 1-7: repository setup, local services, corpus, ingestion, chunking, embeddings, and dense indexing. Week 2 covers Day 8 dense retrieval, Day 9 citation formatting, Day 10 basic generation, Day 11 FastAPI endpoints, Day 12 the first end-to-end RAG path, Day 13 the basic Streamlit playground, and Day 14 stabilization.
 
 Important user preferences for future LLMs
 - Keep implementations simple and readable. Do not overcomplicate with unnecessary abstractions.
@@ -732,14 +732,85 @@ Dependency and environment changes
 Day 13 tests
 - Added five unit tests for the dashboard API client.
 - Tests cover the default API URL, configured URL normalization, request payload and timeout, API error details, and connection failures.
-- The live Streamlit browser acceptance check was not run in this session because Docker/Qdrant should only be started when the user explicitly asks.
+- The live Streamlit acceptance check was completed during Day 14 stabilization.
+
+
+Day 14: Week 2 Stabilization
+Goal from ProjectPlan.tex
+- Fix ingestion and API integration bugs.
+- Keep the README quickstart accurate.
+- Strengthen API health and retrieval tests.
+- Add the first architecture diagram and system description.
+- Acceptance criterion: a reviewer can run and understand the basic RAG system locally.
+
+Implemented Qdrant configuration fix
+- Added get_qdrant_url() in src/ragops/app.py.
+- The host-run API defaults to http://localhost:6333.
+- QDRANT_URL can override the default and trailing slashes are normalized.
+- retrieve_chunks(...) now passes the resolved URL to create_qdrant_client(...).
+- Docker Compose already sets QDRANT_URL=http://qdrant:6333 for the API container, so the API can now use the Docker service hostname instead of incorrectly connecting to its own localhost.
+- .env.example now uses http://127.0.0.1:6333 as the host-run example and explains the Docker value.
+
+Implemented request validation
+- RetrieveRequest.top_k and QueryRequest.top_k now accept integers from 1 through 20.
+- Values outside that range are rejected by Pydantic with HTTP 422 before retrieval starts.
+- The API bounds now match the Streamlit selector.
+
+Implemented developer commands
+- make lint now checks src, tests, scripts, and dashboard.
+- make test now uses .venv/bin/python -m pytest so the repository-root dashboard and scripts modules are importable during collection.
+- Added make services-up for Qdrant and MLflow.
+- Added make ingest-dry-run for non-writing corpus inspection.
+- Added make ingest for embedding generation.
+- Added make index for non-destructive collection creation/upsert.
+- Added make index-recreate for an explicit delete-and-rebuild operation.
+- Added make serve for the FastAPI development server.
+- Added make dashboard for the Streamlit playground.
+- Verified all new targets with make -n before live use.
+
+Documentation changes
+- Reworked the README quickstart around the Make targets.
+- Documented the Python and Docker prerequisites.
+- Documented that raw documents and generated embeddings are not committed.
+- Documented the exact expected raw corpus paths and the role of data/manifests/source_manifest.json.
+- Documented the difference between make index and the intentionally destructive make index-recreate.
+- Filled docs/architecture.md with:
+  - current scope and planned boundaries
+  - a Mermaid offline/online system diagram
+  - component responsibilities
+  - offline ingestion and indexing flow
+  - online request flow
+  - runtime services, ports, and environment variables
+  - HTTP and UI error boundaries
+  - current limitations
+
+Day 14 test changes
+- Added a real /health response assertion for status and package version.
+- Added QDRANT_URL default and override tests.
+- Added tests proving retrieve_chunks(...) passes the configured URL and closes the Qdrant client after both success and failure.
+- Added /retrieve and /query validation tests for top_k values below 1 and above 20.
+
+Day 14 live verification
+- The existing Qdrant service was running with the populated rag_chunks collection; the index was not rebuilt.
+- GET http://127.0.0.1:8000/health returned HTTP 200 with status=ok and version=0.1.0.
+- POST /retrieve with top_k=0 returned HTTP 422 with the expected greater-than-or-equal-to-1 validation detail.
+- A real POST /retrieve for "How do I create a FastAPI app?" returned HTTP 200 and two relevant FastAPI chunks from the reference and tutorial documentation.
+- The first live retrieval after model loading took about 25.7 seconds; this reflects cold embedding-model startup.
+- A following real POST /query returned HTTP 200 with answer, two citations, two retrieved chunks, used_chunk_ids, and latency_ms.
+- The warm /query request reported about 69.6 ms total API latency.
+- Streamlit started successfully at http://localhost:8501.
+- Streamlit's application test harness submitted the same question with top_k=2 against the live API.
+- The rendered result contained Answer, Citations, and Retrieved Chunks sections, a 62.2 ms latency metric, two chunk expanders, and no displayed errors.
+- make ingest-dry-run completed with 1,980 scanned files, 930 parsed documents, and 13,481 deterministic chunks.
+- docker compose config --quiet succeeded.
+- Day 14 acceptance criterion is satisfied: the documented local workflow, API, retrieval path, query path, and Streamlit UI were all verified.
 
 
 Current validation status
 - Full test suite was run with:
   .venv/bin/python -m pytest
 - Result:
-  56 passed, with 1 harmless FastAPI/Starlette TestClient deprecation warning
+  65 passed, with 1 harmless FastAPI/Starlette TestClient deprecation warning
 - Ruff was run with:
   .venv/bin/ruff check src tests scripts dashboard
 - Result:
@@ -749,11 +820,15 @@ Current validation status
 Current important changed/new files
 - Modified:
   - .env.example
+  - Makefile
   - README.md
   - dashboard/app.py
+  - docs/architecture.md
   - pyproject.toml
   - scripts/ingest.py
   - scripts/build_index.py
+  - src/ragops/api/schemas.py
+  - src/ragops/app.py
   - tests/test_chunking.py
   - tests/test_ingestion.py
   - tests/test_retrieval.py
@@ -780,8 +855,7 @@ Current important changed/new files
 
 
 Recommended next step
-- Days 1-12 are complete at their current planned acceptance level.
-- Day 13 implementation and unit tests are complete.
-- Run the live Day 13 browser acceptance check only when the user asks to start the local services.
-- After that verification, Day 14 is Week 2 stabilization and documentation cleanup.
-- Do not implement Day 14 or later features unless the user explicitly asks.
+- Days 1-14 are complete at their current planned acceptance level.
+- Day 15 in ProjectPlan.tex is Golden QA Dataset Design.
+- Day 15 should define data/eval/golden_qa.jsonl and create the first manually reviewed supported, ambiguous, and unsupported questions.
+- Do not implement Day 15 or later features unless the user explicitly asks.
