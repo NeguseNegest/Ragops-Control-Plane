@@ -2,69 +2,29 @@
 
 ## Evaluation-Gated, Cost-Aware RAG Platform
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
-![Pydantic](https://img.shields.io/badge/Pydantic-2.8%2B-E92063?logo=pydantic&logoColor=white)
-![Uvicorn](https://img.shields.io/badge/Uvicorn-ASGI-499848)
-![Qdrant](https://img.shields.io/badge/Qdrant-vector_db-DC244C)
-![MLflow](https://img.shields.io/badge/MLflow-tracking-0194E2?logo=mlflow&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-traces-003B57?logo=sqlite&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white)
-![Sentence Transformers](https://img.shields.io/badge/Sentence_Transformers-embeddings-FCC624)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.2%2B-EE4C2C?logo=pytorch&logoColor=white)
-![Transformers](https://img.shields.io/badge/Transformers-4.41%2B-FFD21E)
-![NumPy](https://img.shields.io/badge/NumPy-1.26%2B-013243?logo=numpy&logoColor=white)
-![rank-bm25](https://img.shields.io/badge/rank--bm25-sparse_retrieval-6B7280)
-![pytest](https://img.shields.io/badge/pytest-tests-0A9EDC?logo=pytest&logoColor=white)
-![Ruff](https://img.shields.io/badge/Ruff-linting-D7FF64)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=githubactions&logoColor=white)
+RAGOps Control Plane is a production-style RAG project built around technical documentation from FastAPI, MLflow, and Qdrant. The current system ingests and chunks documents, stores dense embeddings in Qdrant, retrieves relevant context, builds citations, and exposes the full path through FastAPI.
 
-This project will:
-
-1. Ingest documentation from FastAPI, MLflow, and Qdrant.
-2. Build a RAG pipeline that can search those docs and answer with citations.
-3. Add evaluation, tracing, caching, and deployment checks around the pipeline.
-
-That is the whole idea: build the RAG system, then build the tooling around it
-so different versions can be compared instead of guessed at.
+The long-term goal is to compare and safely promote RAG pipeline versions using measured quality, latency, and cost instead of guesswork.
 
 ## Current State
 
-So far the project has:
+The implemented pipeline supports:
 
-- a basic FastAPI app with a `/health` endpoint
-- Docker Compose services for the API, Qdrant, and MLflow
-- raw docs downloaded into `data/raw`
-- a source manifest for the docs
-- document schemas
-- loaders and cleaners for docs/code files
-- a dry-run ingestion command
-- tests for the current ingestion behavior
+- local Markdown, MDX, RST, text, HTML, and selected Python source loading
+- deterministic heading-aware and overlapping chunking with stable IDs and hashes
+- batched `sentence-transformers/all-MiniLM-L6-v2` embeddings
+- Qdrant indexing and dense retrieval
+- ranked retrieved chunks with source metadata
+- deduplicated numbered citations
+- citation-required generation prompts
+- `GET /health`, `POST /retrieve`, and `POST /query`
+- unit tests that do not require live Qdrant or an external model
 
-Run the current ingestion check:
-
-```bash
-python scripts/ingest.py --dry-run
-```
-
-## Tools
-
-- Python for the core application and pipeline code
-- FastAPI, Pydantic, and Uvicorn for the API layer
-- Docker Compose for local services
-- Qdrant for dense vector indexing and search
-- MLflow for experiment tracking
-- SQLite for trace storage
-- sentence-transformers, PyTorch, Transformers, and NumPy for embeddings and model utilities
-- rank-bm25 for sparse retrieval
-- Streamlit for the dashboard
-- pytest and Ruff for testing and linting
-- GitHub Actions for CI later in the project
+`POST /query` currently uses a deterministic local template client. Retrieval and citation construction are real, but answer synthesis is still a placeholder for a future local or API-backed LLM.
 
 ## Quickstart
 
-Set up the project:
+Create the environment and run the checks:
 
 ```bash
 make setup
@@ -72,38 +32,55 @@ make lint
 make test
 ```
 
-Start Qdrant and MLflow:
+Start the local services:
 
 ```bash
-docker compose up qdrant mlflow
+docker compose up -d qdrant mlflow
+```
+
+With the documentation corpus available in `data/raw`, inspect ingestion without writing embeddings:
+
+```bash
+.venv/bin/python scripts/ingest.py --dry-run
+```
+
+Generate embeddings and build the Qdrant index:
+
+```bash
+.venv/bin/python scripts/ingest.py
+.venv/bin/python scripts/build_index.py --recreate
 ```
 
 Run the API:
 
 ```bash
-make docker-up
+PYTHONPATH=src .venv/bin/uvicorn ragops.app:app --reload
 ```
 
-Check the API:
+Open `http://127.0.0.1:8000/docs`, or send a query directly:
 
 ```bash
-curl http://localhost:8000/health
+curl -X POST http://127.0.0.1:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query":"How do I create a FastAPI app?","top_k":5}'
 ```
 
-## Layout
+## Main Components
 
 ```text
-.
-├── configs/
-├── data/
-├── dashboard/
-├── docs/
-├── scripts/
-├── src/ragops/
-├── tests/
-├── Dockerfile
-├── docker-compose.yml
-├── Makefile
-├── pyproject.toml
-└── README.md
+data/raw -> cleaning -> chunking -> embeddings -> Qdrant
+                                                   |
+query -> dense retrieval -> citations -> generation -> FastAPI response
 ```
+
+- `src/ragops/ingestion`: loading, cleaning, chunking, and embeddings
+- `src/ragops/indexing`: Qdrant collection creation and indexing
+- `src/ragops/retrieval`: dense retrieval and result normalization
+- `src/ragops/generation`: citations, prompts, and generation client
+- `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
+- `scripts`: ingestion and index-building commands
+- `tests`: unit and API tests
+
+## Next Step
+
+Days 1–12 of the project plan are complete at their current acceptance level. The next planned step is a small Streamlit playground that displays answers, citations, retrieved chunks, and latency. Evaluation, hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring come later in the plan.
