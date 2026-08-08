@@ -13,7 +13,6 @@ class GenerationResult(BaseModel):
 
 
 class GenerationClient:
-    """Common interface for answer-generation providers."""
 
     def generate(self, prompt):
         """Generate answer text from one completed prompt."""
@@ -21,7 +20,6 @@ class GenerationClient:
 
 
 class LocalTemplateGenerationClient(GenerationClient):
-    """Deterministic local provider used before a real model client exists."""
 
     def generate(self, prompt):
         """Return a simple cited answer without calling an external model."""

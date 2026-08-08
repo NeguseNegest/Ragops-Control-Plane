@@ -1,0 +1,628 @@
+RAGOps Control Plane progress notes: Days 1-10
+
+Purpose
+- This file is a handoff note for future LLMs and future work sessions.
+- It records what has been implemented so far, what was verified, and what is still missing.
+- The project plan lives in ProjectPlan.tex. Week 1 covers Days 1-7: repository setup, local services, corpus, ingestion, chunking, embeddings, and dense indexing. Week 2 starts with Day 8 dense retrieval, Day 9 citation formatting, and Day 10 basic generation.
+
+Important user preferences for future LLMs
+- Keep implementations simple and readable. Do not overcomplicate with unnecessary abstractions.
+- The user prefers long/compact formatting in Python files over heavy vertical indentation inside function arguments or dictionary listings.
+- Avoid adding function or method return type annotations in new code. The user specifically requested no return value type declarations.
+- Be careful not to implement future days unless the user asks. The user wants to do many later steps themselves.
+- Do not start Docker/Qdrant or run full indexing unless the user explicitly asks for it.
+
+
+Day 1: Project setup
+- Created the initial Python project structure.
+- Added core project files such as README.md, pyproject.toml, Makefile, Dockerfile, and docker-compose.yml.
+- Set up the FastAPI application package under src/ragops.
+- Added a basic /health endpoint and initial pytest coverage.
+- Added development tooling through pytest and ruff.
+
+
+Day 2: Docker Compose and local services
+- Added Docker Compose services for the API, Qdrant, and MLflow.
+- Configured Qdrant ports 6333 and 6334.
+- Added persistent Docker volumes for Qdrant and MLflow state.
+- Added an MLflow tracking server command with SQLite backend storage.
+- Added .env.example with local API, Qdrant, MLflow, and Python settings.
+- Confirmed Qdrant and MLflow can start locally with docker compose.
+
+
+Day 3: Initial corpus
+- Selected FastAPI, MLflow, and Qdrant documentation as the first corpus.
+- Downloaded Qdrant documentation from https://qdrant.tech/llms-full.txt.
+- Sparse-cloned FastAPI documentation and docs_src into external/fastapi.
+- Sparse-cloned MLflow documentation into external/mlflow.
+- Copied selected documentation into data/raw.
+- Recorded source metadata in data/manifests/source_manifest.json.
+- Captured exact Git commits for FastAPI and MLflow documentation snapshots.
+
+
+Day 4: Document loader
+Goal from ProjectPlan.tex
+- Parse local files into clean text.
+- Implement loaders for .md, .txt, and basic .html.
+- Normalize whitespace and remove navigation boilerplate where possible.
+- Create Document and DocumentChunk schemas.
+- Add tests for file loading.
+- Acceptance criterion: python scripts/ingest.py --dry-run prints parsed documents.
+
+Implemented files
+- src/ragops/schemas.py
+- src/ragops/ingestion/loaders.py
+- src/ragops/ingestion/cleaning.py
+- scripts/ingest.py
+- tests/test_ingestion.py
+
+Implemented behavior
+- Added the Document schema for parsed source documents before chunking.
+- Added the DocumentChunk schema for deterministic chunks derived from source documents.
+- Implemented local file loading from data/raw with stable ordering.
+- Supported documentation-like extensions: .md, .mdx, .rst, .txt, .html.
+- Supported .py files only when they are FastAPI docs examples under fastapi/docs_src.
+- Skipped unsupported files and empty files.
+- Built deterministic document IDs with UUID5 from the raw-root-relative path.
+- Stored provenance metadata on each Document:
+  - source_path
+  - relative_path
+  - extension
+  - source_name
+  - content_type
+  - language for Python code examples
+- Added cleaning behavior for Markdown/MDX/RST/TXT/HTML/Python inputs.
+- MDX cleaning removes frontmatter and import lines.
+- HTML cleaning strips tags and ignores navigation-like content where possible.
+- Python examples preserve code text and are marked as code_example.
+- scripts/ingest.py supports a dry run that summarizes parsed documents and now also summarizes generated chunks after Day 5.
+
+Current Day 4 corpus result from earlier dry-run work
+- Files scanned: 1980
+- Supported files: 1022
+- Parsed documents: 930
+- Supported but empty files: 92
+
+Day 4 tests
+- tests/test_ingestion.py covers:
+  - Markdown loading
+  - MDX frontmatter/import stripping
+  - HTML tag/navigation stripping
+  - RST and TXT loading
+  - FastAPI docs_src Python loading
+  - rejecting Python outside FastAPI docs_src
+  - skipping unsupported and empty files
+  - deterministic document IDs
+  - stable iteration order
+
+
+Day 5: Chunking
+Goal from ProjectPlan.tex
+- Implement deterministic chunking.
+- Implement fixed-size chunking.
+- Implement overlapping chunking.
+- Implement heading-aware chunking as a best-effort strategy.
+- Generate deterministic chunk IDs using UUID5.
+- Generate chunk hashes using SHA256.
+- Acceptance criterion: running ingestion twice produces identical chunk IDs.
+
+Implemented files
+- src/ragops/ingestion/chunking.py
+- scripts/ingest.py
+- tests/test_chunking.py
+
+Implemented chunking module
+- Added ChunkConfig with defaults:
+  - DEFAULT_CHUNK_SIZE = 250
+  - DEFAULT_CHUNK_OVERLAP = 50
+  - default strategy = heading
+- Added strategy normalization so aliases such as fixed, fixed_size, overlap, overlapping, with_overlap, heading, headings, and heading_aware map to stable strategy names.
+- Added validation that chunk_overlap must be smaller than chunk_size.
+- Added whitespace-token span extraction with a regex instead of a tokenizer dependency.
+- Preserved original text spacing inside chunks by slicing from character offsets rather than rebuilding text from token lists.
+- Added fixed-size chunking:
+  - split_fixed_size(...)
+  - no overlap by default
+  - emits stable token windows
+- Added overlapping chunking:
+  - split_with_overlap(...)
+  - uses chunk_size minus chunk_overlap as the window step
+  - reuses trailing tokens in the next chunk
+- Added heading-aware chunking:
+  - split_by_headings(...)
+  - detects Markdown headings with # through ######
+  - strips heading anchors like { #intro } from heading metadata
+  - splits documents into heading sections first
+  - applies token windows inside long sections
+  - includes heading, heading_level, and section_index metadata when available
+- Added chunk metadata:
+  - chunk_index
+  - chunking_strategy
+  - chunk_size
+  - chunk_overlap
+  - chunk_start_token
+  - chunk_end_token
+  - chunk_start_char
+  - chunk_end_char
+  - section_index where available
+  - heading and heading_level where available
+- Added deterministic chunk hashes:
+  - build_chunk_hash(text)
+  - SHA256 over the exact chunk text
+- Added deterministic chunk IDs:
+  - build_chunk_id(document_id, strategy, chunk_index, chunk_hash)
+  - UUID5 namespace based on ragops-control-plane/chunks/v1
+  - ID inputs include source document ID, chunking strategy, chunk index, and chunk hash
+- Added chunk_document(...) for one document.
+- Added chunk_documents(...) to yield chunks across documents in input order.
+
+scripts/ingest.py changes for Day 5
+- Added chunking CLI options:
+  - --chunk-size
+  - --chunk-overlap
+  - --chunk-strategy
+  - --preview-chunks
+- summarize_files(...) now loads documents and chunks them.
+- print_summary(...) now prints generated chunk count and chunking configuration.
+- print_chunk_previews(...) prints chunk ID, document ID, chunk hash, token count, optional heading, and a text preview.
+
+Day 5 tests
+- tests/test_chunking.py covers:
+  - fixed-size chunks without overlap
+  - overlapping chunks reusing trailing tokens
+  - deterministic chunk IDs across repeated runs
+  - deterministic 64-character SHA256 chunk hashes
+  - heading metadata and heading levels
+  - heading-aware overlap inside long sections
+  - preserving indentation/spacing for code snippets
+  - chunking multiple documents in input order
+  - rejecting invalid chunk overlap settings
+
+
+Day 6: Embeddings
+Goal from ProjectPlan.tex
+- Generate dense embeddings.
+- Add embedding wrapper for all-MiniLM-L6-v2.
+- Batch embedding generation.
+- Store embedding model name in chunk metadata.
+- Save processed chunks to data/processed/chunks.jsonl.
+- Acceptance criterion: at least 500 chunks have embeddings.
+
+Implemented files
+- src/ragops/ingestion/embeddings.py
+- scripts/ingest.py
+- tests/test_ingestion.py
+- pyproject.toml
+
+Implemented embedding module
+- Added default embedding model name:
+  - sentence-transformers/all-MiniLM-L6-v2
+- Added a simple model cache:
+  - model_cache = {}
+  - get_model(...) loads SentenceTransformer only once per model name.
+- Added embed_texts(...):
+  - accepts a list of texts
+  - returns [] for empty input
+  - calls model.encode(...)
+  - supports batch_size
+  - supports show_progress_bar
+  - converts NumPy embeddings to plain Python lists with .tolist()
+
+scripts/ingest.py changes for Day 6
+- Added non-dry-run output mode.
+- Added --output with default data/processed/chunks.jsonl.
+- Added --embedding-model with default sentence-transformers/all-MiniLM-L6-v2.
+- Added --embedding-batch-size with default 64.
+- Added write_embedded_chunks(...):
+  - lazily imports embed_texts only when actually writing embeddings
+  - embeds all chunk texts
+  - checks that embedding count matches chunk count
+  - creates the output parent directory
+  - writes JSONL, one embedded chunk record per line
+- Added build_embedded_chunk_record(...):
+  - chunk_id
+  - document_id
+  - text
+  - token_count
+  - chunk_hash
+  - metadata
+  - embedding
+- Added embedding metadata to each chunk record:
+  - metadata["embedding_model"]
+  - metadata["embedding_dimension"]
+
+Dependency/environment changes for Day 6
+- pyproject.toml was updated so the local embedding stack works together:
+  - numpy>=1.26,<2.0
+  - torch>=2.2,<2.3
+  - transformers>=4.41,<5.0
+- Ruff line length was changed to 320 because the user prefers long formatting.
+- The local dependency issue was caused by incompatible Torch/Transformers/NumPy versions. It was resolved by pinning the compatible versions above.
+
+Generated Day 6 artifact
+- data/processed/chunks.jsonl exists.
+- It contains 13,481 embedded chunk records.
+- File size is about 128 MB.
+- The expected embedding dimension for all-MiniLM-L6-v2 is 384.
+- Day 6 acceptance criterion is satisfied because the artifact contains far more than 500 embedded chunks.
+
+Day 6 tests
+- tests/test_ingestion.py includes test_write_embedded_chunks_writes_jsonl_with_embedding_metadata.
+- That test uses a fake embedder, not the real SentenceTransformer model, so tests stay fast and deterministic.
+- The test verifies:
+  - texts are passed to the embedder in order
+  - configured model name and batch size are passed through
+  - output JSONL contains chunk IDs
+  - output JSONL contains embeddings
+  - metadata contains embedding_model
+  - metadata contains embedding_dimension
+
+
+Day 7: Qdrant indexing
+Goal from ProjectPlan.tex
+- Store vectors in Qdrant.
+- Create Qdrant collection rag_chunks.
+- Upsert chunks with vectors and metadata.
+- Add scripts/build_index.py.
+- Add a basic dense search sanity check.
+- Acceptance criterion: a query returns relevant chunks from Qdrant.
+
+Implemented files
+- src/ragops/indexing/__init__.py
+- src/ragops/indexing/qdrant.py
+- scripts/build_index.py
+- tests/test_indexing.py
+
+Implemented indexing module
+- Added constants:
+  - DEFAULT_COLLECTION_NAME = rag_chunks
+  - DEFAULT_QDRANT_URL = http://localhost:6333
+  - DEFAULT_BATCH_SIZE = 128
+- Added load_chunk_records(input_path, limit=None):
+  - input is one JSONL file, usually data/processed/chunks.jsonl
+  - reads records in file order
+  - skips blank lines
+  - supports an optional limit for test indexing
+- Added get_vector_size(records):
+  - uses the first record's embedding length
+  - raises ValueError if no records were loaded
+  - raises ValueError if the first record has no embedding
+- Added create_qdrant_client(qdrant_url=DEFAULT_QDRANT_URL):
+  - returns QdrantClient(url=qdrant_url)
+- Added create_collection(client, collection_name, vector_size, recreate=False):
+  - checks whether the collection exists
+  - returns False and leaves the collection alone when it exists and recreate is False
+  - deletes and recreates when recreate is True
+  - creates vectors_config with models.VectorParams(...)
+  - uses models.Distance.COSINE
+- Added build_point(record):
+  - converts one embedded chunk record into models.PointStruct
+  - point ID is record["chunk_id"]
+  - vector is record["embedding"]
+  - payload keeps chunk_id, document_id, text, token_count, chunk_hash, and metadata
+- Added batch_records(records, batch_size=DEFAULT_BATCH_SIZE):
+  - groups records into fixed-size batches
+  - yields a final partial batch
+  - raises ValueError if batch_size <= 0
+- Added upsert_records(client, collection_name, records, batch_size=DEFAULT_BATCH_SIZE):
+  - builds Qdrant points from each batch
+  - calls client.upsert(collection_name=collection_name, points=points)
+  - returns the number of indexed points
+- Added index_chunks(...):
+  - loads JSONL records
+  - infers vector size
+  - creates the collection if needed
+  - upserts records
+  - returns indexed count
+- Added embed_query(query, embedding_model):
+  - lazily imports embed_texts from ragops.ingestion.embeddings
+  - embeds one query for the optional CLI search check
+- Added search_index(client, collection_name, query_vector, top_k=5):
+  - calls client.query_points(...)
+  - returns response.points
+
+Implemented build_index CLI
+- scripts/build_index.py imports from ragops.indexing.qdrant.
+- Adds src to sys.path so the script works from the project root.
+- CLI options:
+  - --input, default data/processed/chunks.jsonl
+  - --qdrant-url, default QDRANT_URL env var or http://localhost:6333
+  - --collection, default rag_chunks
+  - --batch-size, default 128
+  - --recreate
+  - --limit
+  - --query
+  - --top-k
+  - --embedding-model
+- validate_args(...) checks:
+  - positive batch size
+  - positive limit when provided
+  - positive top_k
+  - input file exists
+- main() creates the Qdrant client, indexes chunks, optionally embeds a query and prints search results, then closes the client in a finally block.
+- print_search_results(...) prints rank, score, chunk ID, source path, and a compact text preview.
+
+Day 7 tests
+- tests/test_indexing.py replaces the earlier placeholder tests with real unit tests.
+- These tests do not require Docker or a running Qdrant service.
+- The tests use small fake records and fake clients.
+- Covered behavior:
+  - load_chunk_records reads a temporary JSONL file in order
+  - get_vector_size returns the first embedding length
+  - batch_records yields batch sizes [2, 2, 1] for five records and batch_size=2
+  - build_point keeps point ID, vector, text, document ID, chunk hash, and metadata
+  - create_collection sends cosine-distance vector config to a fake client
+  - upsert_records sends Qdrant points in batches to a fake client
+
+Day 7 current status
+- The Day 7 code and unit tests are implemented.
+- The Day 7 unit-test part is complete.
+- The full Day 7 acceptance criterion is not fully proven yet because the final current implementation has not been run against a live Qdrant service after the latest edits.
+- The remaining Day 7 runtime check is:
+  1. Start Qdrant only if the user asks:
+     docker compose up -d qdrant
+  2. Run a small indexing test:
+     .venv/bin/python scripts/build_index.py --limit 100 --recreate
+  3. Run a search sanity check:
+     .venv/bin/python scripts/build_index.py --query "How do I create a FastAPI app?" --top-k 5
+  4. If the small run works, run the full index:
+     .venv/bin/python scripts/build_index.py --recreate
+- Be cautious with Qdrant state from earlier experiments. If Docker or Qdrant appears stuck, ask the user before cleanup.
+
+
+Day 8: Dense retriever module
+Goal from ProjectPlan.tex
+- Build reusable dense retrieval.
+- Implement retrieve_dense(query, top_k).
+- Return RetrievedChunk objects.
+- Add score, rank, metadata, and source URL.
+- Add tests with small fake data.
+- Acceptance criterion: dense retriever is importable and unit-tested.
+
+Implemented files
+- src/ragops/retrieval/dense.py
+- tests/test_retrieval.py
+
+Implemented dense retrieval module
+- Added RetrievedChunk as a Pydantic model for normalized retrieval results.
+- RetrievedChunk stores:
+  - chunk_id
+  - document_id
+  - text
+  - score
+  - rank
+  - metadata
+  - source_url
+- Added constants:
+  - DEFAULT_TOP_K = 5
+  - DEFAULT_EMBEDDING_MODEL = sentence-transformers/all-MiniLM-L6-v2
+- Added validate_query(query):
+  - rejects non-string queries with ValueError
+  - strips surrounding whitespace
+  - rejects empty strings with ValueError
+  - returns the cleaned query
+- Added source_url_from_metadata(metadata):
+  - returns None if metadata is not a dict
+  - checks source_url, url, documentation_url, relative_path, then source_path
+  - returns the first useful source reference as a string
+- Added build_retrieved_chunk(result, rank):
+  - converts one Qdrant result into RetrievedChunk
+  - reads payload from result.payload
+  - reads metadata from payload["metadata"]
+  - reads score from result.score and falls back to 0.0 when missing/None
+  - uses payload chunk_id or result.id
+  - fills source_url through source_url_from_metadata(...)
+- Added build_retrieved_chunks(results):
+  - preserves Qdrant result order
+  - assigns 1-based ranks with enumerate(..., start=1)
+  - returns a list of RetrievedChunk objects
+- Added retrieve_dense(query, client, top_k=DEFAULT_TOP_K, collection_name=DEFAULT_COLLECTION_NAME, embedding_model=DEFAULT_EMBEDDING_MODEL):
+  - validates and cleans the query
+  - embeds the query using Day 7 qdrant.embed_query(...)
+  - searches Qdrant using Day 7 qdrant.search_index(...)
+  - converts the results into RetrievedChunk objects
+  - does not implement hybrid retrieval, reranking, generation, citations, caching, or API behavior
+
+Day 8 tests
+- tests/test_retrieval.py uses fake Qdrant-like results and monkeypatching.
+- Tests cover:
+  - query stripping
+  - empty query rejection
+  - source URL/path extraction from metadata
+  - converting one Qdrant result into RetrievedChunk
+  - preserving score, rank, payload metadata, and text
+  - converting multiple results with ranked order
+  - retrieve_dense(...) calling a fake embed_query and fake search_index
+- Day 8 does not require Docker or live Qdrant for unit tests.
+- Day 8 acceptance criterion is satisfied: the dense retriever is importable and unit-tested.
+
+
+Day 9: Citation formatter
+Goal from ProjectPlan.tex
+- Ensure all answers can cite sources.
+- Implement citation formatter.
+- Deduplicate citations by document and section.
+- Add citation IDs such as [1], [2], [3].
+- Add source title and URL if available.
+- Acceptance criterion: retrieved chunks can be converted into clean citations.
+
+Implemented files
+- src/ragops/generation/__init__.py
+- src/ragops/generation/citations.py
+- tests/test_citations.py
+
+Implemented citation module
+- Added citation_key(chunk):
+  - reads chunk.metadata safely
+  - uses metadata["heading"] first, then metadata["section_index"]
+  - returns (chunk.document_id, section_value)
+  - this is the deduplication key for citations from the same document section
+- Added source_title_from_chunk(chunk):
+  - reads metadata safely
+  - prefers heading, then source_title, then title, then relative_path
+  - falls back to chunk.document_id
+- Added source_url_from_chunk(chunk):
+  - prefers chunk.source_url
+  - otherwise checks source_url, url, documentation_url, relative_path, then source_path in metadata
+  - returns None when no useful source reference exists
+- Added make_citation(citation_number, chunk):
+  - creates a simple dictionary citation record
+  - stores citation_id like [1]
+  - stores document_id
+  - stores title
+  - stores URL/path
+  - stores metadata
+  - starts chunk_ids with the current chunk ID
+- Added add_chunk_to_citation(citation, chunk):
+  - appends chunk.chunk_id only if it is not already listed
+  - returns the updated citation
+- Added build_citations(chunks):
+  - loops through RetrievedChunk objects in retrieval order
+  - deduplicates by citation_key(...)
+  - assigns citation IDs in first-seen order
+  - returns an ordered list of citation dictionaries
+- Added format_citation(citation):
+  - formats one citation as plain text
+  - includes citation_id and title
+  - appends " - {url}" when a URL/path exists
+- Added format_citations(citations):
+  - returns "" for an empty list
+  - joins formatted citation lines with newline characters
+
+Day 9 tests
+- tests/test_citations.py uses small RetrievedChunk fixtures.
+- Tests cover:
+  - citation key uses document ID and heading
+  - source title prefers heading before relative_path
+  - source URL prefers chunk.source_url before metadata path
+  - same document and same section deduplicate into one citation
+  - deduplicated citations collect multiple chunk IDs
+  - different documents get different citation IDs
+  - format_citation includes ID, title, and URL/path
+  - format_citations joins lines and handles an empty list
+- Day 9 acceptance criterion is satisfied: retrieved chunks can be converted into clean, formatted citations.
+
+
+Day 10: Basic generation client
+Goal from ProjectPlan.tex
+- Generate grounded answers.
+- Implement a generic LLM client interface.
+- Add provider implementation for one API or local model.
+- Add citation-required prompt.
+- Add no-answer instruction in the prompt.
+- Acceptance criterion: given query and chunks, model returns cited answer.
+
+Implemented files
+- src/ragops/generation/client.py
+- tests/test_generation.py
+
+Implemented generation client module
+- Added GenerationResult as a Pydantic model for one grounded generation response.
+- GenerationResult stores:
+  - answer
+  - citations
+  - citation_text
+  - used_chunk_ids
+- Added GenerationClient:
+  - common provider interface for answer generation
+  - defines generate(prompt)
+  - base method intentionally raises NotImplementedError so provider subclasses must implement it
+- Added LocalTemplateGenerationClient:
+  - deterministic local provider for Day 10
+  - does not call an external model, API, or network service
+  - returns "I do not know." when the prompt does not contain citation-labeled context
+  - otherwise returns a simple cited answer containing [1]
+  - this is intentionally simple and can later be replaced by a real model provider
+- Added validate_generation_inputs(query, chunks):
+  - rejects non-string queries
+  - strips surrounding whitespace
+  - rejects empty queries
+  - rejects empty chunk lists
+  - returns the cleaned query
+- Added citation_for_chunk(chunk, citations):
+  - finds the citation dictionary containing the chunk ID
+  - returns None if no citation matches
+- Added build_context(chunks, citations):
+  - builds plain-text context blocks from RetrievedChunk objects
+  - includes citation ID and source title in each source header
+  - preserves retrieval order
+  - includes chunk text
+- Added build_generation_prompt(query, chunks, citations):
+  - includes the user query
+  - includes the generated context
+  - instructs the generator to answer only from context
+  - instructs the generator to cite sources with IDs like [1]
+  - includes no-answer behavior: say "I do not know." when context is insufficient
+- Added used_chunk_ids(chunks):
+  - returns chunk IDs in retrieval order
+- Added generate_answer(query, chunks, client=None):
+  - converts chunks to a list
+  - validates query and chunks
+  - builds citations using Day 9 build_citations(...)
+  - builds the generation prompt
+  - uses LocalTemplateGenerationClient when no client is provided
+  - calls client.generate(prompt)
+  - returns GenerationResult with answer, citations, formatted citation text, and used chunk IDs
+
+Day 10 tests
+- tests/test_generation.py uses small RetrievedChunk fixtures and a fake client.
+- Tests cover:
+  - query stripping
+  - empty query rejection
+  - empty chunks rejection
+  - context includes citation ID, source title, and chunk text
+  - prompt includes query, context, citation instruction, and no-answer instruction
+  - LocalTemplateGenerationClient returns a cited answer when context exists
+  - generate_answer(...) calls a fake client and returns GenerationResult
+  - generated result includes formatted citation text and used chunk IDs
+  - used_chunk_ids(...) preserves retrieval order
+- Day 10 acceptance criterion is satisfied at the local/deterministic-client level: given a query and chunks, the generation path returns a cited answer.
+- A real external LLM/API provider has not been added yet; this was intentionally kept simple for Day 10.
+
+
+Current validation status
+- Full test suite was run with:
+  .venv/bin/python -m pytest
+- Result:
+  45 passed
+- Ruff was run with:
+  .venv/bin/ruff check src tests scripts
+- Result:
+  All checks passed
+
+
+Current important changed/new files
+- Modified:
+  - README.md
+  - pyproject.toml
+  - scripts/ingest.py
+  - scripts/build_index.py
+  - tests/test_chunking.py
+  - tests/test_ingestion.py
+  - tests/test_retrieval.py
+- New/untracked at the time these notes were written:
+  - src/ragops/ingestion/chunking.py
+  - src/ragops/ingestion/embeddings.py
+  - src/ragops/indexing/__init__.py
+  - src/ragops/indexing/qdrant.py
+  - src/ragops/retrieval/dense.py
+  - src/ragops/generation/__init__.py
+  - src/ragops/generation/citations.py
+  - src/ragops/generation/client.py
+  - tests/test_indexing.py
+  - tests/test_citations.py
+  - tests/test_generation.py
+- Existing generated artifact:
+  - data/processed/chunks.jsonl
+  - 13,481 lines
+  - about 128 MB
+
+
+Recommended next step
+- Day 8, Day 9, and Day 10 are complete by unit-test acceptance criteria.
+- The Day 7 live-Qdrant runtime acceptance check is still worth doing before relying on real dense retrieval:
+  - docker compose up -d qdrant
+  - .venv/bin/python scripts/build_index.py --limit 100 --recreate
+  - .venv/bin/python scripts/build_index.py --query "How do I create a FastAPI app?" --top-k 5
+- After that, Day 11 in ProjectPlan.tex starts the FastAPI skeleton for /retrieve and /query.
+- Do not add API endpoints, routing, caching, reranking, or real external model providers unless the user explicitly asks for those days.
