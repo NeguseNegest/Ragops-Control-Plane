@@ -1,9 +1,9 @@
-RAGOps Control Plane progress notes: Days 1-10
+RAGOps Control Plane progress notes: Days 1-13
 
 Purpose
 - This file is a handoff note for future LLMs and future work sessions.
 - It records what has been implemented so far, what was verified, and what is still missing.
-- The project plan lives in ProjectPlan.tex. Week 1 covers Days 1-7: repository setup, local services, corpus, ingestion, chunking, embeddings, and dense indexing. Week 2 starts with Day 8 dense retrieval, Day 9 citation formatting, and Day 10 basic generation.
+- The project plan lives in ProjectPlan.tex. Week 1 covers Days 1-7: repository setup, local services, corpus, ingestion, chunking, embeddings, and dense indexing. Week 2 currently covers Day 8 dense retrieval, Day 9 citation formatting, Day 10 basic generation, Day 11 FastAPI endpoints, Day 12 the first end-to-end RAG path, and Day 13 the basic Streamlit playground.
 
 Important user preferences for future LLMs
 - Keep implementations simple and readable. Do not overcomplicate with unnecessary abstractions.
@@ -355,19 +355,15 @@ Day 7 tests
   - upsert_records sends Qdrant points in batches to a fake client
 
 Day 7 current status
-- The Day 7 code and unit tests are implemented.
-- The Day 7 unit-test part is complete.
-- The full Day 7 acceptance criterion is not fully proven yet because the final current implementation has not been run against a live Qdrant service after the latest edits.
-- The remaining Day 7 runtime check is:
-  1. Start Qdrant only if the user asks:
-     docker compose up -d qdrant
-  2. Run a small indexing test:
-     .venv/bin/python scripts/build_index.py --limit 100 --recreate
-  3. Run a search sanity check:
-     .venv/bin/python scripts/build_index.py --query "How do I create a FastAPI app?" --top-k 5
-  4. If the small run works, run the full index:
-     .venv/bin/python scripts/build_index.py --recreate
-- Be cautious with Qdrant state from earlier experiments. If Docker or Qdrant appears stuck, ask the user before cleanup.
+- The Day 7 code, unit tests, and live-Qdrant acceptance check are complete.
+- Qdrant was started successfully with docker compose up -d qdrant.
+- GET http://localhost:6333/collections confirmed that the rag_chunks collection exists.
+- The full processed dataset was indexed with:
+  .venv/bin/python scripts/build_index.py --recreate
+- The live index contains 13,481 chunks.
+- A live query for "How do I create a FastAPI app?" returned three ranked FastAPI documentation chunks from Qdrant.
+- The returned sources included the FastAPI reference, tutorial, and deployment documentation, with similarity scores between approximately 0.71 and 0.75.
+- Day 7 acceptance criterion is satisfied: a real query returns relevant chunks from Qdrant.
 
 
 Day 8: Dense retriever module
@@ -580,20 +576,181 @@ Day 10 tests
 - A real external LLM/API provider has not been added yet; this was intentionally kept simple for Day 10.
 
 
+Day 11: FastAPI skeleton
+Goal from ProjectPlan.tex
+- Expose the core RAG behavior through HTTP endpoints.
+- Implement GET /health.
+- Implement POST /retrieve.
+- Implement POST /query.
+- Add Pydantic request and response schemas.
+- Acceptance criterion: interactive API documentation is available at /docs.
+
+Implemented files
+- src/ragops/api/schemas.py
+- src/ragops/app.py
+- tests/test_api.py
+
+Implemented API schemas
+- Added RetrieveRequest:
+  - query: the text to search for
+  - top_k: number of chunks to retrieve, default 5
+- Added RetrievedChunkResponse:
+  - chunk_id
+  - document_id
+  - text
+  - score
+  - rank
+  - metadata
+  - source_url
+- Added RetrieveResponse:
+  - original query
+  - requested top_k
+  - retrieved chunks
+  - latency_ms
+- Added QueryRequest:
+  - query: the question to answer
+  - top_k: number of retrieved chunks to use, default 5
+- Added CitationResponse:
+  - citation_id
+  - document_id
+  - title
+  - URL/path
+  - metadata
+  - associated chunk IDs
+- Added QueryResponse:
+  - original query
+  - generated answer
+  - structured citations
+  - formatted citation text
+  - retrieved chunks
+  - used chunk IDs
+  - total latency_ms
+- Pydantic models validate incoming and outgoing data and are used by FastAPI to generate endpoint documentation.
+
+Implemented FastAPI application
+- create_app() builds a FastAPI application titled "RAGOps Control Plane" and includes the package version.
+- GET /health returns status="ok" and the package version through HealthResponse.
+- POST /retrieve accepts RetrieveRequest and returns RetrieveResponse.
+- POST /query accepts QueryRequest and returns QueryResponse.
+- chunk_to_response(...) converts an internal RetrievedChunk into the public API response schema.
+- citation_to_response(...) converts a citation dictionary into CitationResponse.
+- retrieve_chunks(...) creates a Qdrant client, calls retrieve_dense(...), and closes the client in a finally block.
+- close_qdrant_client(...) safely closes clients that expose a close() method.
+- elapsed_ms(...) measures endpoint latency with time.perf_counter().
+- app = create_app() exposes the module-level application used by Uvicorn through ragops.app:app.
+- Day 11 acceptance criterion is satisfied: /docs loads the FastAPI Swagger UI successfully.
+- GET / returns 404 by design because the project does not define a root endpoint; /health and /docs are the intended browser endpoints.
+
+
+Day 12: End-to-end RAG path
+Goal from ProjectPlan.tex
+- Make the first complete RAG request work.
+- Connect POST /query to dense retrieval.
+- Send retrieved context to the generation module.
+- Return the answer, citations, chunks, and latency.
+- Add basic error handling.
+- Acceptance criterion: POST /query returns a grounded answer.
+
+Implemented request flow
+- A client sends JSON containing query and top_k to POST /query.
+- FastAPI parses and validates that JSON as QueryRequest.
+- The endpoint starts a high-resolution request timer.
+- retrieve_chunks(...) opens a Qdrant client connected to http://localhost:6333.
+- retrieve_dense(...) validates and cleans the query.
+- The query is embedded with sentence-transformers/all-MiniLM-L6-v2, matching the model used for indexed chunks.
+- Qdrant searches the rag_chunks collection with cosine-based vector similarity.
+- Search results are converted into ranked RetrievedChunk objects with text, scores, metadata, and source paths.
+- The Qdrant client is closed after retrieval, including when retrieval raises an exception.
+- generate_answer(...) receives the original query and retrieved chunks.
+- The Day 9 citation module creates and deduplicates numbered citations such as [1].
+- The generation module builds citation-labeled context and a prompt that requires context-only answers, citations, and "I do not know" behavior for unsupported questions.
+- LocalTemplateGenerationClient supplies the current deterministic answer implementation.
+- The endpoint converts internal chunks and citations into API response schemas.
+- QueryResponse returns answer, citations, citation_text, chunks, used_chunk_ids, and total latency_ms.
+
+Implemented error handling
+- ValueError is converted into HTTP 400 with the validation message, for example when the query is empty.
+- Unexpected retrieval errors on POST /retrieve are converted into HTTP 503 with "Unable to retrieve chunks."
+- Unexpected retrieval or generation errors on POST /query are converted into HTTP 503 with "Unable to generate answer."
+- Exceptions are chained with "from error" so the original cause remains available for debugging.
+
+Day 11/12 API tests
+- tests/test_api.py uses FastAPI TestClient and monkeypatching, so normal unit tests do not require live Qdrant or a real generation provider.
+- Tests cover:
+  - package version is declared
+  - /health is registered
+  - /docs returns HTTP 200 and contains Swagger UI
+  - /retrieve passes query and top_k to retrieval
+  - /retrieve returns chunks, source information, and latency
+  - /query passes retrieved chunks to generation
+  - /query returns answer, citations, formatted citations, chunks, used chunk IDs, and latency
+  - an empty query returns HTTP 400
+  - a retrieval failure returns HTTP 503
+  - a generation failure returns HTTP 503
+
+Live Day 12 verification
+- Qdrant was running with the fully indexed rag_chunks collection containing 13,481 chunks.
+- The API was started with:
+  PYTHONPATH=src .venv/bin/uvicorn ragops.app:app --reload
+- Uvicorn started successfully at http://127.0.0.1:8000.
+- A real POST /query request returned HTTP 200.
+- The JSON response contained answer, citations, citation_text, chunks, used_chunk_ids, and latency_ms.
+- This live request exercised the complete path from FastAPI to query embedding, Qdrant retrieval, citation building, local generation, and JSON response serialization.
+- Day 12 acceptance criterion is satisfied for the first deterministic RAG demo.
+- Scope note: retrieval and citation construction are real. LocalTemplateGenerationClient currently returns a generic deterministic cited answer rather than synthesizing a detailed answer with a real LLM. A local or API-backed model can replace this provider later without changing the endpoint contract.
+
+
+Day 13: Basic Streamlit Playground
+Goal from ProjectPlan.tex
+- Add a minimal visual demo for the current RAG path.
+- Add a query input.
+- Display the answer, citations, retrieved chunks, and latency.
+- Acceptance criterion: the RAG system can be demonstrated in a browser.
+
+Implemented files
+- dashboard/app.py
+- tests/test_dashboard.py
+- pyproject.toml
+- .env.example
+- README.md
+
+Implemented dashboard behavior
+- Added a Streamlit form with a question field, top_k selector, and submit button.
+- Added RAGOPS_API_URL configuration with http://127.0.0.1:8000 as the local default.
+- Added query_api(...) to call the existing POST /query endpoint with a request timeout.
+- Added readable handling for connection failures, invalid JSON, and API error details.
+- Added answer and latency rendering.
+- Added ordered citation rendering, including links for HTTP sources and plain text for local paths.
+- Added collapsed retrieved-chunk views containing rank, score, source, text, heading, path, and chunk ID.
+- Kept the dashboard as a thin API client; it does not import or call Qdrant, retrieval, or generation modules directly.
+- Kept routing, caching, feedback, analytics, and canary views outside Day 13 scope.
+
+Dependency and environment changes
+- Added requests>=2.32.0 as a direct project dependency.
+- Added RAGOPS_API_URL to .env.example.
+
+Day 13 tests
+- Added five unit tests for the dashboard API client.
+- Tests cover the default API URL, configured URL normalization, request payload and timeout, API error details, and connection failures.
+- The live Streamlit browser acceptance check was not run in this session because Docker/Qdrant should only be started when the user explicitly asks.
+
+
 Current validation status
 - Full test suite was run with:
   .venv/bin/python -m pytest
 - Result:
-  45 passed
+  56 passed, with 1 harmless FastAPI/Starlette TestClient deprecation warning
 - Ruff was run with:
-  .venv/bin/ruff check src tests scripts
+  .venv/bin/ruff check src tests scripts dashboard
 - Result:
   All checks passed
 
 
 Current important changed/new files
 - Modified:
+  - .env.example
   - README.md
+  - dashboard/app.py
   - pyproject.toml
   - scripts/ingest.py
   - scripts/build_index.py
@@ -609,9 +766,13 @@ Current important changed/new files
   - src/ragops/generation/__init__.py
   - src/ragops/generation/citations.py
   - src/ragops/generation/client.py
+  - src/ragops/api/schemas.py
+  - src/ragops/app.py
   - tests/test_indexing.py
   - tests/test_citations.py
   - tests/test_generation.py
+  - tests/test_api.py
+  - tests/test_dashboard.py
 - Existing generated artifact:
   - data/processed/chunks.jsonl
   - 13,481 lines
@@ -619,10 +780,8 @@ Current important changed/new files
 
 
 Recommended next step
-- Day 8, Day 9, and Day 10 are complete by unit-test acceptance criteria.
-- The Day 7 live-Qdrant runtime acceptance check is still worth doing before relying on real dense retrieval:
-  - docker compose up -d qdrant
-  - .venv/bin/python scripts/build_index.py --limit 100 --recreate
-  - .venv/bin/python scripts/build_index.py --query "How do I create a FastAPI app?" --top-k 5
-- After that, Day 11 in ProjectPlan.tex starts the FastAPI skeleton for /retrieve and /query.
-- Do not add API endpoints, routing, caching, reranking, or real external model providers unless the user explicitly asks for those days.
+- Days 1-12 are complete at their current planned acceptance level.
+- Day 13 implementation and unit tests are complete.
+- Run the live Day 13 browser acceptance check only when the user asks to start the local services.
+- After that verification, Day 14 is Week 2 stabilization and documentation cleanup.
+- Do not implement Day 14 or later features unless the user explicitly asks.

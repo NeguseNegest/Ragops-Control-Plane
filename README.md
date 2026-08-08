@@ -18,6 +18,7 @@ The implemented pipeline supports:
 - deduplicated numbered citations
 - citation-required generation prompts
 - `GET /health`, `POST /retrieve`, and `POST /query`
+- a basic Streamlit playground for queries, citations, evidence, and latency
 - unit tests that do not require live Qdrant or an external model
 
 `POST /query` currently uses a deterministic local template client. Retrieval and citation construction are real, but answer synthesis is still a placeholder for a future local or API-backed LLM.
@@ -57,7 +58,15 @@ Run the API:
 PYTHONPATH=src .venv/bin/uvicorn ragops.app:app --reload
 ```
 
-Open `http://127.0.0.1:8000/docs`, or send a query directly:
+In another terminal, run the dashboard:
+
+```bash
+PYTHONPATH=src .venv/bin/streamlit run dashboard/app.py
+```
+
+Open `http://localhost:8501` for the playground. The API documentation remains available at `http://127.0.0.1:8000/docs`.
+
+You can also send a query directly:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/query \
@@ -78,9 +87,10 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 - `src/ragops/retrieval`: dense retrieval and result normalization
 - `src/ragops/generation`: citations, prompts, and generation client
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
+- `dashboard/app.py`: Streamlit query playground
 - `scripts`: ingestion and index-building commands
-- `tests`: unit and API tests
+- `tests`: unit, API, and dashboard client tests
 
 ## Next Step
 
-Days 1–12 of the project plan are complete at their current acceptance level. The next planned step is a small Streamlit playground that displays answers, citations, retrieved chunks, and latency. Evaluation, hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring come later in the plan.
+Days 1–12 are complete, and the Day 13 Streamlit playground is implemented. The next planned step is Week 2 stabilization: verify the browser workflow, fix integration issues, and keep the quickstart and architecture documentation aligned with the working system. Evaluation, hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring come later in the plan.
