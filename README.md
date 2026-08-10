@@ -121,6 +121,32 @@ make index
 
 `make ingest` writes `data/processed/chunks.jsonl` and may download the embedding model on its first run. Use `make index-recreate` only when you intentionally want to delete and rebuild the existing `rag_chunks` collection.
 
+### Generate and review synthetic QA candidates
+
+Day 16 uses both configured LLM providers to create 100 source-grounded candidates without placing unreviewed output in the golden set:
+
+```bash
+make generate-synthetic-qa
+```
+
+The command reads API keys from the ignored `.env` file, allocates candidates evenly between OpenAI and Gemini, and writes `data/eval/synthetic_qa_candidates.jsonl`. Each row records its provider, model, source chunk ID, and `pending` review status.
+
+Review candidates against their exact source chunks and merge approved examples interactively:
+
+```bash
+make review-synthetic-qa
+```
+
+The review command accepts `a` to approve, `r` to reject, `s` to leave a candidate pending, and `q` to save and quit. It stops at 40 approvals by default and only adds approved, non-duplicate examples to `data/eval/golden_qa.jsonl`.
+
+The checked-in Day 16 run contains 100 reviewed candidates: 45 approved and 55 rejected. The approved set includes 25 OpenAI and 20 Gemini examples, and expands the golden dataset from 35 to 80 rows.
+
+To intentionally regenerate the candidate file, pass `--overwrite` directly:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/generate_synthetic_qa.py --overwrite
+```
+
 ### Run the application
 
 Run the API:
@@ -165,4 +191,4 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 
 ## Next Milestone
 
-Day 16: generate source-grounded synthetic QA candidates, record their provider/model provenance, and manually audit candidates before adding them to the golden set.
+Day 17: create retrieval labels for at least 40 questions, including relevant chunk IDs and a helper workflow for inspecting chunks during labeling.

@@ -859,3 +859,12 @@ Recommended next step
 - Day 15 in ProjectPlan.tex is Golden QA Dataset Design.
 - Day 15 should define data/eval/golden_qa.jsonl and create the first manually reviewed supported, ambiguous, and unsupported questions.
 - Do not implement Day 15 or later features unless the user explicitly asks.
+
+Day 16 completion update
+- Added source-grounded synthetic QA generation in src/ragops/evaluation/synthetic_qa.py.
+- Added scripts/generate_synthetic_qa.py with deterministic balanced chunk sampling, OpenAI and Gemini allocation, strict JSON validation, duplicate rejection, and provenance metadata.
+- Added scripts/review_synthetic_qa.py for source-visible manual approval/rejection and approved-only golden-set merging.
+- Generated data/eval/synthetic_qa_candidates.jsonl with 100 candidates: 50 OpenAI and 50 Gemini.
+- Audited every candidate against its recorded source chunk: 45 approved and 55 rejected.
+- Added the 45 approved candidates to data/eval/golden_qa.jsonl, bringing the golden set to 80 examples.
+- Day 16 acceptance criteria are complete. The next planned milestone is Day 17: Retrieval Label Set.

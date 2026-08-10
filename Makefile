@@ -3,7 +3,7 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 
-.PHONY: setup lint test services-up docker-up ingest-dry-run ingest index index-recreate serve dashboard clean
+.PHONY: setup lint test services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -33,6 +33,12 @@ index:
 
 index-recreate:
 	PYTHONPATH=src $(BIN)/python scripts/build_index.py --recreate
+
+generate-synthetic-qa:
+	PYTHONPATH=src $(BIN)/python scripts/generate_synthetic_qa.py
+
+review-synthetic-qa:
+	PYTHONPATH=src $(BIN)/python scripts/review_synthetic_qa.py
 
 serve:
 	PYTHONPATH=src $(BIN)/uvicorn ragops.app:app --reload

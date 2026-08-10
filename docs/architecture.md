@@ -45,6 +45,7 @@ flowchart LR
 | Indexer | `src/ragops/indexing/qdrant.py` | Create the `rag_chunks` collection and upsert embedded chunk records with payload metadata. |
 | Dense retriever | `src/ragops/retrieval/dense.py` | Embed a query, search Qdrant, and normalize ranked results into `RetrievedChunk` objects. |
 | Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build grounded context, and call the configured generation client. |
+| Evaluation datasets | `src/ragops/evaluation` | Generate, validate, review, and safely merge source-grounded synthetic QA candidates. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
 
@@ -57,7 +58,23 @@ flowchart LR
 5. Embedded records are written as JSONL to `data/processed/chunks.jsonl`. Each record contains the chunk text, IDs, hash, metadata, and vector.
 6. `scripts/build_index.py` reads the JSONL file, creates the Qdrant `rag_chunks` collection when needed, and upserts records in batches.
 
-Raw documents and generated JSONL are intentionally ignored by Git. Their source URLs, selected paths, snapshot commits, and destination paths are recorded in `data/manifests/source_manifest.json`.
+## Evaluation Dataset Flow
+
+```text
+processed chunks -> balanced source sampling -> OpenAI + Gemini
+                                              |
+                                              v
+                              synthetic_qa_candidates.jsonl
+                                              |
+                                     manual source review
+                                              |
+                                              v
+                                      golden_qa.jsonl
+```
+
+Synthetic generation uses exact chunk text as context and records provider, model, source path, source chunk ID, and review state. Candidate rows remain separate from the golden set until they are explicitly approved. The merge step rejects duplicate IDs and normalized questions.
+
+Raw documents and processed embedding JSONL are intentionally ignored by Git. Their source URLs, selected paths, snapshot commits, and destination paths are recorded in `data/manifests/source_manifest.json`. Reviewed evaluation JSONL is versioned with the project.
 
 ## Online Request Flow
 
