@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Development is complete through Day 14 of the project plan. The current baseline includes:
+Development is complete through Day 19 of the project plan. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -48,13 +48,15 @@ Development is complete through Day 14 of the project plan. The current baseline
 - Streamlit query interface with answers, citations, evidence, scores, and latency
 - local and Docker Qdrant configuration through `QDRANT_URL`
 - request validation, API error translation, and dashboard error handling
-- 65 passing tests and a verified Streamlit–FastAPI–Qdrant integration path
+- reviewed golden QA and retrieval-label datasets
+- deterministic retrieval metrics and a real dense-baseline evaluation CLI
+- 157 passing tests and a verified Streamlit–FastAPI–Qdrant integration path
 
 Current limitations:
 
 - `POST /query` defaults to the deterministic template client until `RAGOPS_LLM_PROVIDER` is set to `openai` or `gemini` and the corresponding API key is configured.
 - Only dense retrieval is implemented.
-- Evaluation, MLflow tracking, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Generation evaluation, MLflow tracking, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Quickstart
@@ -183,6 +185,31 @@ make test-retrieval-metrics
 
 Day 18 intentionally does not run retrieval itself or write result files; that orchestration belongs to the Day 19 evaluation CLI.
 
+### Run the dense retrieval evaluation
+
+Day 19 defines the baseline in `configs/dense_baseline.yaml` and implements the evaluator in `scripts/evaluate.py`. Validate configuration and all 45 input labels without connecting to Qdrant:
+
+```bash
+make validate-dense-evaluation
+```
+
+With an indexed `rag_chunks` collection already available, run the real dense retriever over every label:
+
+```bash
+make evaluate-dense
+```
+
+The evaluator creates one Qdrant client, checks the configured collection, retrieves the top 10 chunks for every question, computes the Day 18 metrics, and closes the client even if retrieval fails. It writes these artifacts atomically only after the complete run succeeds:
+
+```text
+reports/evaluations/dense_baseline.json
+reports/evaluations/dense_baseline.csv
+```
+
+The JSON file contains configuration, aggregate metrics, latency statistics, and per-question results. The CSV contains one row per question with ranked IDs, scores, latency, per-question metrics, and aggregate Recall@k, MRR, Hit Rate@k, and nDCG@k. This evaluation does not call OpenAI or Gemini.
+
+The Day 19 acceptance run evaluated all 45 labels against the real 13,481-chunk Qdrant index. It produced MRR `0.3359`, Recall/Hit Rate at k of `0.2667`, `0.3111`, `0.4444`, and `0.6000` for k = 1, 3, 5, and 10, and nDCG at k of `0.2667`, `0.2918`, `0.3473`, and `0.3964`. Average retrieval latency was `679.9 ms` including the first-query model cold start; the remaining 44 queries averaged `149.6 ms`.
+
 ### Run the application
 
 Run the API:
@@ -227,4 +254,4 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 
 ## Next Milestone
 
-Day 19: implement the evaluation CLI that loads configuration, runs retrieval over the label set, and saves metrics as JSON and CSV.
+Proceed to Day 20: the LLM-as-judge rubric for faithfulness, answer relevance, and refusal correctness.

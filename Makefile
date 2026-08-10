@@ -3,7 +3,7 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 
-.PHONY: setup lint test test-retrieval-metrics services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-retrieval-metrics validate-dense-evaluation evaluate-dense services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -18,6 +18,12 @@ test:
 
 test-retrieval-metrics:
 	$(BIN)/python -m pytest tests/test_retrieval_metrics.py
+
+validate-dense-evaluation:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only
+
+evaluate-dense:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml
 
 services-up:
 	docker compose up -d qdrant mlflow

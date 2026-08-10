@@ -98,6 +98,23 @@ ranked chunk IDs + retrieval_labels.jsonl
 
 Metrics use binary relevance and macro-average questions equally. Duplicate retrieved IDs cannot increase Recall or nDCG, while missing question rankings and invalid cutoffs are rejected instead of being silently scored.
 
+The Day 19 evaluation runner connects the dense retriever to those metrics:
+
+```text
+dense_baseline.yaml + retrieval_labels.jsonl
+                      |
+                 one Qdrant client
+                      |
+                retrieve every query
+                      |
+            validated complete rankings
+                      |
+                      v
+        dense_baseline.json + dense_baseline.csv
+```
+
+Configuration paths are resolved from the project root. The runner verifies that `top_k` covers every requested metric cutoff, checks the collection before evaluating, preserves retrieval order, rejects duplicate or malformed results, and writes artifacts atomically only after every labeled question succeeds. JSON contains the complete run record; CSV provides stable per-question rows with aggregate metrics repeated for convenient analysis.
+
 Raw documents and processed embedding JSONL are intentionally ignored by Git. Their source URLs, selected paths, snapshot commits, and destination paths are recorded in `data/manifests/source_manifest.json`. Reviewed evaluation JSONL is versioned with the project.
 
 ## Online Request Flow
@@ -141,4 +158,4 @@ When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127
 - The corpus and generated embeddings are local artifacts and are not distributed in Git.
 - Ingestion and index building load the full current record set into memory.
 - Source references are usually corpus-relative paths rather than public documentation URLs.
-- MLflow, evaluation, tracing, routing, caching, reranking, canary gates, and monitoring are not connected yet.
+- Generation evaluation, MLflow, tracing, routing, caching, reranking, canary gates, and monitoring are not connected yet.
