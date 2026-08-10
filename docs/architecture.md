@@ -74,6 +74,30 @@ processed chunks -> balanced source sampling -> OpenAI + Gemini
 
 Synthetic generation uses exact chunk text as context and records provider, model, source path, source chunk ID, and review state. Candidate rows remain separate from the golden set until they are explicitly approved. The merge step rejects duplicate IDs and normalized questions.
 
+Retrieval labels follow a separate offline path:
+
+```text
+golden_qa.jsonl + processed chunks -> source-scoped chunk inspector
+                                             |
+                                      verified selection
+                                             |
+                                             v
+                                  retrieval_labels.jsonl
+```
+
+The label validator requires supported golden questions, matching question text and expected sources, unique existing chunk IDs, and source-path agreement. Labeling is resumable and does not depend on a running vector database.
+
+Day 18 metrics consume ranked chunk IDs and the verified label set without performing retrieval or external I/O:
+
+```text
+ranked chunk IDs + retrieval_labels.jsonl
+                    |
+                    v
+       Recall@k / MRR / Hit Rate@k / nDCG@k
+```
+
+Metrics use binary relevance and macro-average questions equally. Duplicate retrieved IDs cannot increase Recall or nDCG, while missing question rankings and invalid cutoffs are rejected instead of being silently scored.
+
 Raw documents and processed embedding JSONL are intentionally ignored by Git. Their source URLs, selected paths, snapshot commits, and destination paths are recorded in `data/manifests/source_manifest.json`. Reviewed evaluation JSONL is versioned with the project.
 
 ## Online Request Flow

@@ -868,3 +868,20 @@ Day 16 completion update
 - Audited every candidate against its recorded source chunk: 45 approved and 55 rejected.
 - Added the 45 approved candidates to data/eval/golden_qa.jsonl, bringing the golden set to 80 examples.
 - Day 16 acceptance criteria are complete. The next planned milestone is Day 17: Retrieval Label Set.
+
+Day 17 completion update
+- Added strict retrieval label models and cross-dataset validation in src/ragops/evaluation/retrieval_labels.py.
+- Added scripts/label_retrieval.py with offline source-scoped chunk ranking, interactive multi-chunk selection, atomic progress saving, resume support, validation-only mode, and a verified Day 16 bootstrap.
+- Created data/eval/retrieval_labels.jsonl with 45 verified supported-question labels.
+- Every question matches the golden set, and every relevant chunk ID exists under the recorded expected source.
+- Added Make targets for bootstrapping, manual labeling, and validation.
+- Day 17 acceptance criteria are complete. The next planned milestone is Day 18: Retrieval Metrics.
+
+Day 18 completion update
+- Added deterministic retrieval metrics in src/ragops/evaluation/retrieval_metrics.py.
+- Implemented per-question Recall@k, reciprocal rank, Hit@k, and binary nDCG@k.
+- Implemented macro-average Recall@k, MRR, Hit Rate@k, and nDCG@k plus a JSON-ready aggregate evaluator.
+- Added strict validation for cutoffs, chunk ID inputs, duplicate relevance judgments, duplicate labels, and missing question rankings.
+- Duplicate retrieved chunk IDs cannot inflate Recall or nDCG.
+- Added focused toy and edge-case tests plus a perfect-ranking compatibility check against the Day 17 dataset.
+- Day 18 acceptance criteria are complete. The next planned milestone is Day 19: Evaluation CLI.

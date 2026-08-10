@@ -147,6 +147,42 @@ To intentionally regenerate the candidate file, pass `--overwrite` directly:
 PYTHONPATH=src .venv/bin/python scripts/generate_synthetic_qa.py --overwrite
 ```
 
+### Build and inspect retrieval labels
+
+Day 17 stores retrieval-specific relevance judgments in `data/eval/retrieval_labels.jsonl`. Every label links a supported golden question to one or more verified chunk IDs and records how the decision was reviewed.
+
+The checked-in dataset contains 45 labels bootstrapped from Day 16 candidates whose source chunks were already audited. The bootstrap validates the question, expected source, and exact chunk against both JSONL datasets before accepting it:
+
+```bash
+make bootstrap-retrieval-labels
+make validate-retrieval-labels
+```
+
+Use the offline, resumable inspector to add more labels manually:
+
+```bash
+make label-retrieval
+```
+
+The helper ranks chunks only from the question's expected source, shows their text and IDs, and accepts one or more display numbers or exact chunk IDs. It saves after every decision and does not require Qdrant or an LLM API.
+
+### Compute deterministic retrieval metrics
+
+Day 18 provides pure metric functions in `src/ragops/evaluation/retrieval_metrics.py`:
+
+- Recall@k: unique relevant chunks retrieved within the cutoff, divided by all labeled relevant chunks.
+- MRR: the mean reciprocal rank of the first relevant chunk.
+- Hit Rate@k: the fraction of questions with at least one relevant chunk within the cutoff.
+- nDCG@k: binary normalized discounted gain; repeated retrieved IDs cannot earn duplicate gain.
+
+The aggregate evaluator accepts a mapping of question IDs to ranked chunk IDs plus the Day 17 labels. Missing rankings and invalid cutoffs fail explicitly. Run its focused tests with:
+
+```bash
+make test-retrieval-metrics
+```
+
+Day 18 intentionally does not run retrieval itself or write result files; that orchestration belongs to the Day 19 evaluation CLI.
+
 ### Run the application
 
 Run the API:
@@ -191,4 +227,4 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 
 ## Next Milestone
 
-Day 17: create retrieval labels for at least 40 questions, including relevant chunk IDs and a helper workflow for inspecting chunks during labeling.
+Day 19: implement the evaluation CLI that loads configuration, runs retrieval over the label set, and saves metrics as JSON and CSV.

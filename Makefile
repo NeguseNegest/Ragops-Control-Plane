@@ -3,7 +3,7 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 
-.PHONY: setup lint test services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa serve dashboard clean
+.PHONY: setup lint test test-retrieval-metrics services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -15,6 +15,9 @@ lint:
 
 test:
 	$(BIN)/python -m pytest
+
+test-retrieval-metrics:
+	$(BIN)/python -m pytest tests/test_retrieval_metrics.py
 
 services-up:
 	docker compose up -d qdrant mlflow
@@ -39,6 +42,15 @@ generate-synthetic-qa:
 
 review-synthetic-qa:
 	PYTHONPATH=src $(BIN)/python scripts/review_synthetic_qa.py
+
+bootstrap-retrieval-labels:
+	PYTHONPATH=src $(BIN)/python scripts/label_retrieval.py --bootstrap-approved-synthetic --reviewer codex-source-audit
+
+label-retrieval:
+	PYTHONPATH=src $(BIN)/python scripts/label_retrieval.py
+
+validate-retrieval-labels:
+	PYTHONPATH=src $(BIN)/python scripts/label_retrieval.py --validate-only
 
 serve:
 	PYTHONPATH=src $(BIN)/uvicorn ragops.app:app --reload
