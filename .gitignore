@@ -53,3 +53,4 @@ qdrant_storage/
 *.db
 *.sqlite
 *.sqlite3
+*.dbb
