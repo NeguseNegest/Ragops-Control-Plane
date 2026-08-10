@@ -6,6 +6,11 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       QDRANT_URL: "http://qdrant:6333"
+      RAGOPS_LLM_PROVIDER: "${RAGOPS_LLM_PROVIDER:-template}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-5-nano}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_MODEL: "${GEMINI_MODEL:-gemini-3.6-flash}"
     depends_on:
       - qdrant
 

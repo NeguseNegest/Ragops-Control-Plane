@@ -68,7 +68,7 @@ Raw documents and generated JSONL are intentionally ignored by Git. Their source
 5. Qdrant performs cosine-similarity search and returns payloads without vectors.
 6. Results are normalized with 1-based ranks, scores, metadata, and the best available source path or URL.
 7. Citations are deduplicated by document and section and assigned IDs such as `[1]`.
-8. The generation layer builds a context-only prompt. The current local template client returns a deterministic cited response rather than synthesizing a detailed answer.
+8. The generation layer builds a context-only prompt and sends it to the configured template, OpenAI, or Gemini client. The template client remains the offline default.
 9. FastAPI returns the answer, structured citations, formatted citations, retrieved chunks, used chunk IDs, and total latency.
 10. Streamlit renders the response. It does not connect to Qdrant or import the retrieval pipeline directly.
 
@@ -95,7 +95,7 @@ When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127
 
 ## Current Limitations
 
-- Answer generation is a deterministic placeholder, not a real local or API-backed LLM.
+- Answer generation remains deterministic until an OpenAI or Gemini provider and its API key are selected through environment variables.
 - Only dense retrieval is implemented.
 - The corpus and generated embeddings are local artifacts and are not distributed in Git.
 - Ingestion and index building load the full current record set into memory.

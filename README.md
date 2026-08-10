@@ -43,6 +43,7 @@ Development is complete through Day 14 of the project plan. The current baseline
 - batched `sentence-transformers/all-MiniLM-L6-v2` embeddings
 - Qdrant indexing and cosine-similarity dense retrieval
 - ranked chunks, provenance metadata, and deduplicated citations
+- selectable template, OpenAI, and Gemini generation clients
 - `GET /health`, `POST /retrieve`, and `POST /query`
 - Streamlit query interface with answers, citations, evidence, scores, and latency
 - local and Docker Qdrant configuration through `QDRANT_URL`
@@ -51,7 +52,7 @@ Development is complete through Day 14 of the project plan. The current baseline
 
 Current limitations:
 
-- `POST /query` uses a deterministic template client rather than an LLM.
+- `POST /query` defaults to the deterministic template client until `RAGOPS_LLM_PROVIDER` is set to `openai` or `gemini` and the corresponding API key is configured.
 - Only dense retrieval is implemented.
 - Evaluation, MLflow tracking, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
@@ -73,6 +74,26 @@ Start Qdrant and MLflow:
 ```bash
 make services-up
 ```
+
+### Choose an answer-generation provider
+
+The default `template` provider is deterministic, offline, and does not require an API key. To use OpenAI instead, export:
+
+```bash
+export RAGOPS_LLM_PROVIDER=openai
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_MODEL=gpt-5-nano
+```
+
+To use Gemini, export:
+
+```bash
+export RAGOPS_LLM_PROVIDER=gemini
+export GEMINI_API_KEY="your-api-key"
+export GEMINI_MODEL=gemini-3.6-flash
+```
+
+Keep real API keys out of the repository. The ignored `.env` file can hold local values, but `make serve` requires those values to be exported into the shell environment first. Docker Compose reads `.env` for variable substitution and passes the selected provider configuration to the API container.
 
 ### Prepare the corpus and index
 
@@ -144,4 +165,4 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 
 ## Next Milestone
 
-Day 15: define `data/eval/golden_qa.jsonl` and create the first manually reviewed supported, ambiguous, and unsupported evaluation questions.
+Day 16: generate source-grounded synthetic QA candidates, record their provider/model provenance, and manually audit candidates before adding them to the golden set.

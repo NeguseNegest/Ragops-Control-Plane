@@ -45,6 +45,14 @@ def test_docs_are_available():
     assert "Swagger UI" in response.text
 
 
+def test_create_app_uses_injected_generation_client():
+    generation_client = object()
+
+    app = app_module.create_app(generation_client=generation_client)
+
+    assert app.state.generation_client is generation_client
+
+
 def test_get_qdrant_url_uses_local_default(monkeypatch):
     monkeypatch.delenv("QDRANT_URL", raising=False)
 
@@ -146,26 +154,27 @@ def test_top_k_outside_supported_range_returns_422(endpoint, top_k):
 def test_query_returns_answer_citations_chunks_and_latency(monkeypatch):
     chunk = make_chunk()
     calls = {}
+    generation_client = object()
 
     def fake_retrieve_chunks(query, top_k):
         calls["retrieve"] = (query, top_k)
         return [chunk]
 
-    def fake_generate_answer(query, chunks):
-        calls["generate"] = (query, chunks)
+    def fake_generate_answer(query, chunks, client):
+        calls["generate"] = (query, chunks, client)
         citations = [{"citation_id": "[1]", "document_id": "doc-1", "title": "FastAPI Docs", "url": "fastapi/tutorial.md", "metadata": {"title": "FastAPI Docs"}, "chunk_ids": ["chunk-1"]}]
         return GenerationResult(answer="FastAPI is a Python web framework. [1]", citations=citations, citation_text="[1] FastAPI Docs - fastapi/tutorial.md", used_chunk_ids=["chunk-1"])
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)
     monkeypatch.setattr(app_module, "generate_answer", fake_generate_answer)
-    client = make_client()
+    client = TestClient(app_module.create_app(generation_client=generation_client))
 
     response = client.post("/query", json={"query": "What is FastAPI?", "top_k": 1})
     body = response.json()
 
     assert response.status_code == 200
     assert calls["retrieve"] == ("What is FastAPI?", 1)
-    assert calls["generate"] == ("What is FastAPI?", [chunk])
+    assert calls["generate"] == ("What is FastAPI?", [chunk], generation_client)
     assert body["answer"] == "FastAPI is a Python web framework. [1]"
     assert body["citations"][0]["citation_id"] == "[1]"
     assert body["citation_text"] == "[1] FastAPI Docs - fastapi/tutorial.md"
@@ -204,7 +213,7 @@ def test_query_generation_failure_returns_503(monkeypatch):
     def fake_retrieve_chunks(query, top_k):
         return [make_chunk()]
 
-    def fake_generate_answer(query, chunks):
+    def fake_generate_answer(query, chunks, client):
         raise RuntimeError("model unavailable")
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)

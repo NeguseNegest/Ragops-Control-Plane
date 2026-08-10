@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from ragops import __version__
 from ragops.api.schemas import CitationResponse, QueryRequest, QueryResponse, RetrievedChunkResponse, RetrieveRequest, RetrieveResponse
 from ragops.generation.client import generate_answer
+from ragops.generation.factory import create_generation_client
 from ragops.indexing.qdrant import DEFAULT_QDRANT_URL, create_qdrant_client
 from ragops.retrieval.dense import retrieve_dense
 
@@ -59,12 +60,13 @@ def elapsed_ms(start_time):
     return (time.perf_counter() - start_time) * 1000
 
 
-def create_app():
+def create_app(generation_client=None):
     app = FastAPI(
         title="RAGOps Control Plane",
         version=__version__,
         summary="Evaluation-gated control plane for RAG systems.",
     )
+    app.state.generation_client = generation_client if generation_client is not None else create_generation_client()
 
     @app.get("/health", response_model=HealthResponse)
     def health():
@@ -92,7 +94,7 @@ def create_app():
 
         try:
             chunks = retrieve_chunks(request.query, request.top_k)
-            generation_result = generate_answer(query=request.query, chunks=chunks)
+            generation_result = generate_answer(query=request.query, chunks=chunks, client=app.state.generation_client)
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         except Exception as error:
