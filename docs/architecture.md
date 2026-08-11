@@ -2,12 +2,13 @@
 
 ## Current Scope
 
-RAGOps Control Plane currently provides a dense-retrieval RAG path over local FastAPI, MLflow, and Qdrant documentation. It has two distinct workflows:
+RAGOps Control Plane currently provides a dense-retrieval RAG path over local FastAPI, MLflow, and Qdrant documentation. It has three implemented workflows:
 
 - An offline workflow that cleans, chunks, embeds, and indexes documentation.
-- An online workflow that retrieves chunks, builds citations, generates a deterministic response, and exposes the result through FastAPI and Streamlit.
+- An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
+- An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, computes retrieval metrics, and runs the dense baseline against Qdrant.
 
-Evaluation, BM25, hybrid retrieval, reranking, routing, caching, tracing, canary gates, and monitoring are planned but are not part of the current runtime.
+Retrieval evaluation is implemented; generation evaluation is not. BM25, hybrid retrieval, reranking, routing, caching, tracing, canary gates, failure mining, monitoring, and MLflow experiment logging remain planned.
 
 ## System Diagram
 
@@ -29,9 +30,18 @@ flowchart LR
         QueryEmbed -->|Cosine search| Qdrant
         Qdrant --> Retrieved[Ranked chunks]
         Retrieved --> Citations[Citations and prompt]
-        Citations --> Generator[Local template generator]
+        Citations --> Generator["Configured generator\ntemplate / OpenAI / Gemini"]
         Generator --> API
         API -->|JSON response| Streamlit
+    end
+
+    subgraph Evaluation[Offline retrieval evaluation]
+        Golden[golden_qa.jsonl] --> Labels[retrieval_labels.jsonl]
+        EvalConfig[dense_baseline.yaml] --> Runner[Evaluation runner]
+        Labels --> Runner
+        Runner -->|"45 dense queries"| Qdrant
+        Runner --> Metrics["Recall / MRR / Hit Rate / nDCG"]
+        Metrics --> Reports["JSON + CSV reports"]
     end
 ```
 
@@ -44,8 +54,10 @@ flowchart LR
 | Embedder | `src/ragops/ingestion/embeddings.py` | Generate batched `sentence-transformers/all-MiniLM-L6-v2` vectors and cache the model in-process. |
 | Indexer | `src/ragops/indexing/qdrant.py` | Create the `rag_chunks` collection and upsert embedded chunk records with payload metadata. |
 | Dense retriever | `src/ragops/retrieval/dense.py` | Embed a query, search Qdrant, and normalize ranked results into `RetrievedChunk` objects. |
-| Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build grounded context, and call the configured generation client. |
-| Evaluation datasets | `src/ragops/evaluation` | Generate, validate, review, and safely merge source-grounded synthetic QA candidates. |
+| Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build a context-only prompt, select one process-wide provider, and call the template, OpenAI, or Gemini client. |
+| Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
+| Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
+| Evaluation runner | `src/ragops/evaluation/runner.py`, `scripts/evaluate.py` | Validate the dense YAML configuration, run every labeled query through Qdrant, and atomically write JSON and CSV reports. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
 
@@ -72,7 +84,15 @@ processed chunks -> balanced source sampling -> OpenAI + Gemini
                                       golden_qa.jsonl
 ```
 
-Synthetic generation uses exact chunk text as context and records provider, model, source path, source chunk ID, and review state. Candidate rows remain separate from the golden set until they are explicitly approved. The merge step rejects duplicate IDs and normalized questions.
+Synthetic generation uses exact chunk text as context and records provider, model, source path, source chunk ID, and review state. It explicitly creates OpenAI and Gemini clients and therefore does not depend on the runtime `RAGOPS_LLM_PROVIDER` selection. Candidate rows remain separate from the golden set until they are explicitly approved. The merge step rejects duplicate IDs and normalized questions.
+
+The versioned datasets currently contain:
+
+| Dataset | Current contents |
+| --- | --- |
+| `golden_qa.jsonl` | 80 questions: 70 supported, 5 ambiguous, and 5 unsupported; 35 manual and 45 approved synthetic rows. |
+| `synthetic_qa_candidates.jsonl` | 100 reviewed candidates: 50 OpenAI and 50 Gemini; 45 approved and 55 rejected. |
+| `retrieval_labels.jsonl` | 45 verified labels, each linked to one audited source chunk from an approved synthetic candidate. |
 
 Retrieval labels follow a separate offline path:
 
@@ -126,7 +146,7 @@ Raw documents and processed embedding JSONL are intentionally ignored by Git. Th
 5. Qdrant performs cosine-similarity search and returns payloads without vectors.
 6. Results are normalized with 1-based ranks, scores, metadata, and the best available source path or URL.
 7. Citations are deduplicated by document and section and assigned IDs such as `[1]`.
-8. The generation layer builds a context-only prompt and sends it to the configured template, OpenAI, or Gemini client. The template client remains the offline default.
+8. The generation layer builds a context-only prompt and sends it to the client selected at API startup by `RAGOPS_LLM_PROVIDER`. The template client is the default; OpenAI and Gemini are implemented alternatives.
 9. FastAPI returns the answer, structured citations, formatted citations, retrieved chunks, used chunk IDs, and total latency.
 10. Streamlit renders the response. It does not connect to Qdrant or import the retrieval pipeline directly.
 
@@ -142,6 +162,18 @@ Raw documents and processed embedding JSONL are intentionally ignored by Git. Th
 
 When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127.0.0.1:6333`. Docker Compose overrides it with `http://qdrant:6333` for the API container. Streamlit defaults to `http://127.0.0.1:8000`; override `RAGOPS_API_URL` when the API is elsewhere.
 
+Generation configuration is resolved once when `create_app()` initializes its client:
+
+| Variable | Default | Behavior |
+| --- | --- | --- |
+| `RAGOPS_LLM_PROVIDER` | `template` | Selects exactly one of `template`, `openai`, or `gemini` for `POST /query`. |
+| `OPENAI_API_KEY` | none | Required only when the selected runtime provider is `openai`; also used by synthetic generation when OpenAI is requested. |
+| `OPENAI_MODEL` | `gpt-5-nano` | Model passed to the OpenAI Responses API client. |
+| `GEMINI_API_KEY` | none | Required only when the selected runtime provider is `gemini`; also used by synthetic generation when Gemini is requested. |
+| `GEMINI_MODEL` | `gemini-3.6-flash` | Model passed to the Gemini Interactions API client. |
+
+Both provider credentials may be configured simultaneously, but the online API uses only the selected provider until it is restarted. The synthetic QA CLI is different: it loads `.env` itself and can call OpenAI and Gemini in the same batch. Host-run `make serve` and `make dashboard` do not load `.env` automatically. Docker Compose does read `.env` and forwards generation settings to the API container.
+
 ## Error Boundaries
 
 - Pydantic request failures, including `top_k` outside 1–20, return HTTP 422.
@@ -153,9 +185,22 @@ When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127
 
 ## Current Limitations
 
-- Answer generation remains deterministic until an OpenAI or Gemini provider and its API key are selected through environment variables.
 - Only dense retrieval is implemented.
+- The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
+- The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
+- Retrieval is the only evaluated stage. Faithfulness, answer relevance, refusal correctness, latency/cost accounting for generation, and LLM-as-judge scoring are not implemented.
 - The corpus and generated embeddings are local artifacts and are not distributed in Git.
 - Ingestion and index building load the full current record set into memory.
 - Source references are usually corpus-relative paths rather than public documentation URLs.
-- Generation evaluation, MLflow, tracing, routing, caching, reranking, canary gates, and monitoring are not connected yet.
+- `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
+- MLflow is provisioned by Docker Compose but no application or evaluation code logs runs to it yet.
+- Tracing, SQLite persistence, routing, semantic caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+
+## Planned Placeholders
+
+The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
+
+- configurations: `bm25_baseline.yaml`, `hybrid.yaml`, `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
+- scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
+- tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
+- topic documents: `canary_gates.md`, `evaluation.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`

@@ -14,11 +14,11 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is an evaluation-gated, cost-aware platform for developing and operating Retrieval-Augmented Generation systems over technical documentation.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements the dense RAG baseline and its retrieval-evaluation workflow through Day 19; cost controls and promotion gates remain roadmap features.
 
 ## Project Objective
 
-The project evaluates and compares versioned RAG pipelines across retrieval quality, generation quality, latency, and estimated cost. Candidate pipelines are promoted or rejected through explicit evaluation and canary gates.
+The intended system will compare versioned RAG pipelines across retrieval quality, generation quality, latency, and estimated cost, then promote or reject candidates through explicit evaluation and canary gates.
 
 Target capabilities:
 
@@ -43,20 +43,21 @@ Development is complete through Day 19 of the project plan. The current baseline
 - batched `sentence-transformers/all-MiniLM-L6-v2` embeddings
 - Qdrant indexing and cosine-similarity dense retrieval
 - ranked chunks, provenance metadata, and deduplicated citations
-- selectable template, OpenAI, and Gemini generation clients
+- selectable offline-template, OpenAI Responses API, and Gemini Interactions API generation clients
 - `GET /health`, `POST /retrieve`, and `POST /query`
 - Streamlit query interface with answers, citations, evidence, scores, and latency
 - local and Docker Qdrant configuration through `QDRANT_URL`
 - request validation, API error translation, and dashboard error handling
-- reviewed golden QA and retrieval-label datasets
+- an 80-row golden QA set, 100 reviewed synthetic candidates, and 45 verified retrieval labels
 - deterministic retrieval metrics and a real dense-baseline evaluation CLI
-- 157 passing tests and a verified Streamlit–FastAPI–Qdrant integration path
+- 157 passing automated tests, plus a recorded real-Qdrant Day 19 evaluation run; automated API, dashboard, and provider tests isolate external service boundaries
 
 Current limitations:
 
-- `POST /query` defaults to the deterministic template client until `RAGOPS_LLM_PROVIDER` is set to `openai` or `gemini` and the corresponding API key is configured.
 - Only dense retrieval is implemented.
-- Generation evaluation, MLflow tracking, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
+- Grounding and refusal are prompt instructions only: answers and citations are not yet judged or post-validated, and unsupported-query behavior is not enforced.
+- Evaluation currently covers retrieval only. Generation evaluation, MLflow tracking, tracing, routing, caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Quickstart
@@ -79,7 +80,9 @@ make services-up
 
 ### Choose an answer-generation provider
 
-The default `template` provider is deterministic, offline, and does not require an API key. To use OpenAI instead, export:
+`POST /query` uses one generation client selected when the API process starts. The default `template` provider is deterministic and offline, but it returns a fixed, cited placeholder rather than synthesizing an answer from the retrieved text.
+
+To use OpenAI instead, export:
 
 ```bash
 export RAGOPS_LLM_PROVIDER=openai
@@ -87,7 +90,7 @@ export OPENAI_API_KEY="your-api-key"
 export OPENAI_MODEL=gpt-5-nano
 ```
 
-To use Gemini, export:
+To use Gemini instead, export:
 
 ```bash
 export RAGOPS_LLM_PROVIDER=gemini
@@ -95,7 +98,7 @@ export GEMINI_API_KEY="your-api-key"
 export GEMINI_MODEL=gemini-3.6-flash
 ```
 
-Keep real API keys out of the repository. The ignored `.env` file can hold local values, but `make serve` requires those values to be exported into the shell environment first. Docker Compose reads `.env` for variable substitution and passes the selected provider configuration to the API container.
+Both API keys may be present, but `RAGOPS_LLM_PROVIDER` selects exactly one runtime provider: `template`, `openai`, or `gemini`. Restart the API after changing it. Keep real API keys out of the repository. The ignored `.env` file can hold local values, but `make serve` does not load that file automatically; export the values into the shell first. Docker Compose reads `.env` for variable substitution and passes the selected provider configuration to the API container.
 
 ### Prepare the corpus and index
 
@@ -125,7 +128,7 @@ make index
 
 ### Generate and review synthetic QA candidates
 
-Day 16 uses both configured LLM providers to create 100 source-grounded candidates without placing unreviewed output in the golden set:
+Day 16 explicitly instantiates both configured LLM providers to create 100 source-grounded candidates without placing unreviewed output in the golden set. This multi-provider batch workflow is independent of the single `RAGOPS_LLM_PROVIDER` used by `POST /query`:
 
 ```bash
 make generate-synthetic-qa
@@ -141,7 +144,7 @@ make review-synthetic-qa
 
 The review command accepts `a` to approve, `r` to reject, `s` to leave a candidate pending, and `q` to save and quit. It stops at 40 approvals by default and only adds approved, non-duplicate examples to `data/eval/golden_qa.jsonl`.
 
-The checked-in Day 16 run contains 100 reviewed candidates: 45 approved and 55 rejected. The approved set includes 25 OpenAI and 20 Gemini examples, and expands the golden dataset from 35 to 80 rows.
+The checked-in Day 16 run contains 100 reviewed candidates: 45 approved and 55 rejected. The approved set includes 25 OpenAI and 20 Gemini examples, and expands the golden dataset from 35 to 80 rows. The resulting golden set contains 70 supported, 5 ambiguous, and 5 unsupported questions; those categories are dataset annotations and are not yet used by the runtime to route or refuse requests.
 
 To intentionally regenerate the candidate file, pass `--overwrite` directly:
 
@@ -208,7 +211,7 @@ reports/evaluations/dense_baseline.csv
 
 The JSON file contains configuration, aggregate metrics, latency statistics, and per-question results. The CSV contains one row per question with ranked IDs, scores, latency, per-question metrics, and aggregate Recall@k, MRR, Hit Rate@k, and nDCG@k. This evaluation does not call OpenAI or Gemini.
 
-The Day 19 acceptance run evaluated all 45 labels against the real 13,481-chunk Qdrant index. It produced MRR `0.3359`, Recall/Hit Rate at k of `0.2667`, `0.3111`, `0.4444`, and `0.6000` for k = 1, 3, 5, and 10, and nDCG at k of `0.2667`, `0.2918`, `0.3473`, and `0.3964`. Average retrieval latency was `679.9 ms` including the first-query model cold start; the remaining 44 queries averaged `149.6 ms`.
+The recorded Day 19 acceptance run evaluated all 45 labels against a real 13,481-chunk Qdrant index. It produced MRR `0.3359`, Recall/Hit Rate at k of `0.2667`, `0.3111`, `0.4444`, and `0.6000` for k = 1, 3, 5, and 10, and nDCG at k of `0.2667`, `0.2918`, `0.3473`, and `0.3964`. Average retrieval latency was `679.9 ms` including a roughly 24-second first-query embedding-model cold start; the remaining 44 queries averaged `149.6 ms`. Latency values are measurements from that local run, not service-level guarantees.
 
 ### Run the application
 
@@ -245,11 +248,12 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 - `src/ragops/ingestion`: loading, cleaning, chunking, and embeddings
 - `src/ragops/indexing`: Qdrant collection creation and indexing
 - `src/ragops/retrieval`: dense retrieval and result normalization
-- `src/ragops/generation`: citations, prompts, and generation client
+- `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, and dense evaluation orchestration
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion and index-building commands
-- `tests`: unit, API, and dashboard client tests
+- `scripts`: ingestion, indexing, dataset-review, labeling, and evaluation commands; later-milestone script files are still empty placeholders
+- `tests`: 157 unit, API, dashboard, dataset, metric, and evaluation-runner tests; later-milestone test files are still empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
