@@ -238,6 +238,10 @@ def test_checked_in_bm25_config_is_valid():
     config = load_bm25_config(project_root / "configs/bm25_baseline.yaml", project_root=project_root)
 
     assert config.name == "bm25_baseline"
+    assert config.evaluation.labels_path == project_root / "data/eval/retrieval_labels.jsonl"
+    assert config.evaluation.dense_baseline_path == project_root / "reports/evaluations/dense_baseline.json"
+    assert config.output.comparison_path == project_root / "reports/evaluations/bm25_vs_dense.json"
+    assert config.output.report_path == project_root / "reports/week4_bm25_comparison.md"
     assert config.retriever.type == "bm25"
     assert config.retriever.tokenizer == "technical_v1"
     assert config.retriever.top_k == 10

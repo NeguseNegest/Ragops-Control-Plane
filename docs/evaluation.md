@@ -4,10 +4,106 @@
 
 The implemented evaluation stack has two distinct layers:
 
-1. Retrieval evaluation (Days 17–19) compares ranked Qdrant chunk IDs with verified relevance labels and computes Recall@k, MRR, Hit Rate@k, and binary nDCG@k.
+1. Retrieval evaluation (Days 17–19, 23, and 25) compares dense Qdrant, persisted BM25, and live RRF hybrid rankings with verified relevance labels and computes Recall@k, MRR, Hit Rate@k, and binary nDCG@k.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. The larger report and failure analysis belong to Day 21.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, and Day 25 measures the RRF hybrid candidate.
+
+## Day 23 dense-versus-BM25 comparison
+
+`configs/bm25_baseline.yaml` points at the same 45 verified labels and `[1, 3, 5, 10]` cutoffs recorded by `configs/dense_baseline.yaml`. The sparse evaluator additionally verifies that its loaded index has the configured tokenizer and BM25 parameters and that its source SHA256 matches the current processed chunk artifact.
+
+Run the offline preflight and benchmark with:
+
+```bash
+make validate-bm25-evaluation
+make evaluate-bm25
+```
+
+The preflight loads no embedding or generation model and makes no paid API call. The evaluation produces a full BM25 JSON/CSV run, pairs it with the recorded dense JSON by question ID, and renders machine-readable and narrative comparison artifacts. Pairing fails if question IDs, question text, expected sources, relevant chunk IDs, or metric cutoffs differ.
+
+Recorded results:
+
+| Metric | Dense | BM25 | BM25 − dense |
+| --- | ---: | ---: | ---: |
+| MRR | 0.3359 | 0.6189 | +0.2830 |
+| Hit Rate@1 | 0.2667 | 0.4667 | +0.2000 |
+| Hit Rate@3 | 0.3111 | 0.7556 | +0.4444 |
+| Hit Rate@5 | 0.4444 | 0.8444 | +0.4000 |
+| Hit Rate@10 | 0.6000 | 0.8667 | +0.2667 |
+| nDCG@10 | 0.3964 | 0.6806 | +0.2842 |
+
+BM25 wins 27 paired questions, dense wins 6, and 12 tie. The comparison also assigns deterministic wording cohorts so this claim is reproducible: BM25 wins 15/23 conceptual/descriptive questions, 8/14 exact-reference questions, and 4/8 behavioral/procedural questions. Cohort labels describe question wording; they are not human relevance labels. Because the questions were generated from and verified against exact source chunks, lexical overlap likely benefits BM25. Results therefore motivate the Day 24 hybrid experiment but do not establish general superiority.
+
+Artifacts:
+
+- `reports/evaluations/bm25_baseline.json`: configuration, index provenance, aggregate metrics, latencies, and complete per-question rankings
+- `reports/evaluations/bm25_baseline.csv`: flat per-question results
+- `reports/evaluations/bm25_vs_dense.json`: paired metric deltas, wins, misses recovered, cohorts, and ranks
+- `reports/week4_bm25_comparison.md`: report rendered from the paired JSON
+
+## Day 24 hybrid candidate
+
+Day 24 implements the candidate evaluated by Day 25 below. `configs/hybrid.yaml` retrieves dense top 20 and BM25 top 20, applies unweighted Reciprocal Rank Fusion with constant 60, and returns a deduplicated top 10. RRF operates on rank positions, so it does not pretend cosine similarity and BM25 scores are calibrated to the same scale.
+
+Validate and exercise the candidate with:
+
+```bash
+make validate-hybrid
+make test-hybrid
+make retrieve-hybrid HYBRID_QUERY="What is the exact MLflow serving command?"
+```
+
+Every output chunk retains its dense and BM25 source ranks, raw source scores, and RRF contributions in `_fusion` metadata. The implementation rejects duplicate input IDs, inconsistent rank fields, non-finite scores, and different document payloads attached to the same chunk ID.
+
+Functional correctness and CLI operation satisfy Day 24. Quality conclusions come only from the paired Day 25 run below.
+
+## Day 25 hybrid evaluation
+
+Validate all fixed inputs without querying Qdrant, then run the live benchmark:
+
+```bash
+make validate-hybrid-evaluation
+make test-hybrid-evaluation
+make evaluate-hybrid
+```
+
+The evaluator requires exact parity across the dense, BM25, and hybrid question IDs, wording, expected sources, relevant chunks, and metric cutoffs. It also verifies embedding and BM25 component settings, matches the current BM25 source SHA to the Day 23 report, and requires the live Qdrant point count to equal the shared source-record count. Each hybrid question records its fused ranking, original source ranks and scores, total latency, and dense/BM25/fusion stage latency.
+
+Recorded benchmark:
+
+| Metric | Dense | BM25 | RRF hybrid | Hybrid − dense | Hybrid − BM25 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MRR | 0.3359 | **0.6189** | 0.5765 | +0.2406 | -0.0424 |
+| Hit Rate@1 | 0.2667 | **0.4667** | **0.4667** | +0.2000 | 0.0000 |
+| Hit Rate@3 | 0.3111 | **0.7556** | 0.6444 | +0.3333 | -0.1111 |
+| Hit Rate@5 | 0.4444 | **0.8444** | 0.7556 | +0.3111 | -0.0889 |
+| Hit Rate@10 | 0.6000 | **0.8667** | 0.8444 | +0.2444 | -0.0222 |
+| nDCG@10 | 0.3964 | **0.6806** | 0.6405 | +0.2441 | -0.0401 |
+
+Hybrid wins 26 ranks versus dense, loses one, and ties 18. Against BM25 it wins 10, loses 14, and ties 21; it also drops one labeled chunk that BM25 retrieves at rank 1. Against the better component rank per question, hybrid wins 4, loses 15, and ties 26. Giving each of the 20 unique labeled chunks equal weight changes the hybrid-versus-BM25 MRR gap from `-0.0424` to `-0.0318`, so repeated questions do not reverse the conclusion.
+
+The result is negative but actionable: unweighted RRF improves dense retrieval, yet it does not beat BM25 on this label set. Consensus promotion sometimes lifts evidence to rank 1, but it can demote strong BM25-only evidence below chunks that appear in both candidate lists. This motivates treating weighting or reranking as new candidates rather than retroactively tuning Day 25.
+
+Measured latency:
+
+| Run or stage | Average | After first query |
+| --- | ---: | ---: |
+| Dense baseline | 679.9 ms | 149.6 ms |
+| BM25 baseline | 87.9 ms | 88.1 ms |
+| RRF hybrid total | 837.4 ms | 177.1 ms |
+| Hybrid dense stage | 772.5 ms | not separately reported |
+| Hybrid BM25 stage | 64.7 ms | not separately reported |
+| Hybrid fusion stage | 0.2 ms | not separately reported |
+
+The historical baseline latency rows come from separate runs. Only the hybrid component rows are internally timed in the same run; their averages include the `29,892.1 ms` first-query dense model warm-up.
+
+Artifacts:
+
+- `reports/evaluations/hybrid_rrf.json`: live configuration, index provenance, complete rankings, metrics, and component latency
+- `reports/evaluations/hybrid_rrf.csv`: flat per-question hybrid results
+- `reports/evaluations/hybrid_vs_baselines.json`: strict three-way metrics, paired outcomes, cohorts, relevance groups, and failures
+- `reports/week4_hybrid_comparison.md`: benchmark table and analysis rendered from the comparison JSON
 
 ## Day 20 sample
 

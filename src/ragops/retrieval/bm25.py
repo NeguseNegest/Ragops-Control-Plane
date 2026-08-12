@@ -70,12 +70,54 @@ class BM25RetrieverConfig(StrictModel):
         return BM25Parameters(k1=self.k1, b=self.b, epsilon=self.epsilon)
 
 
+class BM25EvaluationDatasetConfig(StrictModel):
+    """Verified labels, metric cutoffs, and dense run used for Day 23."""
+
+    labels_path: Path = Path("data/eval/retrieval_labels.jsonl")
+    k_values: list[int] = Field(default_factory=lambda: [1, 3, 5, 10], min_length=1)
+    minimum_labels: int = Field(default=40, gt=0)
+    dense_baseline_path: Path = Path("reports/evaluations/dense_baseline.json")
+
+    @field_validator("labels_path", "dense_baseline_path", mode="before")
+    @classmethod
+    def validate_evaluation_path(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("Evaluation paths must not be empty.")
+        return value
+
+    @field_validator("k_values")
+    @classmethod
+    def validate_metric_cutoffs(cls, values):
+        if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in values):
+            raise ValueError("k_values must contain positive integers.")
+        if len(values) != len(set(values)):
+            raise ValueError("k_values must not contain duplicates.")
+        return sorted(values)
+
+
+class BM25EvaluationOutputConfig(StrictModel):
+    """Machine-readable and narrative Day 23 artifact destinations."""
+
+    directory: Path = Path("reports/evaluations")
+    comparison_path: Path = Path("reports/evaluations/bm25_vs_dense.json")
+    report_path: Path = Path("reports/week4_bm25_comparison.md")
+
+    @field_validator("directory", "comparison_path", "report_path", mode="before")
+    @classmethod
+    def validate_output_path(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("Output paths must not be empty.")
+        return value
+
+
 class BM25Config(StrictModel):
-    """Complete Day 22 BM25 index configuration."""
+    """Complete BM25 index configuration with optional Day 23 evaluation."""
 
     name: str = Field(min_length=1)
     input: BM25InputConfig
     retriever: BM25RetrieverConfig
+    evaluation: BM25EvaluationDatasetConfig | None = None
+    output: BM25EvaluationOutputConfig | None = None
 
     @field_validator("name")
     @classmethod
@@ -84,6 +126,14 @@ class BM25Config(StrictModel):
         if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", value):
             raise ValueError("BM25 configuration name must use lowercase letters, numbers, underscores, or hyphens.")
         return value
+
+    @model_validator(mode="after")
+    def validate_evaluation_settings(self):
+        if (self.evaluation is None) != (self.output is None):
+            raise ValueError("BM25 evaluation and output settings must be configured together.")
+        if self.evaluation is not None and self.retriever.top_k < max(self.evaluation.k_values):
+            raise ValueError("retriever.top_k must be at least the largest evaluation cutoff.")
+        return self
 
 
 class BM25IndexDocument(StrictModel):
@@ -183,7 +233,23 @@ def load_bm25_config(config_path, project_root=None):
     project_root = Path(project_root or Path.cwd()).resolve()
     input_config = config.input.model_copy(update={"chunks_path": resolve_project_path(config.input.chunks_path, project_root)})
     retriever = config.retriever.model_copy(update={"index_path": resolve_project_path(config.retriever.index_path, project_root)})
-    return config.model_copy(update={"input": input_config, "retriever": retriever})
+    updates = {"input": input_config, "retriever": retriever}
+    if config.evaluation is not None:
+        updates["evaluation"] = config.evaluation.model_copy(
+            update={
+                "labels_path": resolve_project_path(config.evaluation.labels_path, project_root),
+                "dense_baseline_path": resolve_project_path(config.evaluation.dense_baseline_path, project_root),
+            }
+        )
+    if config.output is not None:
+        updates["output"] = config.output.model_copy(
+            update={
+                "directory": resolve_project_path(config.output.directory, project_root),
+                "comparison_path": resolve_project_path(config.output.comparison_path, project_root),
+                "report_path": resolve_project_path(config.output.report_path, project_root),
+            }
+        )
+    return config.model_copy(update=updates)
 
 
 def sha256_file(path, block_size=1024 * 1024):
@@ -356,6 +422,25 @@ def load_bm25_index(path):
     except (OSError, EOFError, json.JSONDecodeError, UnicodeDecodeError) as error:
         raise ValueError(f"BM25 index is invalid: {path}") from error
     return BM25Index(payload)
+
+
+def validate_bm25_index(index, config, verify_source_hash=True):
+    """Verify persisted provenance and scoring settings against a BM25 config."""
+    if not isinstance(index, BM25Index):
+        raise ValueError("index must be a loaded BM25Index.")
+
+    payload = index.payload
+    if payload.tokenizer != config.retriever.tokenizer:
+        raise ValueError("Persisted BM25 tokenizer does not match the configuration.")
+    if payload.parameters != config.retriever.parameters():
+        raise ValueError("Persisted BM25 parameters do not match the configuration.")
+    if verify_source_hash:
+        chunks_path = config.input.chunks_path
+        if not chunks_path.is_file():
+            raise FileNotFoundError(f"Chunk input does not exist: {chunks_path}")
+        if payload.source_sha256 != sha256_file(chunks_path):
+            raise ValueError("Persisted BM25 index does not match the current chunk input SHA256.")
+    return payload
 
 
 def retrieve_bm25(query, index, top_k=DEFAULT_TOP_K):

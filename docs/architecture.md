@@ -2,13 +2,14 @@
 
 ## Current Scope
 
-RAGOps Control Plane currently provides a dense-retrieval RAG path plus an offline BM25 retriever over local FastAPI, MLflow, and Qdrant documentation. It has three implemented workflows:
+RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline BM25 and RRF hybrid retrievers over local FastAPI, MLflow, and Qdrant documentation. It has four implemented workflows:
 
 - An offline workflow that cleans and chunks documentation, then builds both a dense Qdrant index and a portable BM25 index.
 - An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
-- An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, computes retrieval metrics, runs the dense baseline against Qdrant, and applies cross-provider LLM judging to generated answers.
+- An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
+- An offline hybrid CLI that retrieves independent dense and BM25 candidate pools and merges them without normalizing their incompatible raw scores.
 
-Dense retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, and Day 22 BM25 indexing/retrieval are implemented. BM25 evaluation, hybrid retrieval, reranking, routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
+Dense, BM25, and RRF hybrid retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, and Day 22–25 sparse/hybrid work are implemented. Reranking, routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
 
 ## System Diagram
 
@@ -37,13 +38,33 @@ flowchart LR
         API -->|JSON response| Streamlit
     end
 
+    subgraph Hybrid[Offline hybrid CLI]
+        HybridConfig[hybrid.yaml] --> HybridCLI[Hybrid query CLI]
+        HybridCLI -->|"dense top 20"| Qdrant
+        HybridCLI -->|"BM25 top 20"| BM25Index
+        Qdrant --> RRF[Reciprocal Rank Fusion]
+        BM25Index --> RRF
+        RRF --> HybridTop10[Deduplicated top 10]
+    end
+
     subgraph Evaluation[Offline retrieval evaluation]
         Golden[golden_qa.jsonl] --> Labels[retrieval_labels.jsonl]
-        EvalConfig[dense_baseline.yaml] --> Runner[Evaluation runner]
-        Labels --> Runner
-        Runner -->|"45 dense queries"| Qdrant
-        Runner --> Metrics["Recall / MRR / Hit Rate / nDCG"]
+        DenseConfig[dense_baseline.yaml] --> DenseRunner[Dense runner]
+        BM25Config[bm25_baseline.yaml] --> BM25Runner[BM25 runner]
+        HybridConfig --> HybridRunner[Hybrid evaluator]
+        Labels --> DenseRunner
+        Labels --> BM25Runner
+        Labels --> HybridRunner
+        DenseRunner -->|"45 dense queries"| Qdrant
+        BM25Index --> BM25Runner
+        Qdrant --> HybridRunner
+        BM25Index --> HybridRunner
+        DenseRunner --> Metrics["Recall / MRR / Hit Rate / nDCG"]
+        BM25Runner --> Metrics
+        HybridRunner --> Metrics
         Metrics --> Reports["JSON + CSV reports"]
+        Reports --> Paired["Three-way ranks + cohorts + failures"]
+        Paired --> Comparison["Comparison JSON + Markdown"]
     end
 
     subgraph GenerationEvaluation[Offline generation evaluation]
@@ -67,10 +88,11 @@ flowchart LR
 | Indexer | `src/ragops/indexing/qdrant.py` | Create the `rag_chunks` collection and upsert embedded chunk records with payload metadata. |
 | Dense retriever | `src/ragops/retrieval/dense.py` | Embed a query, search Qdrant, and normalize ranked results into `RetrievedChunk` objects. |
 | BM25 retriever | `src/ragops/retrieval/bm25.py`, `scripts/build_bm25_index.py` | Tokenize technical text, persist a versioned sparse index, validate source provenance, and return ranked `RetrievedChunk` objects without Qdrant. |
+| Hybrid retriever | `src/ragops/retrieval/hybrid.py`, `scripts/retrieve_hybrid.py` | Retrieve independently ranked dense and BM25 candidate pools, validate their identities and ranks, fuse them with deterministic RRF, and expose readable or JSON CLI results. |
 | Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build a context-only prompt, select one process-wide provider, and call the template, OpenAI, or Gemini client. |
 | Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
-| Evaluation runner | `src/ragops/evaluation/runner.py`, `scripts/evaluate.py` | Validate the dense YAML configuration, run every labeled query through Qdrant, and atomically write JSON and CSV reports. |
+| Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `scripts/evaluate.py`, `evaluate_bm25.py`, `evaluate_hybrid.py` | Run the verified label set through dense, BM25, or hybrid retrieval; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
@@ -85,6 +107,24 @@ flowchart LR
 5. Embedded records are written as JSONL to `data/processed/chunks.jsonl`. Each record contains the chunk text, IDs, hash, metadata, and vector.
 6. `scripts/build_index.py` reads the JSONL file, creates the Qdrant `rag_chunks` collection when needed, and upserts records in batches.
 7. Independently, `scripts/build_bm25_index.py` drops embeddings, adds normalized prose and exact technical tokens, and atomically writes `data/processed/bm25_index.json.gz` with the input SHA256 and BM25 parameters.
+
+Day 24 combines the existing indexes at query time:
+
+```text
+                         query
+                           |
+              +------------+------------+
+              |                         |
+       dense top 20                 BM25 top 20
+              |                         |
+              +------------+------------+
+                           |
+             score(chunk) = sum(1 / (60 + rank))
+                           |
+                  deduplicated top 10
+```
+
+`configs/hybrid.yaml` pins both candidate depths, their index/model settings, the RRF constant, and final depth. Fusion uses list positions rather than raw cosine or BM25 scores, which are not on a shared scale. A chunk returned by both retrievers receives both reciprocal-rank contributions. The final `RetrievedChunk.score` is the fused score; `_fusion` metadata retains each original rank, score, and contribution. Equal scores are resolved by number of contributing rankings, best source rank, then chunk ID. Input rankings must be contiguous, unique, finite, and payload-consistent for matching IDs.
 
 ## Evaluation Dataset Flow
 
@@ -150,6 +190,42 @@ dense_baseline.yaml + retrieval_labels.jsonl
 ```
 
 Configuration paths are resolved from the project root. The runner verifies that `top_k` covers every requested metric cutoff, checks the collection before evaluating, preserves retrieval order, rejects duplicate or malformed results, and writes artifacts atomically only after every labeled question succeeds. JSON contains the complete run record; CSV provides stable per-question rows with aggregate metrics repeated for convenient analysis.
+
+Day 23 runs the persisted BM25 index through the same labels and metric functions, then performs a strict paired comparison:
+
+```text
+bm25_baseline.yaml + retrieval_labels.jsonl + bm25_index.json.gz
+                              |
+              validate tokenizer, parameters, and source SHA256
+                              |
+                     retrieve every query
+                              |
+                    BM25 JSON + CSV
+                              |
+           pair by question ID with dense_baseline.json
+                              |
+                              v
+              bm25_vs_dense.json + Markdown report
+```
+
+The comparison refuses different question IDs, question text, relevant chunks, sources, or metric cutoffs. It compares the first relevant rank for every question, counts wins and top-10 misses recovered, and groups results with a deterministic question-wording classifier. That classifier is an analysis aid rather than a relevance annotation: exact references are detected first, behavioral/procedural wording second, and all other questions are conceptual/descriptive. The recorded result is BM25 MRR `0.6189` versus dense MRR `0.3359`, with 27 BM25 wins, 6 dense wins, and 12 ties. The synthetic questions' lexical overlap with source chunks is a likely advantage for BM25 and limits generalization.
+
+Day 25 runs the Day 24 candidate over the same paired label set:
+
+```text
+hybrid.yaml + labels + dense baseline + BM25 baseline
+                    |
+        verify labels, cutoffs, component configs,
+        BM25 SHA, and live dense/BM25 record parity
+                    |
+     45 × (dense top 20 + BM25 top 20 -> RRF top 10)
+                    |
+   hybrid JSON/CSV + three-way JSON/Markdown benchmark
+```
+
+The hybrid report stores full fused rankings, RRF source provenance, live Qdrant point count, BM25 source hash, total latency, and separate dense/BM25/fusion latency. The comparison requires identical question IDs, wording, sources, labels, cutoffs, embedding settings, BM25 settings, and source hash where available. It reports per-question and per-relevance-group outcomes so repeated questions for one labeled chunk do not silently masquerade as independent evidence.
+
+The measured RRF candidate reaches MRR `0.5765`, between dense `0.3359` and BM25 `0.6189`. It wins 26 paired questions versus dense and loses one, but wins only 10 versus BM25 while losing 14. Hybrid Hit Rate@10 is `0.8444`, below BM25's `0.8667`; it loses one BM25 top-10 hit. Unweighted consensus fusion therefore does not replace BM25 on this benchmark. Average hybrid latency is `837.4 ms` including a `29,892.1 ms` first-query cold start and `177.1 ms` after the first query; fusion itself averages `0.2 ms`.
 
 The Day 20 generation evaluation is a separate pipeline:
 
@@ -223,7 +299,8 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 ## Current Limitations
 
-- Dense retrieval remains the only online and evaluated retriever. The standalone BM25 retriever is implemented and persisted, but its comparison run belongs to Day 23.
+- Dense retrieval remains the only online retriever. BM25 and RRF hybrid retrieval are available offline, but neither is exposed through the API.
+- The evaluated unweighted RRF candidate does not beat BM25 on the current lexically aligned labels. Weighted fusion and reranking remain experiments, not accepted improvements.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
 - The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. The offline judge measures these qualities after the fact. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
 - Day 20 generation scores come from one judge model over 10 questions. All 10 have a separate Codex evidence audit, but they do not have independent human sign-off and are not a substitute for larger samples, multiple judges, calibrated human labels, or statistical uncertainty estimates.
@@ -239,7 +316,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
 
-- configurations: `hybrid.yaml`, `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
+- configurations: `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
 - tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
 - topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`

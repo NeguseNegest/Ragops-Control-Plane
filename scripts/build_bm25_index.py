@@ -14,7 +14,7 @@ from ragops.retrieval.bm25 import (  # noqa: E402
     load_bm25_index,
     retrieve_bm25,
     save_bm25_index,
-    sha256_file,
+    validate_bm25_index,
 )
 
 
@@ -39,19 +39,6 @@ def validate_source(config):
         raise FileNotFoundError(f"Chunk input does not exist: {chunks_path}")
 
 
-def validate_index(config, index):
-    """Verify persisted provenance and scoring settings against the config."""
-    payload = index.payload
-    if payload.tokenizer != config.retriever.tokenizer:
-        raise ValueError("Persisted BM25 tokenizer does not match the configuration.")
-    if payload.parameters != config.retriever.parameters():
-        raise ValueError("Persisted BM25 parameters do not match the configuration.")
-    source_digest = sha256_file(config.input.chunks_path)
-    if payload.source_sha256 != source_digest:
-        raise ValueError("Persisted BM25 index does not match the current chunk input SHA256.")
-    return payload
-
-
 def print_results(results):
     for result in results:
         source = result.source_url or "unknown"
@@ -73,7 +60,7 @@ def main():
 
     if args.validate_index:
         index = load_bm25_index(config.retriever.index_path)
-        payload = validate_index(config, index)
+        payload = validate_bm25_index(index, config)
         print(
             f"Valid BM25 index with {payload.document_count} searchable documents "
             f"({payload.skipped_document_count} skipped) at {config.retriever.index_path}."

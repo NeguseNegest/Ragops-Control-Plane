@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements dense and BM25 retrieval foundations, dense and LLM-as-judge evaluation workflows, and the first measured benchmark report through Day 22; cost controls and promotion gates remain roadmap features.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements dense, BM25, and RRF hybrid retrieval, paired three-way retrieval evaluation, LLM-as-judge evaluation, and measured benchmark reports through Day 25; cost controls and promotion gates remain roadmap features.
 
 ## Project Objective
 
@@ -36,13 +36,14 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 22 of the project plan, including the first persisted sparse index. The current baseline includes:
+Implementation is complete through Day 25 of the project plan, including a measured Reciprocal Rank Fusion benchmark. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
 - batched `sentence-transformers/all-MiniLM-L6-v2` embeddings
 - Qdrant indexing and cosine-similarity dense retrieval
 - technical-text tokenization, a portable gzip-compressed BM25 index, and ranked sparse retrieval
+- deterministic Reciprocal Rank Fusion over dense top-20 and BM25 top-20 candidates into a deduplicated hybrid top 10
 - ranked chunks, provenance metadata, and deduplicated citations
 - selectable offline-template, OpenAI Responses API, and Gemini Interactions API generation clients
 - `GET /health`, `POST /retrieve`, and `POST /query`
@@ -51,29 +52,34 @@ Implementation is complete through Day 22 of the project plan, including the fir
 - request validation, API error translation, and dashboard error handling
 - an 80-row golden QA set, 100 reviewed synthetic candidates, and 45 verified retrieval labels
 - deterministic retrieval metrics and a real dense-baseline evaluation CLI
+- a provenance-checked BM25 evaluation CLI, paired per-question comparison, wording-cohort analysis, and reproducible JSON/CSV/Markdown reports
+- a live hybrid evaluator with dense/BM25/fusion component timings, strict corpus and label parity checks, three-way paired outcomes, relevance-group analysis, and failure reporting
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
 Current limitations:
 
-- Dense retrieval remains the only retriever connected to the API and evaluation runner. BM25 is implemented as a standalone offline retriever but is not evaluated until Day 23.
+- Dense retrieval remains the only retriever connected to the online API. BM25 and RRF hybrid retrieval are available through offline CLIs but are not exposed through `POST /retrieve` and `POST /query`.
+- Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; it is an evaluated candidate, not the selected retrieval baseline.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
 - Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow tracking, cost accounting, tracing, routing, caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
-## First Measured Baseline
+## Dense vs BM25 vs Hybrid Benchmark
 
-The recorded dense baseline evaluated 45 verified questions against 13,481 indexed chunks. The full [Week 3 benchmark report](reports/week3_dense_baseline.md) documents the setup, corpus-level results, latency caveats, and concrete failure examples.
+Day 25 evaluates dense-top-20 plus BM25-top-20 RRF on the same 45 verified questions and final top-10 cutoffs as both component baselines. The complete [three-way hybrid report](reports/week4_hybrid_comparison.md) records every gain, regression, failure, latency stage, and validity caveat. The earlier [dense-vs-BM25 report](reports/week4_bm25_comparison.md) and [dense benchmark](reports/week3_dense_baseline.md) retain their detailed analyses.
 
-| Cutoff | Recall@k | Hit Rate@k | nDCG@k |
-| ---: | ---: | ---: | ---: |
-| 1 | 0.2667 | 0.2667 | 0.2667 |
-| 3 | 0.3111 | 0.3111 | 0.2918 |
-| 5 | 0.4444 | 0.4444 | 0.3473 |
-| 10 | 0.6000 | 0.6000 | 0.3964 |
+| Metric | Dense | BM25 | RRF hybrid | Hybrid − dense | Hybrid − BM25 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MRR | 0.3359 | **0.6189** | 0.5765 | +0.2406 | -0.0424 |
+| Recall / Hit Rate@1 | 0.2667 | **0.4667** | **0.4667** | +0.2000 | 0.0000 |
+| Recall / Hit Rate@3 | 0.3111 | **0.7556** | 0.6444 | +0.3333 | -0.1111 |
+| Recall / Hit Rate@5 | 0.4444 | **0.8444** | 0.7556 | +0.3111 | -0.0889 |
+| Recall / Hit Rate@10 | 0.6000 | **0.8667** | 0.8444 | +0.2444 | -0.0222 |
+| nDCG@10 | 0.3964 | **0.6806** | 0.6405 | +0.2441 | -0.0401 |
 
-MRR was `0.3359`. Mean latency was `679.9 ms` including a `24,009.5 ms` first-query embedding-model cold start; the remaining 44 queries averaged `149.6 ms`. Because every question currently has one labeled relevant chunk, Recall@k and Hit Rate@k are equal in this run.
+Hybrid wins 26 paired ranks against dense, loses one, and ties 18; against BM25 it wins 10, loses 14, and ties 21. The result answers Day 25 negatively: unweighted RRF improves on dense but does not improve on the stronger BM25 baseline. Consensus promotion helps when both components locate useful evidence, but it can demote strong BM25-only chunks; one BM25 top-10 hit is lost entirely. Giving each of the 20 unique labeled chunks equal weight still leaves hybrid MRR 3.2 percentage points below BM25. These source-derived labels retain lexical overlap and contain one judged chunk per question, so the result selects BM25 only for this benchmark—not universally.
 
 ## Quickstart
 
@@ -157,7 +163,7 @@ The resulting `data/processed/bm25_index.json.gz` contains schema-versioned chun
 PYTHONPATH=src .venv/bin/python scripts/build_bm25_index.py --overwrite
 ```
 
-The recorded local Day 22 build indexed 13,476 searchable chunks, skipped five chunks containing no searchable tokens, and produced a 5.8 MB compressed artifact. A real `retrieve_bm25` sanity query ranked the labeled Qdrant dot-product evidence first. Run your own standalone sparse retrieval check while building or validating with `--query` and optional `--top-k`. `retrieve_bm25` is not yet connected to `POST /retrieve` or `POST /query`; the Day 23 milestone evaluates it against the same labels as the dense baseline.
+The recorded local Day 22 build indexed 13,476 searchable chunks, skipped five chunks containing no searchable tokens, and produced a 5.8 MB compressed artifact. A real `retrieve_bm25` sanity query ranked the labeled Qdrant dot-product evidence first. Run your own standalone sparse retrieval check while building or validating with `--query` and optional `--top-k`. `retrieve_bm25` is not yet connected to `POST /retrieve` or `POST /query`; Day 23 evaluates it offline against the same labels as the dense baseline.
 
 ### Generate and review synthetic QA candidates
 
@@ -246,6 +252,87 @@ The JSON file contains configuration, aggregate metrics, latency statistics, and
 
 The recorded Day 19 acceptance run evaluated all 45 labels against a real 13,481-chunk Qdrant index. It produced MRR `0.3359`, Recall/Hit Rate at k of `0.2667`, `0.3111`, `0.4444`, and `0.6000` for k = 1, 3, 5, and 10, and nDCG at k of `0.2667`, `0.2918`, `0.3473`, and `0.3964`. Average retrieval latency was `679.9 ms` including a roughly 24-second first-query embedding-model cold start; the remaining 44 queries averaged `149.6 ms`. Latency values are measurements from that local run, not service-level guarantees.
 
+### Evaluate BM25 and compare it with dense retrieval
+
+Day 23 uses `configs/bm25_baseline.yaml` and the persisted Day 22 index. Preflight verifies the label count, dense-report coverage, index parameters, tokenizer, and source-chunk SHA256 without running any query:
+
+```bash
+make validate-bm25-evaluation
+make test-bm25-evaluation
+```
+
+Run all 45 local sparse queries and regenerate the checked-in comparison artifacts:
+
+```bash
+make evaluate-bm25
+```
+
+The evaluator loads the index once, applies the same metric functions and cutoffs as the dense run, compares the first relevant rank for every question, and writes:
+
+```text
+reports/evaluations/bm25_baseline.json
+reports/evaluations/bm25_baseline.csv
+reports/evaluations/bm25_vs_dense.json
+reports/week4_bm25_comparison.md
+```
+
+The BM25 JSON includes index provenance and complete rankings; the CSV is one row per question. The paired JSON stores aggregate deltas, wins, misses recovered by each retriever, deterministic wording cohorts, and per-question ranks. The Markdown report is rendered from that comparison JSON. The recorded local run produced MRR `0.6189`, Hit Rate@5 `0.8444`, and 27 BM25 wins versus 6 dense wins. Its average `87.9 ms` in-memory scoring time is not directly comparable with the dense `679.9 ms`, which includes embedding plus Qdrant search and a 24-second cold start.
+
+### Run Reciprocal Rank Fusion hybrid retrieval
+
+Day 24 is configured in `configs/hybrid.yaml`. It retrieves 20 dense candidates from Qdrant and 20 sparse candidates from the persisted BM25 index, then computes each unique chunk's score as the sum of `1 / (60 + rank)` across the rankings and returns the best 10.
+
+Validate configuration, candidate depths, and BM25 index provenance without connecting to Qdrant:
+
+```bash
+make validate-hybrid
+make test-hybrid
+```
+
+With the `rag_chunks` collection running, execute the real query CLI:
+
+```bash
+make retrieve-hybrid
+make retrieve-hybrid HYBRID_QUERY="What is the exact MLflow serving command?"
+```
+
+The equivalent direct command supports readable or JSON output:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/retrieve_hybrid.py \
+  --config configs/hybrid.yaml \
+  --query "What operation quantifies vector similarity?" \
+  --json
+```
+
+Each fused result uses its RRF score and final rank while retaining the source chunk payload. Reserved `_fusion` metadata records the original dense and BM25 ranks, original scores, and individual RRF contributions. Duplicate IDs within one ranking, non-contiguous ranks, non-finite scores, and conflicting payloads for the same chunk ID fail explicitly. RRF avoids comparing incomparable cosine and BM25 score scales directly.
+
+### Evaluate dense, BM25, and hybrid retrieval
+
+Day 25 extends `configs/hybrid.yaml` with the verified labels, fixed baseline reports, and artifact paths. Preflight checks label coverage, metric cutoffs, component configurations, current BM25 SHA, and baseline provenance without querying Qdrant:
+
+```bash
+make validate-hybrid-evaluation
+make test-hybrid-evaluation
+```
+
+With `rag_chunks` running, reproduce the live 45-question benchmark:
+
+```bash
+make evaluate-hybrid
+```
+
+Outputs:
+
+```text
+reports/evaluations/hybrid_rrf.json
+reports/evaluations/hybrid_rrf.csv
+reports/evaluations/hybrid_vs_baselines.json
+reports/week4_hybrid_comparison.md
+```
+
+The live run verified 13,481 Qdrant points against 13,481 source records and the BM25 source SHA256. Hybrid MRR was `0.5765`, Hit Rate@5 was `0.7556`, and Hit Rate@10 was `0.8444`. Average end-to-end latency was `837.4 ms`, dominated by a `29,892.1 ms` first-query embedding warm-up; the remaining 44 queries averaged `177.1 ms`. Within the same hybrid run, dense retrieval averaged `772.5 ms`, BM25 `64.7 ms`, and fusion `0.2 ms`; component averages include the dense cold start.
+
 ### Generate and judge the Day 20 acceptance sample
 
 Day 20 is configured in `configs/generation_judge.yaml`. It deterministically selects six supported, two ambiguous, and two unsupported golden questions. By default, `gpt-5-nano` generates answers from five retrieved chunks and `gemini-3.6-flash` independently judges them. The providers must differ unless the config explicitly disables that guard.
@@ -315,19 +402,23 @@ data/raw -> cleaning -> chunking -> chunks.jsonl -> embeddings -> Qdrant
                                           +-> BM25 tokens -> persisted BM25 index
 
 query -> dense retrieval -> citations -> generation -> FastAPI response
+
+query -> dense top 20 --+
+                         +-> RRF -> hybrid top 10 -> CLI
+query -> BM25 top 20 ---+
 ```
 
 - `src/ragops/ingestion`: loading, cleaning, chunking, and embeddings
 - `src/ragops/indexing`: Qdrant collection creation and indexing
-- `src/ragops/retrieval`: dense retrieval, BM25 indexing/retrieval, and shared result normalization
+- `src/ragops/retrieval`: dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, dense evaluation, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, dense and BM25 evaluation/comparison, and LLM-as-judge orchestration
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion, indexing, dataset-review, labeling, and evaluation commands; later-milestone script files are still empty placeholders
-- `tests`: unit, API, dashboard, dataset, metric, evaluation-runner, and LLM-judge tests; later-milestone test files are still empty placeholders
+- `scripts`: ingestion, indexing, dense/BM25/hybrid retrieval, dataset-review, labeling, and evaluation commands; later-milestone script files remain empty placeholders
+- `tests`: unit, API, dashboard, dataset, retrieval/fusion, metric, evaluation-runner, and LLM-judge tests; later-milestone test files remain empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 23: evaluate the BM25 baseline on the 45 verified labels and compare it with the Week 3 dense baseline.
+Proceed to Day 26: rerank a hybrid candidate pool with a cross-encoder and record reranker latency before evaluating that new pipeline on Day 27.

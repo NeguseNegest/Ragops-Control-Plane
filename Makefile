@@ -2,8 +2,9 @@ PYTHON ?= python3.12
 VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
+HYBRID_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 
-.PHONY: setup lint test test-retrieval-metrics test-llm-judge test-bm25 validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -24,6 +25,15 @@ test-llm-judge:
 
 test-bm25:
 	$(BIN)/python -m pytest tests/test_bm25.py
+
+test-bm25-evaluation:
+	$(BIN)/python -m pytest tests/test_bm25_evaluation.py
+
+test-hybrid:
+	$(BIN)/python -m pytest tests/test_hybrid.py
+
+test-hybrid-evaluation:
+	$(BIN)/python -m pytest tests/test_hybrid_evaluation.py
 
 validate-dense-evaluation:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only
@@ -51,6 +61,24 @@ build-bm25-index:
 
 validate-bm25-index:
 	PYTHONPATH=src $(BIN)/python scripts/build_bm25_index.py --config configs/bm25_baseline.yaml --validate-index
+
+validate-bm25-evaluation:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_bm25.py --config configs/bm25_baseline.yaml --validate-only
+
+evaluate-bm25:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_bm25.py --config configs/bm25_baseline.yaml --overwrite
+
+validate-hybrid:
+	PYTHONPATH=src $(BIN)/python scripts/retrieve_hybrid.py --config configs/hybrid.yaml --validate-only
+
+retrieve-hybrid:
+	PYTHONPATH=src $(BIN)/python scripts/retrieve_hybrid.py --config configs/hybrid.yaml --query "$(HYBRID_QUERY)"
+
+validate-hybrid-evaluation:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_hybrid.py --config configs/hybrid.yaml --validate-only
+
+evaluate-hybrid:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_hybrid.py --config configs/hybrid.yaml --overwrite
 
 services-up:
 	docker compose up -d qdrant mlflow
