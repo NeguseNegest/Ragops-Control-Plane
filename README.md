@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements the dense RAG baseline and its retrieval-evaluation workflow through Day 19; cost controls and promotion gates remain roadmap features.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements the dense RAG baseline and its retrieval and LLM-as-judge evaluation workflows through Day 20; cost controls and promotion gates remain roadmap features.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Development is complete through Day 19 of the project plan. The current baseline includes:
+Implementation is complete through Day 20 of the project plan, including the authorized real-provider run and all 10 configured spot-checks. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -50,14 +50,15 @@ Development is complete through Day 19 of the project plan. The current baseline
 - request validation, API error translation, and dashboard error handling
 - an 80-row golden QA set, 100 reviewed synthetic candidates, and 45 verified retrieval labels
 - deterministic retrieval metrics and a real dense-baseline evaluation CLI
-- 157 passing automated tests, plus a recorded real-Qdrant Day 19 evaluation run; automated API, dashboard, and provider tests isolate external service boundaries
+- strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
+- cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
 Current limitations:
 
 - Only dense retrieval is implemented.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
-- Grounding and refusal are prompt instructions only: answers and citations are not yet judged or post-validated, and unsupported-query behavior is not enforced.
-- Evaluation currently covers retrieval only. Generation evaluation, MLflow tracking, tracing, routing, caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow tracking, cost accounting, tracing, routing, caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Quickstart
@@ -213,6 +214,43 @@ The JSON file contains configuration, aggregate metrics, latency statistics, and
 
 The recorded Day 19 acceptance run evaluated all 45 labels against a real 13,481-chunk Qdrant index. It produced MRR `0.3359`, Recall/Hit Rate at k of `0.2667`, `0.3111`, `0.4444`, and `0.6000` for k = 1, 3, 5, and 10, and nDCG at k of `0.2667`, `0.2918`, `0.3473`, and `0.3964`. Average retrieval latency was `679.9 ms` including a roughly 24-second first-query embedding-model cold start; the remaining 44 queries averaged `149.6 ms`. Latency values are measurements from that local run, not service-level guarantees.
 
+### Generate and judge the Day 20 acceptance sample
+
+Day 20 is configured in `configs/generation_judge.yaml`. It deterministically selects six supported, two ambiguous, and two unsupported golden questions. By default, `gpt-5-nano` generates answers from five retrieved chunks and `gemini-3.6-flash` independently judges them. The providers must differ unless the config explicitly disables that guard.
+
+Validate the config and sample allocation without Qdrant or paid API calls:
+
+```bash
+make validate-generation-judge
+make test-llm-judge
+```
+
+With Qdrant indexed and both keys present in the ignored `.env`, run the real acceptance evaluation:
+
+```bash
+make judge-answers
+```
+
+The command refuses to overwrite an existing run. Use `PYTHONPATH=src .venv/bin/python scripts/judge_answers.py --overwrite` only when intentionally replacing the artifacts. A successful run writes:
+
+```text
+reports/evaluations/day20_generation_judge_judgments.jsonl
+reports/evaluations/day20_generation_judge_summary.json
+```
+
+Each JSONL record retains the question type, expected answer and behavior, exact retrieved chunk text and scores, generated answer, citations, generator and judge models, rubric scores and rationales, component timings, and manual-review status. The judge treats all supplied text as untrusted data, uses retrieved chunks—not the reference answer—as faithfulness evidence, requires strict JSON, and rejects semantically inconsistent refusal verdicts.
+
+Manually compare every automatic judgment with the documented rubric and evidence:
+
+```bash
+make review-judgments
+make validate-day20
+```
+
+The reviewer records `agree` or `disagree`; disagreement requires notes. `make validate-day20` passes only after all 10 configured spot-checks are complete. See `docs/evaluation.md` for the full rubric and review rules.
+
+The recorded Day 20 run used OpenAI `gpt-5-nano` for generation and Gemini `gemini-3.6-flash` for judging. Its 10 answers received mean faithfulness `4.5/5` and mean answer relevance `3.4/5`; refusal verdicts were 2 correct, 4 incorrect, and 4 not applicable. A separate Codex evidence audit reviewed all 10 records, agreed with 8 judgments, and documented 2 relevance-score disagreements. This reviewer identity is stored as `codex-manual-audit` and must not be interpreted as human sign-off.
+
 ### Run the application
 
 Run the API:
@@ -249,13 +287,13 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 - `src/ragops/indexing`: Qdrant collection creation and indexing
 - `src/ragops/retrieval`: dense retrieval and result normalization
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, and dense evaluation orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, dense evaluation, and LLM-as-judge orchestration
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
 - `dashboard/app.py`: Streamlit query playground
 - `scripts`: ingestion, indexing, dataset-review, labeling, and evaluation commands; later-milestone script files are still empty placeholders
-- `tests`: 157 unit, API, dashboard, dataset, metric, and evaluation-runner tests; later-milestone test files are still empty placeholders
+- `tests`: unit, API, dashboard, dataset, metric, evaluation-runner, and LLM-judge tests; later-milestone test files are still empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 20: the LLM-as-judge rubric for faithfulness, answer relevance, and refusal correctness.
+Proceed to Day 21: produce the first Markdown benchmark report, metrics table, and documented failure examples from the recorded evaluation artifacts.

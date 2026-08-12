@@ -3,7 +3,7 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 
-.PHONY: setup lint test test-retrieval-metrics validate-dense-evaluation evaluate-dense services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-retrieval-metrics test-llm-judge validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -19,11 +19,26 @@ test:
 test-retrieval-metrics:
 	$(BIN)/python -m pytest tests/test_retrieval_metrics.py
 
+test-llm-judge:
+	$(BIN)/python -m pytest tests/test_llm_judge.py
+
 validate-dense-evaluation:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only
 
 evaluate-dense:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml
+
+validate-generation-judge:
+	PYTHONPATH=src $(BIN)/python scripts/judge_answers.py --config configs/generation_judge.yaml --validate-only
+
+judge-answers:
+	PYTHONPATH=src $(BIN)/python scripts/judge_answers.py --config configs/generation_judge.yaml
+
+review-judgments:
+	PYTHONPATH=src $(BIN)/python scripts/review_judgments.py --config configs/generation_judge.yaml
+
+validate-day20:
+	PYTHONPATH=src $(BIN)/python scripts/review_judgments.py --config configs/generation_judge.yaml --validate-only --require-reviewed
 
 services-up:
 	docker compose up -d qdrant mlflow

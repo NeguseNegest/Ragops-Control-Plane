@@ -1,0 +1,56 @@
+{
+  "automatic_metrics": {
+    "answer_relevance_distribution": {
+      "1": 4,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 6
+    },
+    "faithfulness_distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 2,
+      "4": 1,
+      "5": 7
+    },
+    "mean_answer_relevance": 3.4,
+    "mean_faithfulness": 4.5,
+    "refusal_verdict_counts": {
+      "correct": 2,
+      "incorrect": 4,
+      "not_applicable": 4
+    }
+  },
+  "generator": {
+    "model": "gpt-5-nano",
+    "provider": "openai"
+  },
+  "judge": {
+    "model": "gemini-3.6-flash",
+    "provider": "gemini"
+  },
+  "manual_review": {
+    "agreement_rate": 0.8,
+    "reviewed_count": 10,
+    "status_counts": {
+      "agree": 8,
+      "disagree": 2,
+      "pending": 0
+    }
+  },
+  "query_type_counts": {
+    "ambiguous": 2,
+    "supported": 6,
+    "unsupported": 2
+  },
+  "question_count": 10,
+  "run_name": "day20_generation_judge",
+  "schema_version": 1,
+  "timings_ms": {
+    "average_generation": 9259.10999130574,
+    "average_judge": 9900.929903704673,
+    "average_retrieval": 7581.079578393837,
+    "average_total": 26741.11947340425
+  }
+}

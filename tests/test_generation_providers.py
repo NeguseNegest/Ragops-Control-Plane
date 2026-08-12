@@ -118,3 +118,20 @@ def test_factory_requires_provider_api_key(monkeypatch, provider, key_name):
 def test_factory_rejects_unknown_provider():
     with pytest.raises(ValueError, match="Unsupported RAGOPS_LLM_PROVIDER"):
         factory_module.create_generation_client("unknown")
+
+
+def test_factory_explicit_model_overrides_provider_environment(monkeypatch):
+    calls = {}
+
+    def fake_client(model, api_key):
+        calls.update(model=model, api_key=api_key)
+        return "openai-client"
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("OPENAI_MODEL", "environment-model")
+    monkeypatch.setattr(factory_module, "OpenAIGenerationClient", fake_client)
+
+    client = factory_module.create_generation_client("openai", model="configured-judge-model")
+
+    assert client == "openai-client"
+    assert calls == {"model": "configured-judge-model", "api_key": "test-openai-key"}

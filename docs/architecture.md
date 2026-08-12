@@ -6,9 +6,9 @@ RAGOps Control Plane currently provides a dense-retrieval RAG path over local Fa
 
 - An offline workflow that cleans, chunks, embeds, and indexes documentation.
 - An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
-- An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, computes retrieval metrics, and runs the dense baseline against Qdrant.
+- An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, computes retrieval metrics, runs the dense baseline against Qdrant, and applies cross-provider LLM judging to generated answers.
 
-Retrieval evaluation is implemented; generation evaluation is not. BM25, hybrid retrieval, reranking, routing, caching, tracing, canary gates, failure mining, monitoring, and MLflow experiment logging remain planned.
+Retrieval evaluation and the Day 20 LLM-as-judge acceptance workflow are implemented. BM25, hybrid retrieval, reranking, routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
 
 ## System Diagram
 
@@ -43,6 +43,16 @@ flowchart LR
         Runner --> Metrics["Recall / MRR / Hit Rate / nDCG"]
         Metrics --> Reports["JSON + CSV reports"]
     end
+
+    subgraph GenerationEvaluation[Offline generation evaluation]
+        JudgeConfig[generation_judge.yaml] --> Sample["10-question stratified sample"]
+        Golden --> Sample
+        Sample -->|"retrieve top 5"| Qdrant
+        Qdrant --> EvalGenerator[OpenAI generator]
+        EvalGenerator --> EvalJudge[Gemini judge]
+        EvalJudge --> JudgeReports["Judgments JSONL + summary JSON"]
+        JudgeReports --> SpotCheck[Manual spot-check]
+    end
 ```
 
 ## Component Responsibilities
@@ -58,6 +68,8 @@ flowchart LR
 | Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
 | Evaluation runner | `src/ragops/evaluation/runner.py`, `scripts/evaluate.py` | Validate the dense YAML configuration, run every labeled query through Qdrant, and atomically write JSON and CSV reports. |
+| LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
+| Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
 
@@ -135,6 +147,28 @@ dense_baseline.yaml + retrieval_labels.jsonl
 
 Configuration paths are resolved from the project root. The runner verifies that `top_k` covers every requested metric cutoff, checks the collection before evaluating, preserves retrieval order, rejects duplicate or malformed results, and writes artifacts atomically only after every labeled question succeeds. JSON contains the complete run record; CSV provides stable per-question rows with aggregate metrics repeated for convenient analysis.
 
+The Day 20 generation evaluation is a separate pipeline:
+
+```text
+golden_qa.jsonl + generation_judge.yaml
+                 |
+     deterministic 6/2/2 query-type sample
+                 |
+       dense top-5 retrieval from Qdrant
+                 |
+      OpenAI answer generation
+                 |
+      Gemini rubric judgment
+                 |
+   judgments JSONL + summary JSON
+                 |
+       manual agree/disagree audit
+```
+
+The default cross-provider roles reduce direct self-evaluation: OpenAI `gpt-5-nano` generates and Gemini `gemini-3.6-flash` judges. Every record retains the full retrieved evidence and model provenance. Faithfulness is grounded only in retrieved evidence; the golden reference answer is used for relevance. The parser requires 1–5 scores and enforces refusal semantics: supported answers use `not_applicable`, ambiguous questions require clarification, and unsupported questions require refusal. This judge is an evaluation signal rather than ground truth, so the configured 10 spot-checks remain part of acceptance.
+
+The recorded Day 20 acceptance run completed all 10 questions with mean faithfulness 4.5/5 and mean answer relevance 3.4/5. The stored `codex-manual-audit` reviewed every automatic judgment, agreeing with eight and documenting two relevance-score disagreements; it is an implementation audit, not human sign-off. Because the Docker-backed Qdrant endpoint was unresponsive, this run populated a temporary local Qdrant store from the same 13,481 processed chunks and used the production dense retriever against it. Its cold-start retrieval timings should not be treated as service latency.
+
 Raw documents and processed embedding JSONL are intentionally ignored by Git. Their source URLs, selected paths, snapshot commits, and destination paths are recorded in `data/manifests/source_manifest.json`. Reviewed evaluation JSONL is versioned with the project.
 
 ## Online Request Flow
@@ -172,7 +206,7 @@ Generation configuration is resolved once when `create_app()` initializes its cl
 | `GEMINI_API_KEY` | none | Required only when the selected runtime provider is `gemini`; also used by synthetic generation when Gemini is requested. |
 | `GEMINI_MODEL` | `gemini-3.6-flash` | Model passed to the Gemini Interactions API client. |
 
-Both provider credentials may be configured simultaneously, but the online API uses only the selected provider until it is restarted. The synthetic QA CLI is different: it loads `.env` itself and can call OpenAI and Gemini in the same batch. Host-run `make serve` and `make dashboard` do not load `.env` automatically. Docker Compose does read `.env` and forwards generation settings to the API container.
+Both provider credentials may be configured simultaneously, but the online API uses only the selected provider until it is restarted. The synthetic QA and Day 20 judge CLIs are different: they load `.env` themselves and can assign OpenAI and Gemini separate roles in the same batch. Host-run `make serve` and `make dashboard` do not load `.env` automatically. Docker Compose does read `.env` and forwards generation settings to the API container.
 
 ## Error Boundaries
 
@@ -187,8 +221,9 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 - Only dense retrieval is implemented.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
-- The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
-- Retrieval is the only evaluated stage. Faithfulness, answer relevance, refusal correctness, latency/cost accounting for generation, and LLM-as-judge scoring are not implemented.
+- The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. The offline judge measures these qualities after the fact. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
+- Day 20 generation scores come from one judge model over 10 questions. All 10 have a separate Codex evidence audit, but they do not have independent human sign-off and are not a substitute for larger samples, multiple judges, calibrated human labels, or statistical uncertainty estimates.
+- Generation token usage and cost are not captured, and judge results are not logged to MLflow.
 - The corpus and generated embeddings are local artifacts and are not distributed in Git.
 - Ingestion and index building load the full current record set into memory.
 - Source references are usually corpus-relative paths rather than public documentation URLs.
@@ -203,4 +238,4 @@ The repository contains empty files reserved for later project-plan milestones. 
 - configurations: `bm25_baseline.yaml`, `hybrid.yaml`, `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
 - tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
-- topic documents: `canary_gates.md`, `evaluation.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`
+- topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`

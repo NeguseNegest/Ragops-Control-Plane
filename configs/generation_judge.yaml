@@ -1,0 +1,31 @@
+name: day20_generation_judge
+
+retrieval:
+  collection_name: rag_chunks
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  top_k: 5
+
+generation:
+  provider: openai
+  model: gpt-5-nano
+
+judge:
+  provider: gemini
+  model: gemini-3.6-flash
+
+dataset:
+  golden_path: data/eval/golden_qa.jsonl
+  sample_size: 10
+  seed: 20
+  query_type_counts:
+    supported: 6
+    ambiguous: 2
+    unsupported: 2
+
+manual_review:
+  minimum_spot_checks: 10
+
+output:
+  directory: reports/evaluations
+
+require_cross_provider_judge: true
