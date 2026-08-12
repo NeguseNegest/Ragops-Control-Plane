@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements the dense RAG baseline and its retrieval and LLM-as-judge evaluation workflows through Day 20; cost controls and promotion gates remain roadmap features.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements the dense RAG baseline, its retrieval and LLM-as-judge evaluation workflows, and the first measured benchmark report through Day 21; cost controls and promotion gates remain roadmap features.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 20 of the project plan, including the authorized real-provider run and all 10 configured spot-checks. The current baseline includes:
+Implementation is complete through Day 21 of the project plan, including the authorized real-provider run, all 10 configured spot-checks, and the first evidence-backed dense retrieval report. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -60,6 +60,19 @@ Current limitations:
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
 - Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow tracking, cost accounting, tracing, routing, caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
+
+## First Measured Baseline
+
+The recorded dense baseline evaluated 45 verified questions against 13,481 indexed chunks. The full [Week 3 benchmark report](reports/week3_dense_baseline.md) documents the setup, corpus-level results, latency caveats, and concrete failure examples.
+
+| Cutoff | Recall@k | Hit Rate@k | nDCG@k |
+| ---: | ---: | ---: | ---: |
+| 1 | 0.2667 | 0.2667 | 0.2667 |
+| 3 | 0.3111 | 0.3111 | 0.2918 |
+| 5 | 0.4444 | 0.4444 | 0.3473 |
+| 10 | 0.6000 | 0.6000 | 0.3964 |
+
+MRR was `0.3359`. Mean latency was `679.9 ms` including a `24,009.5 ms` first-query embedding-model cold start; the remaining 44 queries averaged `149.6 ms`. Because every question currently has one labeled relevant chunk, Recall@k and Hit Rate@k are equal in this run.
 
 ## Quickstart
 
@@ -296,4 +309,4 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 
 ## Next Milestone
 
-Proceed to Day 21: produce the first Markdown benchmark report, metrics table, and documented failure examples from the recorded evaluation artifacts.
+Proceed to Day 22: implement a persisted BM25 index and sparse retriever, then use the Week 3 dense report as the comparison baseline.
