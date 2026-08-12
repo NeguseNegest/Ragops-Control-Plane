@@ -243,7 +243,27 @@ hybrid_rerank.yaml + query
 
 `cross-encoder/ms-marco-MiniLM-L-6-v2` receives paired query and chunk text rather than independently encoded vectors. The wrapper validates that the model returns one finite scalar per candidate. Sorting uses descending cross-encoder score, then the original RRF rank and chunk ID for deterministic ties. Every output remains a `RetrievedChunk`: its final `score` is the raw cross-encoder relevance logit, `_reranker` records model name plus the prior RRF rank and score, and `_fusion` continues to record dense/BM25 ranks, source scores, and contributions.
 
-The CLI validates BM25 provenance before retrieval, closes Qdrant on success or failure, and reports model-load, dense, BM25, fusion, reranker, and total pipeline latency separately. `--validate-only` deliberately avoids Qdrant and model loading. This is functional Day 26 acceptance, not retrieval-quality evidence; Day 27 will evaluate the candidate on all verified labels.
+The CLI validates BM25 provenance before retrieval, closes Qdrant on success or failure, and reports model-load, dense, BM25, fusion, reranker, and total pipeline latency separately. `--validate-only` deliberately avoids Qdrant and model loading. This is functional Day 26 acceptance; Day 27 evaluates the same candidate on all verified labels.
+
+Day 27 adds the evaluation path:
+
+```text
+dense report + BM25 report + Day 25 RRF report + labels
+                              |
+         validate identities, component settings, and BM25 SHA
+                              |
+  45 × (dense 25 + BM25 25 -> RRF 25 -> cross-encoder 5)
+                              |
+ retain RRF-25 candidates + reranked results + stage timings
+                              |
+ common top-5 four-way comparison + controlled reranker ablation
+                              |
+       JSON/CSV run + JSON/Markdown benchmark
+```
+
+The common depth is important: baseline rankings are truncated to five and the primary metric is MRR@5, avoiding a comparison between a five-result reranker and baseline MRR over ten results. The controlled ablation compares the exact RRF-25 order from the live run before and after cross-encoding, isolating reranking from Day 25's different candidate depths.
+
+Measured MRR@5 is dense `0.3163`, BM25 `0.6152`, Day 25 RRF `0.5641`, and reranked `0.6889`. The cross-encoder improves its own pre-rerank MRR@5 from `0.5644` to `0.6889`, with 16 paired wins, five losses, and 24 ties. It recovers six pre-rerank top-five misses but loses one prior hit. Warmed end-to-end latency averages `4,476.4 ms`; the reranker alone averages `4,274.9 ms`, so the quality gain comes with a large serving-cost penalty.
 
 The Day 20 generation evaluation is a separate pipeline:
 
@@ -318,7 +338,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 ## Current Limitations
 
 - Dense retrieval remains the only online retriever. BM25, RRF hybrid, and hybrid-plus-reranker retrieval are available offline, but none is exposed through the API.
-- The evaluated unweighted RRF candidate does not beat BM25 on the current lexically aligned labels. The cross-encoder candidate is functionally implemented but remains unmeasured until Day 27, so it is not an accepted improvement.
+- The cross-encoder has the highest measured MRR@5 on the current labels, but its warmed stage averages about 4.27 seconds per query. It remains an offline candidate until latency is reduced or routing limits its use.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
 - The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. The offline judge measures these qualities after the fact. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
 - Day 20 generation scores come from one judge model over 10 questions. All 10 have a separate Codex evidence audit, but they do not have independent human sign-off and are not a substitute for larger samples, multiple judges, calibrated human labels, or statistical uncertainty estimates.

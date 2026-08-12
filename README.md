@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval, paired three-way retrieval evaluation, LLM-as-judge evaluation, and measured benchmark reports through Day 25; the Day 26 reranker is implemented but intentionally not benchmarked until Day 27.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval, strict four-way retrieval evaluation, LLM-as-judge evaluation, and measured benchmark reports through Day 27.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 26 of the project plan, including a functional hybrid-plus-cross-encoder retrieval path. The current baseline includes:
+Implementation is complete through Day 27 of the project plan, including a measured hybrid-plus-cross-encoder benchmark. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -55,6 +55,7 @@ Implementation is complete through Day 26 of the project plan, including a funct
 - deterministic retrieval metrics and a real dense-baseline evaluation CLI
 - a provenance-checked BM25 evaluation CLI, paired per-question comparison, wording-cohort analysis, and reproducible JSON/CSV/Markdown reports
 - a live hybrid evaluator with dense/BM25/fusion component timings, strict corpus and label parity checks, three-way paired outcomes, relevance-group analysis, and failure reporting
+- a live cross-encoder evaluator with a common-depth four-way comparison, controlled pre-rerank ablation, cold/warm component latency, and explicit reranking regressions
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
@@ -62,26 +63,25 @@ Current limitations:
 
 - Dense retrieval remains the only retriever connected to the online API. BM25, RRF hybrid, and hybrid-plus-reranker retrieval are available through offline CLIs but are not exposed through `POST /retrieve` and `POST /query`.
 - Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; it is an evaluated candidate, not the selected retrieval baseline.
-- The Day 26 cross-encoder path has only functional acceptance evidence. Its retrieval quality and latency tradeoff remain unmeasured across the label set until Day 27.
+- The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query and is not suitable for the online path without latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
 - Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow tracking, cost accounting, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
-## Dense vs BM25 vs Hybrid Benchmark
+## Dense vs BM25 vs Hybrid vs Reranker Benchmark
 
-Day 25 evaluates dense-top-20 plus BM25-top-20 RRF on the same 45 verified questions and final top-10 cutoffs as both component baselines. The complete [three-way hybrid report](reports/week4_hybrid_comparison.md) records every gain, regression, failure, latency stage, and validity caveat. The earlier [dense-vs-BM25 report](reports/week4_bm25_comparison.md) and [dense benchmark](reports/week3_dense_baseline.md) retain their detailed analyses.
+Day 27 compares dense, BM25, Day 25 RRF, and hybrid plus cross-encoder retrieval over the same 45 verified questions. Because the reranker returns five results, every headline ranking is truncated to five and MRR is reported as MRR@5. The complete [four-way reranker report](reports/week4_reranker_comparison.md) includes the controlled RRF-25 ablation, latency tradeoff, and every gain and regression. The [three-way hybrid report](reports/week4_hybrid_comparison.md), [dense-vs-BM25 report](reports/week4_bm25_comparison.md), and [dense benchmark](reports/week3_dense_baseline.md) retain the earlier full-depth analyses.
 
-| Metric | Dense | BM25 | RRF hybrid | Hybrid − dense | Hybrid − BM25 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| MRR | 0.3359 | **0.6189** | 0.5765 | +0.2406 | -0.0424 |
-| Recall / Hit Rate@1 | 0.2667 | **0.4667** | **0.4667** | +0.2000 | 0.0000 |
-| Recall / Hit Rate@3 | 0.3111 | **0.7556** | 0.6444 | +0.3333 | -0.1111 |
-| Recall / Hit Rate@5 | 0.4444 | **0.8444** | 0.7556 | +0.3111 | -0.0889 |
-| Recall / Hit Rate@10 | 0.6000 | **0.8667** | 0.8444 | +0.2444 | -0.0222 |
-| nDCG@10 | 0.3964 | **0.6806** | 0.6405 | +0.2441 | -0.0401 |
+| Metric | Dense | BM25 | RRF hybrid | Hybrid + reranker |
+| --- | ---: | ---: | ---: | ---: |
+| MRR@5 | 0.3163 | 0.6152 | 0.5641 | **0.6889** |
+| Recall / Hit Rate@1 | 0.2667 | 0.4667 | 0.4667 | **0.5778** |
+| Recall / Hit Rate@3 | 0.3111 | **0.7556** | 0.6444 | **0.7556** |
+| Recall / Hit Rate@5 | 0.4444 | **0.8444** | 0.7556 | **0.8444** |
+| nDCG@5 | 0.3473 | 0.6727 | 0.6112 | **0.7282** |
 
-Hybrid wins 26 paired ranks against dense, loses one, and ties 18; against BM25 it wins 10, loses 14, and ties 21. The result answers Day 25 negatively: unweighted RRF improves on dense but does not improve on the stronger BM25 baseline. Consensus promotion helps when both components locate useful evidence, but it can demote strong BM25-only chunks; one BM25 top-10 hit is lost entirely. Giving each of the 20 unique labeled chunks equal weight still leaves hybrid MRR 3.2 percentage points below BM25. These source-derived labels retain lexical overlap and contain one judged chunk per question, so the result selects BM25 only for this benchmark—not universally.
+Reranking improves MRR@5 by 7.4 percentage points over BM25 and 12.5 points over the Day 25 RRF ranking. Against its own RRF-25 candidate order, it wins 16 question ranks, loses five, ties 24, recovers six top-five misses, and loses one prior hit; MRR@5 rises from `0.5644` to `0.6889`. It also matches BM25 Hit@5 while placing more labels first. The tradeoff is material: warmed end-to-end latency averages `4,476.4 ms`, including `4,274.9 ms` in the reranker, versus an in-run retrieval-plus-fusion estimate of about `333.7 ms` across the full run. Equal weighting over the 20 unique labeled chunks preserves the measured improvement, but source-derived single-chunk labels and an unpinned model revision limit generalization.
 
 ## Quickstart
 
@@ -362,9 +362,35 @@ PYTHONPATH=src .venv/bin/python scripts/retrieve_hybrid_rerank.py \
   --json
 ```
 
-The first execution may download and load the configured Hugging Face model. Readable and JSON output separate model-load time from dense, BM25, fusion, cross-encoder, and total pipeline latency. Final scores are raw cross-encoder relevance logits; `_reranker` metadata retains the RRF candidate rank and score, while `_fusion` retains dense and BM25 provenance. Day 26 establishes functional behavior only—the 45-question quality and latency comparison belongs to Day 27.
+The first execution may download and load the configured Hugging Face model. Readable and JSON output separate model-load time from dense, BM25, fusion, cross-encoder, and total pipeline latency. Final scores are raw cross-encoder relevance logits; `_reranker` metadata retains the RRF candidate rank and score, while `_fusion` retains dense and BM25 provenance. Day 26 establishes functional behavior; Day 27 below measures the fixed candidate.
 
 The real Day 26 acceptance query used the live local collection and current 13,476-document BM25 index. The verified vector-operation chunk moved from RRF candidate rank 9 to final rank 2. This cold process measured `53,219.4 ms` to download/load the cross-encoder, `7,042.6 ms` for reranking, and `13,330.6 ms` for retrieval plus reranking; those one-query cold timings demonstrate observability, not representative steady-state performance.
+
+### Evaluate hybrid plus cross-encoder reranking
+
+Day 27 extends `configs/hybrid_rerank.yaml` with the fixed label set, dense/BM25/RRF reports, common `[1, 3, 5]` cutoffs, and output paths. Preflight validates all labels, component settings, report coverage, and the current BM25 source hash without connecting to Qdrant or loading the model:
+
+```bash
+make validate-reranker-evaluation
+make test-reranker-evaluation
+```
+
+With `rag_chunks` running, reproduce the live benchmark:
+
+```bash
+make evaluate-reranker
+```
+
+Outputs:
+
+```text
+reports/evaluations/hybrid_rrf_cross_encoder.json
+reports/evaluations/hybrid_rrf_cross_encoder.csv
+reports/evaluations/reranker_vs_baselines.json
+reports/week4_reranker_comparison.md
+```
+
+The evaluator loads one cross-encoder for all 45 questions, retains each full RRF-25 candidate order and final top five, validates `_fusion` and `_reranker` provenance, and records model-load plus dense/BM25/fusion/reranker latency. The comparison recomputes all four official pipelines at top five and adds an in-run RRF-25-before-reranking ablation. See the benchmark table above and the full report for the measured result and validity limits.
 
 ### Generate and judge the Day 20 acceptance sample
 
@@ -450,7 +476,7 @@ query -> BM25 top 25 ---+
 - `src/ragops/retrieval`: dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, dense and BM25 evaluation/comparison, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker evaluation and comparison, and LLM-as-judge orchestration
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
 - `dashboard/app.py`: Streamlit query playground
 - `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, and evaluation commands; later-milestone script files remain empty placeholders
@@ -459,4 +485,4 @@ query -> BM25 top 25 ---+
 
 ## Next Milestone
 
-Proceed to Day 27: evaluate hybrid plus cross-encoder reranking over the verified label set, compare its quality and latency with dense, BM25, and RRF, and record regressions where reranking hurts.
+Proceed to Day 28: refactor retrievers behind a common interface, consolidate RRF/reranking tests and configuration, and keep the complete suite green.

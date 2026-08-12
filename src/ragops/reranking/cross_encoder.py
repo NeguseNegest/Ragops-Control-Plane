@@ -64,6 +64,48 @@ class CrossEncoderConfig(StrictModel):
         return self
 
 
+class RerankerEvaluationDatasetConfig(StrictModel):
+    """Verified labels and fixed reports used for the Day 27 comparison."""
+
+    labels_path: Path = Path("data/eval/retrieval_labels.jsonl")
+    k_values: list[int] = Field(default_factory=lambda: [1, 3, 5], min_length=1)
+    minimum_labels: int = Field(default=40, gt=0)
+    dense_baseline_path: Path = Path("reports/evaluations/dense_baseline.json")
+    bm25_baseline_path: Path = Path("reports/evaluations/bm25_baseline.json")
+    hybrid_baseline_path: Path = Path("reports/evaluations/hybrid_rrf.json")
+
+    @field_validator("labels_path", "dense_baseline_path", "bm25_baseline_path", "hybrid_baseline_path", mode="before")
+    @classmethod
+    def validate_evaluation_path(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("Reranker evaluation paths must not be empty.")
+        return value
+
+    @field_validator("k_values")
+    @classmethod
+    def validate_metric_cutoffs(cls, values):
+        if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in values):
+            raise ValueError("k_values must contain positive integers.")
+        if len(values) != len(set(values)):
+            raise ValueError("k_values must not contain duplicates.")
+        return sorted(values)
+
+
+class RerankerEvaluationOutputConfig(StrictModel):
+    """Day 27 run and four-way comparison artifact destinations."""
+
+    directory: Path = Path("reports/evaluations")
+    comparison_path: Path = Path("reports/evaluations/reranker_vs_baselines.json")
+    report_path: Path = Path("reports/week4_reranker_comparison.md")
+
+    @field_validator("directory", "comparison_path", "report_path", mode="before")
+    @classmethod
+    def validate_output_path(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("Reranker output paths must not be empty.")
+        return value
+
+
 class HybridRerankConfig(StrictModel):
     """Dense plus BM25 fusion followed by cross-encoder reranking."""
 
@@ -73,6 +115,8 @@ class HybridRerankConfig(StrictModel):
     bm25: BM25RetrieverConfig
     fusion: ReciprocalRankFusionConfig
     reranker: CrossEncoderConfig
+    evaluation: RerankerEvaluationDatasetConfig | None = None
+    output: RerankerEvaluationOutputConfig | None = None
 
     @field_validator("name")
     @classmethod
@@ -90,6 +134,10 @@ class HybridRerankConfig(StrictModel):
             raise ValueError("bm25.top_k must be at least fusion.top_k.")
         if self.fusion.top_k != self.reranker.candidate_top_k:
             raise ValueError("fusion.top_k must equal reranker.candidate_top_k so every fused candidate is reranked.")
+        if (self.evaluation is None) != (self.output is None):
+            raise ValueError("Reranker evaluation and output settings must be configured together.")
+        if self.evaluation is not None and self.reranker.top_k < max(self.evaluation.k_values):
+            raise ValueError("reranker.top_k must be at least the largest evaluation cutoff.")
         return self
 
     def bm25_validation_config(self):
@@ -114,7 +162,25 @@ def load_hybrid_rerank_config(config_path, project_root=None):
     project_root = Path(project_root or Path.cwd()).resolve()
     input_config = config.input.model_copy(update={"chunks_path": resolve_project_path(config.input.chunks_path, project_root)})
     bm25_config = config.bm25.model_copy(update={"index_path": resolve_project_path(config.bm25.index_path, project_root)})
-    return config.model_copy(update={"input": input_config, "bm25": bm25_config})
+    updates = {"input": input_config, "bm25": bm25_config}
+    if config.evaluation is not None:
+        updates["evaluation"] = config.evaluation.model_copy(
+            update={
+                "labels_path": resolve_project_path(config.evaluation.labels_path, project_root),
+                "dense_baseline_path": resolve_project_path(config.evaluation.dense_baseline_path, project_root),
+                "bm25_baseline_path": resolve_project_path(config.evaluation.bm25_baseline_path, project_root),
+                "hybrid_baseline_path": resolve_project_path(config.evaluation.hybrid_baseline_path, project_root),
+            }
+        )
+    if config.output is not None:
+        updates["output"] = config.output.model_copy(
+            update={
+                "directory": resolve_project_path(config.output.directory, project_root),
+                "comparison_path": resolve_project_path(config.output.comparison_path, project_root),
+                "report_path": resolve_project_path(config.output.report_path, project_root),
+            }
+        )
+    return config.model_copy(update=updates)
 
 
 class CrossEncoderReranker:
@@ -344,6 +410,8 @@ __all__ = [
     "CrossEncoderReranker",
     "HybridRerankConfig",
     "RERANKER_METADATA_KEY",
+    "RerankerEvaluationDatasetConfig",
+    "RerankerEvaluationOutputConfig",
     "build_cross_encoder_reranker",
     "configured_qdrant_url",
     "load_hybrid_rerank_config",
