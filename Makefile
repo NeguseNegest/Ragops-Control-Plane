@@ -5,7 +5,7 @@ PIP := $(BIN)/python -m pip
 HYBRID_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 RERANK_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 
-.PHONY: setup lint test test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -17,6 +17,9 @@ lint:
 
 test:
 	$(BIN)/python -m pytest
+
+test-retrieval-interface:
+	$(BIN)/python -m pytest tests/test_retriever_interface.py tests/test_hybrid.py tests/test_reranking.py
 
 test-retrieval-metrics:
 	$(BIN)/python -m pytest tests/test_retrieval_metrics.py

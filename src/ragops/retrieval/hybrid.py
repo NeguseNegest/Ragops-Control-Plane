@@ -10,8 +10,9 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ragops.indexing.qdrant import DEFAULT_COLLECTION_NAME, DEFAULT_QDRANT_URL
-from ragops.retrieval.bm25 import BM25Config, BM25InputConfig, BM25RetrieverConfig, retrieve_bm25
-from ragops.retrieval.dense import DEFAULT_EMBEDDING_MODEL, RetrievedChunk, retrieve_dense, validate_query
+from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE, FunctionRetriever, Retriever, resolve_top_k, validate_timings, validate_top_k
+from ragops.retrieval.bm25 import BM25Config, BM25InputConfig, BM25Retriever, BM25RetrieverConfig, retrieve_bm25
+from ragops.retrieval.dense import DEFAULT_EMBEDDING_MODEL, DenseRetriever, RetrievedChunk, retrieve_dense, validate_query
 
 DEFAULT_DENSE_CANDIDATES = 20
 DEFAULT_BM25_CANDIDATES = 20
@@ -112,6 +113,7 @@ class HybridConfig(StrictModel):
     """Complete dense-plus-BM25 retrieval and optional evaluation config."""
 
     name: str = Field(min_length=1)
+    retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     input: BM25InputConfig
     dense: HybridDenseConfig
     bm25: BM25RetrieverConfig
@@ -308,6 +310,105 @@ def reciprocal_rank_fusion(rankings, top_k=DEFAULT_HYBRID_TOP_K, rank_constant=D
     return results
 
 
+class HybridRetriever(Retriever):
+    """Configured dense-plus-sparse RRF pipeline using the common interface."""
+
+    def __init__(
+        self,
+        dense_retriever,
+        bm25_retriever,
+        dense_top_k=DEFAULT_DENSE_CANDIDATES,
+        bm25_top_k=DEFAULT_BM25_CANDIDATES,
+        default_top_k=DEFAULT_HYBRID_TOP_K,
+        rank_constant=DEFAULT_RRF_CONSTANT,
+        clock=time.perf_counter,
+    ):
+        super().__init__(default_top_k)
+        if not callable(getattr(dense_retriever, "retrieve", None)):
+            raise ValueError("dense_retriever must implement retrieve(query, top_k, timings).")
+        if not callable(getattr(bm25_retriever, "retrieve", None)):
+            raise ValueError("bm25_retriever must implement retrieve(query, top_k, timings).")
+        self.dense_retriever = dense_retriever
+        self.bm25_retriever = bm25_retriever
+        self.dense_top_k = validate_top_k(dense_top_k, "dense_top_k")
+        self.bm25_top_k = validate_top_k(bm25_top_k, "bm25_top_k")
+        self.rank_constant = _validate_rank_constant(rank_constant)
+        self.clock = clock
+        if self.dense_top_k < self.default_top_k or self.bm25_top_k < self.default_top_k:
+            raise ValueError("Candidate depths must each be at least default_top_k.")
+
+    def retrieve(self, query, top_k=None, timings=None):
+        query = validate_query(query)
+        top_k = resolve_top_k(top_k, self.default_top_k)
+        validate_timings(timings)
+        if self.dense_top_k < top_k or self.bm25_top_k < top_k:
+            raise ValueError("Candidate depths must each be at least top_k.")
+
+        dense_started_at = self.clock()
+        try:
+            dense_results = list(self.dense_retriever.retrieve(query, top_k=self.dense_top_k))
+        except Exception as error:
+            raise RuntimeError(f"Dense candidate retrieval failed: {error}") from error
+        dense_latency_ms = max(0.0, (self.clock() - dense_started_at) * 1000)
+
+        bm25_started_at = self.clock()
+        try:
+            bm25_results = list(self.bm25_retriever.retrieve(query, top_k=self.bm25_top_k))
+        except Exception as error:
+            raise RuntimeError(f"BM25 candidate retrieval failed: {error}") from error
+        bm25_latency_ms = max(0.0, (self.clock() - bm25_started_at) * 1000)
+
+        fusion_started_at = self.clock()
+        results = reciprocal_rank_fusion(
+            {"dense": dense_results, "bm25": bm25_results},
+            top_k=top_k,
+            rank_constant=self.rank_constant,
+        )
+        fusion_latency_ms = max(0.0, (self.clock() - fusion_started_at) * 1000)
+        if timings is not None:
+            timings.update(
+                {
+                    "dense_ms": dense_latency_ms,
+                    "bm25_ms": bm25_latency_ms,
+                    "fusion_ms": fusion_latency_ms,
+                }
+            )
+        return results
+
+
+def build_hybrid_retriever(config, client, index, dense_retriever=retrieve_dense, bm25_retriever=retrieve_bm25, clock=time.perf_counter):
+    """Build one common-interface hybrid pipeline from validated config."""
+    if dense_retriever is retrieve_dense:
+        dense = DenseRetriever(
+            client,
+            collection_name=config.dense.collection_name,
+            embedding_model=config.dense.embedding_model,
+            default_top_k=config.dense.top_k,
+            clock=clock,
+        )
+    else:
+        dense = FunctionRetriever(
+            dense_retriever,
+            config.dense.top_k,
+            client=client,
+            collection_name=config.dense.collection_name,
+            embedding_model=config.dense.embedding_model,
+        )
+    if bm25_retriever is retrieve_bm25:
+        sparse = BM25Retriever(index, default_top_k=config.bm25.top_k, clock=clock)
+    else:
+        sparse = FunctionRetriever(bm25_retriever, config.bm25.top_k, index=index)
+    return HybridRetriever(
+        dense,
+        sparse,
+        dense_top_k=config.dense.top_k,
+        bm25_top_k=config.bm25.top_k,
+        default_top_k=config.fusion.top_k,
+        rank_constant=config.fusion.rank_constant,
+        clock=clock,
+    )
+
+
 def retrieve_hybrid(
     query,
     client,
@@ -324,53 +425,24 @@ def retrieve_hybrid(
     timings=None,
 ):
     """Retrieve dense and sparse candidates, then fuse them into one ranking."""
-    query = validate_query(query)
-    dense_top_k = _validate_positive_integer(dense_top_k, "dense_top_k")
-    bm25_top_k = _validate_positive_integer(bm25_top_k, "bm25_top_k")
-    top_k = _validate_positive_integer(top_k, "top_k")
-    if dense_top_k < top_k or bm25_top_k < top_k:
-        raise ValueError("Candidate depths must each be at least top_k.")
-
-    dense_started_at = clock()
-    try:
-        dense_results = list(
-            dense_retriever(
-                query=query,
-                client=client,
-                top_k=dense_top_k,
-                collection_name=collection_name,
-                embedding_model=embedding_model,
-            )
-        )
-    except Exception as error:
-        raise RuntimeError(f"Dense candidate retrieval failed: {error}") from error
-    dense_latency_ms = max(0.0, (clock() - dense_started_at) * 1000)
-
-    bm25_started_at = clock()
-    try:
-        bm25_results = list(bm25_retriever(query=query, index=index, top_k=bm25_top_k))
-    except Exception as error:
-        raise RuntimeError(f"BM25 candidate retrieval failed: {error}") from error
-    bm25_latency_ms = max(0.0, (clock() - bm25_started_at) * 1000)
-
-    fusion_started_at = clock()
-    results = reciprocal_rank_fusion(
-        {"dense": dense_results, "bm25": bm25_results},
-        top_k=top_k,
-        rank_constant=rank_constant,
+    dense = FunctionRetriever(
+        dense_retriever,
+        dense_top_k,
+        client=client,
+        collection_name=collection_name,
+        embedding_model=embedding_model,
     )
-    fusion_latency_ms = max(0.0, (clock() - fusion_started_at) * 1000)
-    if timings is not None:
-        if not isinstance(timings, dict):
-            raise ValueError("timings must be a dictionary when provided.")
-        timings.update(
-            {
-                "dense_ms": dense_latency_ms,
-                "bm25_ms": bm25_latency_ms,
-                "fusion_ms": fusion_latency_ms,
-            }
-        )
-    return results
+    sparse = FunctionRetriever(bm25_retriever, bm25_top_k, index=index)
+    retriever = HybridRetriever(
+        dense,
+        sparse,
+        dense_top_k=dense_top_k,
+        bm25_top_k=bm25_top_k,
+        default_top_k=top_k,
+        rank_constant=rank_constant,
+        clock=clock,
+    )
+    return retriever.retrieve(query, timings=timings)
 
 
 def retrieve_hybrid_config(
@@ -384,18 +456,5 @@ def retrieve_hybrid_config(
     timings=None,
 ):
     """Run hybrid retrieval using one validated Day 24 configuration."""
-    return retrieve_hybrid(
-        query=query,
-        client=client,
-        index=index,
-        dense_top_k=config.dense.top_k,
-        bm25_top_k=config.bm25.top_k,
-        top_k=config.fusion.top_k,
-        rank_constant=config.fusion.rank_constant,
-        collection_name=config.dense.collection_name,
-        embedding_model=config.dense.embedding_model,
-        dense_retriever=dense_retriever,
-        bm25_retriever=bm25_retriever,
-        clock=clock,
-        timings=timings,
-    )
+    retriever = build_hybrid_retriever(config, client, index, dense_retriever=dense_retriever, bm25_retriever=bm25_retriever, clock=clock)
+    return retriever.retrieve(query, timings=timings)

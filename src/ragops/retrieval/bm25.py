@@ -2,6 +2,7 @@ import gzip
 import hashlib
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any, Literal
 
@@ -9,6 +10,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from rank_bm25 import BM25Okapi
 
+from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE, Retriever, resolve_top_k, validate_timings
 from ragops.retrieval.dense import DEFAULT_TOP_K, RetrievedChunk, source_url_from_metadata, validate_query
 
 BM25_INDEX_SCHEMA_VERSION = 1
@@ -114,6 +116,7 @@ class BM25Config(StrictModel):
     """Complete BM25 index configuration with optional Day 23 evaluation."""
 
     name: str = Field(min_length=1)
+    retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     input: BM25InputConfig
     retriever: BM25RetrieverConfig
     evaluation: BM25EvaluationDatasetConfig | None = None
@@ -443,10 +446,28 @@ def validate_bm25_index(index, config, verify_source_hash=True):
     return payload
 
 
+class BM25Retriever(Retriever):
+    """Configured sparse retriever implementing the common retrieval interface."""
+
+    def __init__(self, index, default_top_k=DEFAULT_TOP_K, clock=time.perf_counter):
+        super().__init__(default_top_k)
+        if isinstance(index, (str, Path)):
+            index = load_bm25_index(index)
+        if not isinstance(index, BM25Index):
+            raise ValueError("index must be a BM25Index or a path to a persisted BM25 index.")
+        self.index = index
+        self.clock = clock
+
+    def retrieve(self, query, top_k=None, timings=None):
+        top_k = resolve_top_k(top_k, self.default_top_k)
+        validate_timings(timings)
+        started_at = self.clock() if timings is not None else None
+        results = self.index.search(query, top_k=top_k)
+        if started_at is not None:
+            timings["bm25_ms"] = max(0.0, (self.clock() - started_at) * 1000)
+        return results
+
+
 def retrieve_bm25(query, index, top_k=DEFAULT_TOP_K):
     """Return ranked sparse chunks from a loaded index or persisted index path."""
-    if isinstance(index, (str, Path)):
-        index = load_bm25_index(index)
-    if not isinstance(index, BM25Index):
-        raise ValueError("index must be a BM25Index or a path to a persisted BM25 index.")
-    return index.search(query, top_k=top_k)
+    return BM25Retriever(index, default_top_k=top_k).retrieve(query)

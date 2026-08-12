@@ -1,6 +1,9 @@
+import time
+
 from pydantic import BaseModel
 
 from ragops.indexing.qdrant import DEFAULT_COLLECTION_NAME, embed_query, search_index
+from ragops.retrieval.base import Retriever, resolve_top_k, validate_timings
 
 DEFAULT_TOP_K = 5
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -62,11 +65,30 @@ def build_retrieved_chunks(results):
     return [build_retrieved_chunk(result, rank) for rank, result in enumerate(results, start=1)]
 
 
+class DenseRetriever(Retriever):
+    """Configured dense retriever implementing the common retrieval interface."""
+
+    def __init__(self, client, collection_name=DEFAULT_COLLECTION_NAME, embedding_model=DEFAULT_EMBEDDING_MODEL, default_top_k=DEFAULT_TOP_K, clock=time.perf_counter):
+        super().__init__(default_top_k)
+        self.client = client
+        self.collection_name = collection_name
+        self.embedding_model = embedding_model
+        self.clock = clock
+
+    def retrieve(self, query, top_k=None, timings=None):
+        query = validate_query(query)
+        top_k = resolve_top_k(top_k, self.default_top_k)
+        validate_timings(timings)
+        started_at = self.clock() if timings is not None else None
+        query_vector = embed_query(query, self.embedding_model)
+        results = search_index(self.client, self.collection_name, query_vector, top_k=top_k)
+        chunks = build_retrieved_chunks(results)
+        if started_at is not None:
+            timings["dense_ms"] = max(0.0, (self.clock() - started_at) * 1000)
+        return chunks
+
+
 def retrieve_dense(query, client, top_k=DEFAULT_TOP_K, collection_name=DEFAULT_COLLECTION_NAME, embedding_model=DEFAULT_EMBEDDING_MODEL):
     """Embed one query, search Qdrant, and return ranked dense results."""
- 
-    query = validate_query(query)
-    query_vector = embed_query(query, embedding_model)
-    results = search_index(client, collection_name, query_vector, top_k=top_k)
-
-    return build_retrieved_chunks(results)
+    retriever = DenseRetriever(client, collection_name=collection_name, embedding_model=embedding_model, default_top_k=top_k)
+    return retriever.retrieve(query)

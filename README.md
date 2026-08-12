@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval, strict four-way retrieval evaluation, LLM-as-judge evaluation, and measured benchmark reports through Day 27.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, and measured benchmark reports through Day 28.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 27 of the project plan, including a measured hybrid-plus-cross-encoder benchmark. The current baseline includes:
+Implementation is complete through Day 28 of the project plan, including a measured hybrid-plus-cross-encoder benchmark and a common retrieval interface. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -45,6 +45,7 @@ Implementation is complete through Day 27 of the project plan, including a measu
 - technical-text tokenization, a portable gzip-compressed BM25 index, and ranked sparse retrieval
 - deterministic Reciprocal Rank Fusion over dense top-20 and BM25 top-20 candidates into a deduplicated hybrid top 10
 - configurable cross-encoder reranking of a 25-chunk RRF candidate pool down to five results, with preserved fusion provenance and component latency
+- a shared `retrieve(query, top_k, timings)` contract and config-driven factory for dense, BM25, RRF, and reranked pipelines
 - ranked chunks, provenance metadata, and deduplicated citations
 - selectable offline-template, OpenAI Responses API, and Gemini Interactions API generation clients
 - `GET /health`, `POST /retrieve`, and `POST /query`
@@ -82,6 +83,14 @@ Day 27 compares dense, BM25, Day 25 RRF, and hybrid plus cross-encoder retrieval
 | nDCG@5 | 0.3473 | 0.6727 | 0.6112 | **0.7282** |
 
 Reranking improves MRR@5 by 7.4 percentage points over BM25 and 12.5 points over the Day 25 RRF ranking. Against its own RRF-25 candidate order, it wins 16 question ranks, loses five, ties 24, recovers six top-five misses, and loses one prior hit; MRR@5 rises from `0.5644` to `0.6889`. It also matches BM25 Hit@5 while placing more labels first. The tradeoff is material: warmed end-to-end latency averages `4,476.4 ms`, including `4,274.9 ms` in the reranker, versus an in-run retrieval-plus-fusion estimate of about `333.7 ms` across the full run. Equal weighting over the 20 unique labeled chunks preserves the measured improvement, but source-derived single-chunk labels and an unpinned model revision limit generalization.
+
+Day 28 changes pipeline construction without changing the candidate settings or benchmark artifacts above. All four retrieval YAML files pin `retriever_interface: common_v1`; `ragops.retrieval.factory.build_retriever` validates that marker and returns a `Retriever` object. Dense and BM25 own their index resources, RRF composes those two objects, and the cross-encoder composes over the RRF candidate retriever. Every pipeline accepts the same query call shape and optional timing sink. The original `retrieve_dense`, `retrieve_bm25`, `retrieve_hybrid`, and `retrieve_hybrid_reranked` functions remain compatibility entry points.
+
+Run the interface, RRF, and reranking regression suite with:
+
+```bash
+make test-retrieval-interface
+```
 
 ## Quickstart
 
@@ -460,7 +469,7 @@ data/raw -> cleaning -> chunking -> chunks.jsonl -> embeddings -> Qdrant
                                           |
                                           +-> BM25 tokens -> persisted BM25 index
 
-query -> dense retrieval -> citations -> generation -> FastAPI response
+query -> configured Retriever -> citations -> generation -> FastAPI response
 
 query -> dense top 20 --+
                          +-> RRF -> hybrid top 10 -> CLI
@@ -473,7 +482,7 @@ query -> BM25 top 25 ---+
 
 - `src/ragops/ingestion`: loading, cleaning, chunking, and embeddings
 - `src/ragops/indexing`: Qdrant collection creation and indexing
-- `src/ragops/retrieval`: dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
+- `src/ragops/retrieval`: common retriever contract and factory, dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
 - `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker evaluation and comparison, and LLM-as-judge orchestration
@@ -485,4 +494,4 @@ query -> BM25 top 25 ---+
 
 ## Next Milestone
 
-Proceed to Day 28: refactor retrievers behind a common interface, consolidate RRF/reranking tests and configuration, and keep the complete suite green.
+Proceed to Day 29: configure MLflow tracking, define experiment naming and tags, and log retrieval evaluation parameters, metrics, and artifacts without changing the measured Day 27 result.

@@ -10,16 +10,18 @@ import yaml
 from pydantic import Field, field_validator, model_validator
 
 from ragops.indexing.qdrant import DEFAULT_COLLECTION_NAME
+from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE, FunctionRetriever, Retriever, resolve_top_k, validate_timings
 from ragops.retrieval.bm25 import BM25Config, BM25InputConfig, BM25RetrieverConfig
 from ragops.retrieval.dense import DEFAULT_EMBEDDING_MODEL, RetrievedChunk, retrieve_dense, validate_query
 from ragops.retrieval.hybrid import (
     DEFAULT_RRF_CONSTANT,
     HybridDenseConfig,
+    HybridRetriever,
     ReciprocalRankFusionConfig,
     StrictModel,
+    build_hybrid_retriever,
     configured_qdrant_url,
     resolve_project_path,
-    retrieve_hybrid,
 )
 
 DEFAULT_RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
@@ -110,6 +112,7 @@ class HybridRerankConfig(StrictModel):
     """Dense plus BM25 fusion followed by cross-encoder reranking."""
 
     name: str = Field(min_length=1)
+    retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     input: BM25InputConfig
     dense: HybridDenseConfig
     bm25: BM25RetrieverConfig
@@ -324,6 +327,72 @@ def rerank_chunks(query, chunks, reranker, candidate_top_k=DEFAULT_RERANK_CANDID
     return results
 
 
+class CrossEncoderRerankedRetriever(Retriever):
+    """Cross-encoder stage composed over a common-interface candidate retriever."""
+
+    def __init__(self, candidate_retriever, reranker, candidate_top_k=DEFAULT_RERANK_CANDIDATES, default_top_k=DEFAULT_RERANK_TOP_K, clock=time.perf_counter):
+        super().__init__(default_top_k)
+        if not callable(getattr(candidate_retriever, "retrieve", None)):
+            raise ValueError("candidate_retriever must implement retrieve(query, top_k, timings).")
+        self.candidate_retriever = candidate_retriever
+        self.reranker = reranker
+        self.candidate_top_k = _validate_positive_integer(candidate_top_k, "candidate_top_k")
+        self.clock = clock
+        if self.default_top_k > self.candidate_top_k:
+            raise ValueError("default_top_k must not exceed candidate_top_k.")
+
+    def retrieve_with_candidates(self, query, top_k=None, timings=None):
+        """Return both the candidate order and final reranked order."""
+        query = validate_query(query)
+        top_k = resolve_top_k(top_k, self.default_top_k)
+        validate_timings(timings)
+        if top_k > self.candidate_top_k:
+            raise ValueError("top_k must not exceed candidate_top_k.")
+
+        stage_timings = {}
+        started_at = self.clock()
+        candidates = self.candidate_retriever.retrieve(query, top_k=self.candidate_top_k, timings=stage_timings)
+        results = rerank_chunks(
+            query,
+            candidates,
+            self.reranker,
+            candidate_top_k=self.candidate_top_k,
+            top_k=top_k,
+            clock=self.clock,
+            timings=stage_timings,
+        )
+        stage_timings["total_ms"] = max(0.0, (self.clock() - started_at) * 1000)
+        if timings is not None:
+            timings.update(stage_timings)
+        return candidates, results
+
+    def retrieve(self, query, top_k=None, timings=None):
+        return self.retrieve_with_candidates(query, top_k=top_k, timings=timings)[1]
+
+
+def build_hybrid_reranked_retriever(config, client, index, reranker, dense_retriever=retrieve_dense, bm25_retriever=None, clock=time.perf_counter):
+    """Build the complete common-interface reranked pipeline from config."""
+    if bm25_retriever is None:
+        from ragops.retrieval.bm25 import retrieve_bm25
+
+        bm25_retriever = retrieve_bm25
+    candidate_retriever = build_hybrid_retriever(
+        config,
+        client,
+        index,
+        dense_retriever=dense_retriever,
+        bm25_retriever=bm25_retriever,
+        clock=clock,
+    )
+    return CrossEncoderRerankedRetriever(
+        candidate_retriever,
+        reranker,
+        candidate_top_k=config.reranker.candidate_top_k,
+        default_top_k=config.reranker.top_k,
+        clock=clock,
+    )
+
+
 def retrieve_hybrid_reranked(
     query,
     client,
@@ -342,77 +411,61 @@ def retrieve_hybrid_reranked(
     timings=None,
 ):
     """Retrieve and fuse a candidate pool, then cross-encode its top results."""
-    if timings is not None and not isinstance(timings, dict):
-        raise ValueError("timings must be a dictionary when provided.")
-    candidate_top_k = _validate_positive_integer(candidate_top_k, "candidate_top_k")
-    top_k = _validate_positive_integer(top_k, "top_k")
-    if top_k > candidate_top_k:
-        raise ValueError("top_k must not exceed candidate_top_k.")
     if bm25_retriever is None:
         from ragops.retrieval.bm25 import retrieve_bm25
 
         bm25_retriever = retrieve_bm25
-    stage_timings = {}
-    started_at = clock()
-    candidates = retrieve_hybrid(
-        query=query,
+    dense = FunctionRetriever(
+        dense_retriever,
+        default_top_k=dense_top_k,
         client=client,
-        index=index,
-        dense_top_k=dense_top_k,
-        bm25_top_k=bm25_top_k,
-        top_k=candidate_top_k,
-        rank_constant=rank_constant,
         collection_name=collection_name,
         embedding_model=embedding_model,
-        dense_retriever=dense_retriever,
-        bm25_retriever=bm25_retriever,
-        clock=clock,
-        timings=stage_timings,
     )
-    results = rerank_chunks(
-        query=query,
-        chunks=candidates,
-        reranker=reranker,
+    sparse = FunctionRetriever(bm25_retriever, bm25_top_k, index=index)
+    candidate_retriever = HybridRetriever(
+        dense,
+        sparse,
+        dense_top_k=dense_top_k,
+        bm25_top_k=bm25_top_k,
+        default_top_k=candidate_top_k,
+        rank_constant=rank_constant,
+        clock=clock,
+    )
+    retriever = CrossEncoderRerankedRetriever(
+        candidate_retriever,
+        reranker,
         candidate_top_k=candidate_top_k,
-        top_k=top_k,
+        default_top_k=top_k,
         clock=clock,
-        timings=stage_timings,
     )
-    stage_timings["total_ms"] = max(0.0, (clock() - started_at) * 1000)
-    if timings is not None:
-        timings.update(stage_timings)
-    return results
+    return retriever.retrieve(query, timings=timings)
 
 
 def retrieve_hybrid_reranked_config(query, config, client, index, reranker, dense_retriever=retrieve_dense, bm25_retriever=None, clock=time.perf_counter, timings=None):
     """Run the complete Day 26 pipeline from validated configuration."""
-    return retrieve_hybrid_reranked(
-        query=query,
-        client=client,
-        index=index,
-        reranker=reranker,
-        dense_top_k=config.dense.top_k,
-        bm25_top_k=config.bm25.top_k,
-        candidate_top_k=config.reranker.candidate_top_k,
-        top_k=config.reranker.top_k,
-        rank_constant=config.fusion.rank_constant,
-        collection_name=config.dense.collection_name,
-        embedding_model=config.dense.embedding_model,
+    retriever = build_hybrid_reranked_retriever(
+        config,
+        client,
+        index,
+        reranker,
         dense_retriever=dense_retriever,
         bm25_retriever=bm25_retriever,
         clock=clock,
-        timings=timings,
     )
+    return retriever.retrieve(query, timings=timings)
 
 
 __all__ = [
     "CrossEncoderConfig",
+    "CrossEncoderRerankedRetriever",
     "CrossEncoderReranker",
     "HybridRerankConfig",
     "RERANKER_METADATA_KEY",
     "RerankerEvaluationDatasetConfig",
     "RerankerEvaluationOutputConfig",
     "build_cross_encoder_reranker",
+    "build_hybrid_reranked_retriever",
     "configured_qdrant_url",
     "load_hybrid_rerank_config",
     "rerank_chunks",

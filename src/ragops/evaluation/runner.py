@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from ragops.evaluation.retrieval_labels import RetrievalLabel, load_retrieval_labels
 from ragops.evaluation.retrieval_metrics import evaluate_retrieval_metrics, hit_at_k, ndcg_at_k, normalize_k_values, recall_at_k, reciprocal_rank
 from ragops.indexing.qdrant import DEFAULT_COLLECTION_NAME, DEFAULT_QDRANT_URL, create_qdrant_client
+from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE
 from ragops.retrieval.dense import DEFAULT_EMBEDDING_MODEL, retrieve_dense
 
 
@@ -72,6 +73,7 @@ class RetrievalEvaluationConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1)
+    retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     retriever: DenseRetrieverEvaluationConfig
     evaluation: EvaluationDatasetConfig
     output: EvaluationOutputConfig
@@ -262,13 +264,21 @@ def close_client(client):
         close()
 
 
-def evaluate_dense_config(config, labels, client_factory=create_qdrant_client, retriever=retrieve_dense, clock=time.perf_counter, progress=None):
+def evaluate_dense_config(config, labels, client_factory=create_qdrant_client, retriever=None, clock=time.perf_counter, progress=None):
     """Create one Qdrant client, validate the collection, run, and close."""
     client = client_factory(configured_qdrant_url(config))
 
     try:
         if not client.collection_exists(collection_name=config.retriever.collection_name):
             raise RuntimeError(f"Qdrant collection does not exist: {config.retriever.collection_name}")
+        if retriever is None:
+            from ragops.retrieval.factory import build_retriever
+
+            configured_retriever = build_retriever(config, client=client, clock=clock)
+
+            def retriever(query, top_k, **kwargs):
+                return configured_retriever.retrieve(query, top_k=top_k)
+
         return run_retrieval_evaluation(config, labels, client, retriever=retriever, clock=clock, progress=progress)
     finally:
         close_client(client)

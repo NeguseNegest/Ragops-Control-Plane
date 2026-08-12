@@ -2,14 +2,14 @@
 
 ## Current Scope
 
-RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline BM25 and RRF hybrid retrievers over local FastAPI, MLflow, and Qdrant documentation. It has four implemented workflows:
+RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline BM25, RRF hybrid, and cross-encoder-reranked retrievers over local FastAPI, MLflow, and Qdrant documentation. It has four implemented workflows:
 
 - An offline workflow that cleans and chunks documentation, then builds both a dense Qdrant index and a portable BM25 index.
 - An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
 - An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
-- An offline hybrid CLI that retrieves independent dense and BM25 candidate pools and merges them without normalizing their incompatible raw scores.
+- Offline hybrid and reranked CLIs that retrieve independent dense and BM25 candidate pools, fuse ranks without normalizing incompatible raw scores, and optionally apply a cross-encoder.
 
-Dense, BM25, and RRF hybrid retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, and Day 22–25 sparse/hybrid work are implemented. Reranking, routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, and the Day 28 common-interface refactor are implemented. Routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
 
 ## System Diagram
 
@@ -86,13 +86,15 @@ flowchart LR
 | Chunker | `src/ragops/ingestion/chunking.py` | Create deterministic fixed, overlapping, or heading-aware chunks with UUID5 IDs and SHA256 hashes. |
 | Embedder | `src/ragops/ingestion/embeddings.py` | Generate batched `sentence-transformers/all-MiniLM-L6-v2` vectors and cache the model in-process. |
 | Indexer | `src/ragops/indexing/qdrant.py` | Create the `rag_chunks` collection and upsert embedded chunk records with payload metadata. |
+| Retriever contract and factory | `src/ragops/retrieval/base.py`, `factory.py` | Provide the shared `retrieve(query, top_k, timings)` interface, validate the configured interface version, and construct any retrieval pipeline from its validated config and runtime resources. |
 | Dense retriever | `src/ragops/retrieval/dense.py` | Embed a query, search Qdrant, and normalize ranked results into `RetrievedChunk` objects. |
 | BM25 retriever | `src/ragops/retrieval/bm25.py`, `scripts/build_bm25_index.py` | Tokenize technical text, persist a versioned sparse index, validate source provenance, and return ranked `RetrievedChunk` objects without Qdrant. |
 | Hybrid retriever | `src/ragops/retrieval/hybrid.py`, `scripts/retrieve_hybrid.py` | Retrieve independently ranked dense and BM25 candidate pools, validate their identities and ranks, fuse them with deterministic RRF, and expose readable or JSON CLI results. |
+| Reranked retriever | `src/ragops/reranking/cross_encoder.py`, `scripts/retrieve_hybrid_rerank.py` | Compose a cross-encoder over the configured RRF candidate retriever while retaining candidate order, provenance, and component timings. |
 | Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build a context-only prompt, select one process-wide provider, and call the template, OpenAI, or Gemini client. |
 | Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
-| Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `scripts/evaluate.py`, `evaluate_bm25.py`, `evaluate_hybrid.py` | Run the verified label set through dense, BM25, or hybrid retrieval; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
+| Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
@@ -107,6 +109,12 @@ flowchart LR
 5. Embedded records are written as JSONL to `data/processed/chunks.jsonl`. Each record contains the chunk text, IDs, hash, metadata, and vector.
 6. `scripts/build_index.py` reads the JSONL file, creates the Qdrant `rag_chunks` collection when needed, and upserts records in batches.
 7. Independently, `scripts/build_bm25_index.py` drops embeddings, adds normalized prose and exact technical tokens, and atomically writes `data/processed/bm25_index.json.gz` with the input SHA256 and BM25 parameters.
+
+## Common Retrieval Interface
+
+Day 28 moves runtime composition behind `Retriever.retrieve(query, top_k=None, timings=None)`. `DenseRetriever` owns a Qdrant client and embedding settings, `BM25Retriever` owns a loaded sparse index, `HybridRetriever` composes both candidate retrievers before RRF, and `CrossEncoderRerankedRetriever` composes over the hybrid candidate pool. The config factory selects one of these four pipelines from the validated model; it does not infer candidate depths or model names from call-site defaults.
+
+The four checked-in retrieval configs explicitly declare `retriever_interface: common_v1`. Their existing component sections remain authoritative for collection, index, model, RRF, candidate-depth, final-depth, and evaluation settings. An unknown interface version is rejected during Pydantic validation. Legacy retrieval functions delegate to or adapt the same objects so CLI, API, evaluator, and test injection call sites remain compatible during the refactor.
 
 Day 24 combines the existing indexes at query time:
 

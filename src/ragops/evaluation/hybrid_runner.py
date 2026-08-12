@@ -169,7 +169,7 @@ def evaluate_hybrid_config(
     labels,
     client_factory=create_qdrant_client,
     index_loader=load_bm25_index,
-    retriever=retrieve_hybrid_config,
+    retriever=None,
     clock=time.perf_counter,
     progress=None,
 ):
@@ -186,6 +186,14 @@ def evaluate_hybrid_config(
             raise RuntimeError(
                 f"Dense collection contains {dense_index['points_count']} points but the shared chunk artifact contains {payload.source_record_count} records."
             )
+        if retriever is None:
+            from ragops.retrieval.factory import build_retriever
+
+            configured_retriever = build_retriever(config, client=client, index=index, clock=clock)
+
+            def retriever(query, timings, **kwargs):
+                return configured_retriever.retrieve(query, timings=timings)
+
         return run_hybrid_evaluation(
             config,
             labels,

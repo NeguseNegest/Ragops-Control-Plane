@@ -13,10 +13,9 @@ from ragops.reranking.cross_encoder import (
     RERANKER_METADATA_KEY,
     build_cross_encoder_reranker,
     configured_qdrant_url,
-    rerank_chunks,
 )
 from ragops.retrieval.bm25 import BM25Index, load_bm25_index, validate_bm25_index
-from ragops.retrieval.hybrid import FUSION_METADATA_KEY, retrieve_hybrid_config
+from ragops.retrieval.hybrid import FUSION_METADATA_KEY
 
 RERANKER_COMPARISON_SCHEMA_VERSION = 1
 OFFICIAL_RETRIEVERS = ("dense", "bm25", "hybrid", "reranked")
@@ -59,22 +58,10 @@ def component_latency_summary(question_results, after_first=False):
 
 def retrieve_reranker_candidates(query, config, client, index, reranker, clock=time.perf_counter, timings=None):
     """Return the RRF candidate ranking and its cross-encoder-reranked output."""
-    stage_timings = {}
-    candidates = retrieve_hybrid_config(query, config, client, index, clock=clock, timings=stage_timings)
-    results = rerank_chunks(
-        query,
-        candidates,
-        reranker,
-        candidate_top_k=config.reranker.candidate_top_k,
-        top_k=config.reranker.top_k,
-        clock=clock,
-        timings=stage_timings,
-    )
-    if timings is not None:
-        if not isinstance(timings, dict):
-            raise ValueError("timings must be a dictionary when provided.")
-        timings.update(stage_timings)
-    return candidates, results
+    from ragops.retrieval.factory import build_retriever
+
+    configured_retriever = build_retriever(config, client=client, index=index, reranker=reranker, clock=clock)
+    return configured_retriever.retrieve_with_candidates(query, timings=timings)
 
 
 def _fusion_sources(result, question_id):
@@ -245,7 +232,7 @@ def _dense_index_metadata(client, collection_name):
     return metadata
 
 
-def evaluate_reranker_config(config, labels, client_factory=create_qdrant_client, index_loader=load_bm25_index, reranker_factory=build_cross_encoder_reranker, retriever=retrieve_reranker_candidates, clock=time.perf_counter, progress=None):
+def evaluate_reranker_config(config, labels, client_factory=create_qdrant_client, index_loader=load_bm25_index, reranker_factory=build_cross_encoder_reranker, retriever=None, clock=time.perf_counter, progress=None):
     """Validate indexes, load one model, evaluate all labels, and close Qdrant."""
     require_reranker_evaluation_settings(config)
     index = index_loader(config.bm25.index_path)
@@ -260,6 +247,14 @@ def evaluate_reranker_config(config, labels, client_factory=create_qdrant_client
         model_started_at = clock()
         reranker = reranker_factory(config.reranker)
         model_load_ms = max(0.0, (clock() - model_started_at) * 1000)
+        if retriever is None:
+            from ragops.retrieval.factory import build_retriever
+
+            configured_retriever = build_retriever(config, client=client, index=index, reranker=reranker, clock=clock)
+
+            def retriever(query, timings, **kwargs):
+                return configured_retriever.retrieve_with_candidates(query, timings=timings)
+
         return run_reranker_evaluation(
             config,
             labels,

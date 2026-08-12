@@ -114,11 +114,19 @@ def run_bm25_evaluation(config, labels, index, retriever=retrieve_bm25, clock=ti
     }
 
 
-def evaluate_bm25_config(config, labels, index_loader=load_bm25_index, retriever=retrieve_bm25, clock=time.perf_counter, progress=None):
+def evaluate_bm25_config(config, labels, index_loader=load_bm25_index, retriever=None, clock=time.perf_counter, progress=None):
     """Load and validate the persisted index once, then run sparse evaluation."""
     require_evaluation_settings(config)
     index = index_loader(config.retriever.index_path)
     validate_bm25_index(index, config)
+    if retriever is None:
+        from ragops.retrieval.factory import build_retriever
+
+        configured_retriever = build_retriever(config, index=index, clock=clock)
+
+        def retriever(query, top_k, **kwargs):
+            return configured_retriever.retrieve(query, top_k=top_k)
+
     return run_bm25_evaluation(config, labels, index, retriever=retriever, clock=clock, progress=progress)
 
 

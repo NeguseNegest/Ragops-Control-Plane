@@ -4,10 +4,20 @@
 
 The implemented evaluation stack has two distinct layers:
 
-1. Retrieval evaluation (Days 17–19, 23, 25, and 27) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels and computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k.
+1. Retrieval evaluation (Days 17–19, 23, 25, 27, and the Day 28 refactor) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels and computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, and Day 27 measures its quality and latency tradeoff.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, and Day 28 moves every retrieval candidate behind the same config-driven interface without changing those measurements.
+
+## Day 28 retrieval construction
+
+The dense, BM25, hybrid, and reranked evaluation entry points now construct `Retriever` objects through the validated pipeline config. Each object exposes `retrieve(query, top_k=None, timings=None)`; the reranked object additionally exposes `retrieve_with_candidates` so the controlled pre-rerank ablation retains the exact candidate order. All checked-in retrieval configs pin `retriever_interface: common_v1`, and the focused regression suite covers interface construction, exact RRF behavior, reranking order/provenance, resource validation, and legacy function compatibility:
+
+```bash
+make test-retrieval-interface
+```
+
+Day 28 does not rerun or rewrite the Day 27 benchmark. Its acceptance check is behavioral equivalence under the common interface plus the complete test suite; the reported quality and latency values remain tied to the recorded Day 27 live run.
 
 ## Day 23 dense-versus-BM25 comparison
 
