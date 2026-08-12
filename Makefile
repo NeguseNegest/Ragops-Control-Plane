@@ -3,7 +3,7 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 
-.PHONY: setup lint test test-retrieval-metrics test-llm-judge validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-retrieval-metrics test-llm-judge test-bm25 validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -22,6 +22,9 @@ test-retrieval-metrics:
 test-llm-judge:
 	$(BIN)/python -m pytest tests/test_llm_judge.py
 
+test-bm25:
+	$(BIN)/python -m pytest tests/test_bm25.py
+
 validate-dense-evaluation:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only
 
@@ -39,6 +42,15 @@ review-judgments:
 
 validate-day20:
 	PYTHONPATH=src $(BIN)/python scripts/review_judgments.py --config configs/generation_judge.yaml --validate-only --require-reviewed
+
+validate-bm25-config:
+	PYTHONPATH=src $(BIN)/python scripts/build_bm25_index.py --config configs/bm25_baseline.yaml --validate-only
+
+build-bm25-index:
+	PYTHONPATH=src $(BIN)/python scripts/build_bm25_index.py --config configs/bm25_baseline.yaml
+
+validate-bm25-index:
+	PYTHONPATH=src $(BIN)/python scripts/build_bm25_index.py --config configs/bm25_baseline.yaml --validate-index
 
 services-up:
 	docker compose up -d qdrant mlflow

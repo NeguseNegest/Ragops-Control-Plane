@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements the dense RAG baseline, its retrieval and LLM-as-judge evaluation workflows, and the first measured benchmark report through Day 21; cost controls and promotion gates remain roadmap features.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements dense and BM25 retrieval foundations, dense and LLM-as-judge evaluation workflows, and the first measured benchmark report through Day 22; cost controls and promotion gates remain roadmap features.
 
 ## Project Objective
 
@@ -36,12 +36,13 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 21 of the project plan, including the authorized real-provider run, all 10 configured spot-checks, and the first evidence-backed dense retrieval report. The current baseline includes:
+Implementation is complete through Day 22 of the project plan, including the first persisted sparse index. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
 - batched `sentence-transformers/all-MiniLM-L6-v2` embeddings
 - Qdrant indexing and cosine-similarity dense retrieval
+- technical-text tokenization, a portable gzip-compressed BM25 index, and ranked sparse retrieval
 - ranked chunks, provenance metadata, and deduplicated citations
 - selectable offline-template, OpenAI Responses API, and Gemini Interactions API generation clients
 - `GET /health`, `POST /retrieve`, and `POST /query`
@@ -55,7 +56,7 @@ Implementation is complete through Day 21 of the project plan, including the aut
 
 Current limitations:
 
-- Only dense retrieval is implemented.
+- Dense retrieval remains the only retriever connected to the API and evaluation runner. BM25 is implemented as a standalone offline retriever but is not evaluated until Day 23.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
 - Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow tracking, cost accounting, tracing, routing, caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
@@ -139,6 +140,24 @@ make index
 ```
 
 `make ingest` writes `data/processed/chunks.jsonl` and may download the embedding model on its first run. Use `make index-recreate` only when you intentionally want to delete and rebuild the existing `rag_chunks` collection.
+
+### Build the BM25 index
+
+Day 22 builds sparse retrieval from the same processed chunks without loading or persisting their embedding vectors. Validate the strict configuration, build the ignored local artifact, and verify that its source hash and scoring parameters still match:
+
+```bash
+make validate-bm25-config
+make build-bm25-index
+make validate-bm25-index
+```
+
+The resulting `data/processed/bm25_index.json.gz` contains schema-versioned chunk payloads, technical tokens, BM25 parameters, and the SHA256 of `chunks.jsonl`. The build refuses to replace an existing index. To intentionally rebuild it, run:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/build_bm25_index.py --overwrite
+```
+
+The recorded local Day 22 build indexed 13,476 searchable chunks, skipped five chunks containing no searchable tokens, and produced a 5.8 MB compressed artifact. A real `retrieve_bm25` sanity query ranked the labeled Qdrant dot-product evidence first. Run your own standalone sparse retrieval check while building or validating with `--query` and optional `--top-k`. `retrieve_bm25` is not yet connected to `POST /retrieve` or `POST /query`; the Day 23 milestone evaluates it against the same labels as the dense baseline.
 
 ### Generate and review synthetic QA candidates
 
@@ -291,14 +310,16 @@ curl -X POST http://127.0.0.1:8000/query \
 ## Main Components
 
 ```text
-data/raw -> cleaning -> chunking -> embeddings -> Qdrant
-                                                   |
+data/raw -> cleaning -> chunking -> chunks.jsonl -> embeddings -> Qdrant
+                                          |
+                                          +-> BM25 tokens -> persisted BM25 index
+
 query -> dense retrieval -> citations -> generation -> FastAPI response
 ```
 
 - `src/ragops/ingestion`: loading, cleaning, chunking, and embeddings
 - `src/ragops/indexing`: Qdrant collection creation and indexing
-- `src/ragops/retrieval`: dense retrieval and result normalization
+- `src/ragops/retrieval`: dense retrieval, BM25 indexing/retrieval, and shared result normalization
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
 - `src/ragops/evaluation`: synthetic QA handling, retrieval labels, retrieval metrics, dense evaluation, and LLM-as-judge orchestration
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
@@ -309,4 +330,4 @@ query -> dense retrieval -> citations -> generation -> FastAPI response
 
 ## Next Milestone
 
-Proceed to Day 22: implement a persisted BM25 index and sparse retriever, then use the Week 3 dense report as the comparison baseline.
+Proceed to Day 23: evaluate the BM25 baseline on the 45 verified labels and compare it with the Week 3 dense baseline.

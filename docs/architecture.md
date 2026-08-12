@@ -2,13 +2,13 @@
 
 ## Current Scope
 
-RAGOps Control Plane currently provides a dense-retrieval RAG path over local FastAPI, MLflow, and Qdrant documentation. It has three implemented workflows:
+RAGOps Control Plane currently provides a dense-retrieval RAG path plus an offline BM25 retriever over local FastAPI, MLflow, and Qdrant documentation. It has three implemented workflows:
 
-- An offline workflow that cleans, chunks, embeds, and indexes documentation.
+- An offline workflow that cleans and chunks documentation, then builds both a dense Qdrant index and a portable BM25 index.
 - An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
 - An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, computes retrieval metrics, runs the dense baseline against Qdrant, and applies cross-provider LLM judging to generated answers.
 
-Retrieval evaluation and the Day 20 LLM-as-judge acceptance workflow are implemented. BM25, hybrid retrieval, reranking, routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
+Dense retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, and Day 22 BM25 indexing/retrieval are implemented. BM25 evaluation, hybrid retrieval, reranking, routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
 
 ## System Diagram
 
@@ -21,6 +21,8 @@ flowchart LR
         Embed --> JSONL["data/processed/chunks.jsonl"]
         JSONL --> Index[Qdrant index builder]
         Index --> Qdrant[(Qdrant rag_chunks)]
+        JSONL --> BM25Build[Technical tokenizer and BM25 builder]
+        BM25Build --> BM25Index[(bm25_index.json.gz)]
     end
 
     subgraph Online[Online query path]
@@ -64,6 +66,7 @@ flowchart LR
 | Embedder | `src/ragops/ingestion/embeddings.py` | Generate batched `sentence-transformers/all-MiniLM-L6-v2` vectors and cache the model in-process. |
 | Indexer | `src/ragops/indexing/qdrant.py` | Create the `rag_chunks` collection and upsert embedded chunk records with payload metadata. |
 | Dense retriever | `src/ragops/retrieval/dense.py` | Embed a query, search Qdrant, and normalize ranked results into `RetrievedChunk` objects. |
+| BM25 retriever | `src/ragops/retrieval/bm25.py`, `scripts/build_bm25_index.py` | Tokenize technical text, persist a versioned sparse index, validate source provenance, and return ranked `RetrievedChunk` objects without Qdrant. |
 | Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build a context-only prompt, select one process-wide provider, and call the template, OpenAI, or Gemini client. |
 | Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
@@ -81,6 +84,7 @@ flowchart LR
 4. Chunk text is embedded with `sentence-transformers/all-MiniLM-L6-v2`.
 5. Embedded records are written as JSONL to `data/processed/chunks.jsonl`. Each record contains the chunk text, IDs, hash, metadata, and vector.
 6. `scripts/build_index.py` reads the JSONL file, creates the Qdrant `rag_chunks` collection when needed, and upserts records in batches.
+7. Independently, `scripts/build_bm25_index.py` drops embeddings, adds normalized prose and exact technical tokens, and atomically writes `data/processed/bm25_index.json.gz` with the input SHA256 and BM25 parameters.
 
 ## Evaluation Dataset Flow
 
@@ -219,7 +223,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 ## Current Limitations
 
-- Only dense retrieval is implemented.
+- Dense retrieval remains the only online and evaluated retriever. The standalone BM25 retriever is implemented and persisted, but its comparison run belongs to Day 23.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
 - The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. The offline judge measures these qualities after the fact. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
 - Day 20 generation scores come from one judge model over 10 questions. All 10 have a separate Codex evidence audit, but they do not have independent human sign-off and are not a substitute for larger samples, multiple judges, calibrated human labels, or statistical uncertainty estimates.
@@ -235,7 +239,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
 
-- configurations: `bm25_baseline.yaml`, `hybrid.yaml`, `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
+- configurations: `hybrid.yaml`, `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
 - tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
 - topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`

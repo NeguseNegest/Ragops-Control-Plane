@@ -1,0 +1,13 @@
+name: bm25_baseline
+
+input:
+  chunks_path: data/processed/chunks.jsonl
+
+retriever:
+  type: bm25
+  index_path: data/processed/bm25_index.json.gz
+  tokenizer: technical_v1
+  top_k: 10
+  k1: 1.5
+  b: 0.75
+  epsilon: 0.25
