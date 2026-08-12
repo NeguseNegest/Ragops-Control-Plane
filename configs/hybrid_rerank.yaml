@@ -1,0 +1,32 @@
+name: hybrid_rrf_cross_encoder
+
+input:
+  chunks_path: data/processed/chunks.jsonl
+
+dense:
+  type: dense
+  collection_name: rag_chunks
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  top_k: 25
+
+bm25:
+  type: bm25
+  index_path: data/processed/bm25_index.json.gz
+  tokenizer: technical_v1
+  top_k: 25
+  k1: 1.5
+  b: 0.75
+  epsilon: 0.25
+
+fusion:
+  type: rrf
+  rank_constant: 60
+  top_k: 25
+
+reranker:
+  type: cross_encoder
+  model: cross-encoder/ms-marco-MiniLM-L-6-v2
+  candidate_top_k: 25
+  top_k: 5
+  batch_size: 16
+  max_length: 512

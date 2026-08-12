@@ -227,6 +227,24 @@ The hybrid report stores full fused rankings, RRF source provenance, live Qdrant
 
 The measured RRF candidate reaches MRR `0.5765`, between dense `0.3359` and BM25 `0.6189`. It wins 26 paired questions versus dense and loses one, but wins only 10 versus BM25 while losing 14. Hybrid Hit Rate@10 is `0.8444`, below BM25's `0.8667`; it loses one BM25 top-10 hit. Unweighted consensus fusion therefore does not replace BM25 on this benchmark. Average hybrid latency is `837.4 ms` including a `29,892.1 ms` first-query cold start and `177.1 ms` after the first query; fusion itself averages `0.2 ms`.
 
+Day 26 adds a separate, offline reranked candidate:
+
+```text
+hybrid_rerank.yaml + query
+          |
+ dense top 25 + BM25 top 25
+          |
+      RRF top 25
+          |
+ cross-encoder(query, chunk) for every candidate
+          |
+   score sort -> top 5 + stage timings
+```
+
+`cross-encoder/ms-marco-MiniLM-L-6-v2` receives paired query and chunk text rather than independently encoded vectors. The wrapper validates that the model returns one finite scalar per candidate. Sorting uses descending cross-encoder score, then the original RRF rank and chunk ID for deterministic ties. Every output remains a `RetrievedChunk`: its final `score` is the raw cross-encoder relevance logit, `_reranker` records model name plus the prior RRF rank and score, and `_fusion` continues to record dense/BM25 ranks, source scores, and contributions.
+
+The CLI validates BM25 provenance before retrieval, closes Qdrant on success or failure, and reports model-load, dense, BM25, fusion, reranker, and total pipeline latency separately. `--validate-only` deliberately avoids Qdrant and model loading. This is functional Day 26 acceptance, not retrieval-quality evidence; Day 27 will evaluate the candidate on all verified labels.
+
 The Day 20 generation evaluation is a separate pipeline:
 
 ```text
@@ -299,8 +317,8 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 ## Current Limitations
 
-- Dense retrieval remains the only online retriever. BM25 and RRF hybrid retrieval are available offline, but neither is exposed through the API.
-- The evaluated unweighted RRF candidate does not beat BM25 on the current lexically aligned labels. Weighted fusion and reranking remain experiments, not accepted improvements.
+- Dense retrieval remains the only online retriever. BM25, RRF hybrid, and hybrid-plus-reranker retrieval are available offline, but none is exposed through the API.
+- The evaluated unweighted RRF candidate does not beat BM25 on the current lexically aligned labels. The cross-encoder candidate is functionally implemented but remains unmeasured until Day 27, so it is not an accepted improvement.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
 - The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. The offline judge measures these qualities after the fact. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.
 - Day 20 generation scores come from one judge model over 10 questions. All 10 have a separate Codex evidence audit, but they do not have independent human sign-off and are not a substitute for larger samples, multiple judges, calibrated human labels, or statistical uncertainty estimates.
@@ -310,13 +328,13 @@ Both provider credentials may be configured simultaneously, but the online API u
 - Source references are usually corpus-relative paths rather than public documentation URLs.
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow is provisioned by Docker Compose but no application or evaluation code logs runs to it yet.
-- Tracing, SQLite persistence, routing, semantic caching, reranking, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Tracing, SQLite persistence, routing, semantic caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 
 ## Planned Placeholders
 
 The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
 
-- configurations: `hybrid_rerank.yaml`, `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
+- configurations: `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
 - tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
 - topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`

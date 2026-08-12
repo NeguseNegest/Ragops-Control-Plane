@@ -4,10 +4,10 @@
 
 The implemented evaluation stack has two distinct layers:
 
-1. Retrieval evaluation (Days 17–19, 23, and 25) compares dense Qdrant, persisted BM25, and live RRF hybrid rankings with verified relevance labels and computes Recall@k, MRR, Hit Rate@k, and binary nDCG@k.
+1. Retrieval evaluation (Days 17–19, 23, and 25) compares dense Qdrant, persisted BM25, and live RRF hybrid rankings with verified relevance labels and computes Recall@k, MRR, Hit Rate@k, and binary nDCG@k. Day 26 adds a functional cross-encoder candidate whose benchmark is intentionally reserved for Day 27.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, and Day 25 measures the RRF hybrid candidate.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, and Day 26 verifies the reranked pipeline without making a quality claim.
 
 ## Day 23 dense-versus-BM25 comparison
 
@@ -104,6 +104,24 @@ Artifacts:
 - `reports/evaluations/hybrid_rrf.csv`: flat per-question hybrid results
 - `reports/evaluations/hybrid_vs_baselines.json`: strict three-way metrics, paired outcomes, cohorts, relevance groups, and failures
 - `reports/week4_hybrid_comparison.md`: benchmark table and analysis rendered from the comparison JSON
+
+## Day 26 cross-encoder candidate
+
+`configs/hybrid_rerank.yaml` expands both component retrieval depths to 25, fuses a top-25 candidate pool with the same unweighted RRF constant of 60, and reranks all 25 query/chunk pairs with `cross-encoder/ms-marco-MiniLM-L-6-v2` down to a final top five.
+
+Run configuration and index preflight without Qdrant or model loading, then exercise the live path with:
+
+```bash
+make validate-hybrid-rerank
+make test-reranker
+make retrieve-hybrid-rerank RERANK_QUERY="What operation quantifies vector similarity?"
+```
+
+The pipeline preserves the complete `_fusion` metadata and adds `_reranker` metadata containing the model, original RRF candidate rank, and candidate score. It reports model loading separately and measures dense, BM25, fusion, cross-encoder, and total retrieval latency. Raw cross-encoder logits are used only to order candidates; they are not calibrated probabilities and are not compared numerically with RRF, cosine, or BM25 scores.
+
+The live acceptance query “What operation is used to quantify the similarity between the query and document vectors?” returned five chunks and moved its verified label from RRF candidate rank 9 to reranked rank 2. The first process spent `53,219.4 ms` downloading/loading the model; the pipeline then measured dense `6,220.8 ms`, BM25 `66.5 ms`, fusion `0.5 ms`, reranker `7,042.6 ms`, and total retrieval-plus-reranking `13,330.6 ms`. These are cold one-query measurements and must not be treated as a steady-state latency benchmark.
+
+No aggregate retrieval metric is reported for Day 26. A single acceptance query demonstrates wiring, metadata, and timing—not effectiveness. Day 27 must run the fixed label set, compare dense/BM25/RRF/reranked quality and latency, and document cases where reranking helps or hurts.
 
 ## Day 20 sample
 

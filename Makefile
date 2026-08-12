@@ -3,8 +3,9 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 HYBRID_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
+RERANK_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 
-.PHONY: setup lint test test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -34,6 +35,9 @@ test-hybrid:
 
 test-hybrid-evaluation:
 	$(BIN)/python -m pytest tests/test_hybrid_evaluation.py
+
+test-reranker:
+	$(BIN)/python -m pytest tests/test_reranking.py
 
 validate-dense-evaluation:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only
@@ -79,6 +83,12 @@ validate-hybrid-evaluation:
 
 evaluate-hybrid:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate_hybrid.py --config configs/hybrid.yaml --overwrite
+
+validate-hybrid-rerank:
+	PYTHONPATH=src $(BIN)/python scripts/retrieve_hybrid_rerank.py --config configs/hybrid_rerank.yaml --validate-only
+
+retrieve-hybrid-rerank:
+	PYTHONPATH=src $(BIN)/python scripts/retrieve_hybrid_rerank.py --config configs/hybrid_rerank.yaml --query "$(RERANK_QUERY)"
 
 services-up:
 	docker compose up -d qdrant mlflow
