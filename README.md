@@ -109,7 +109,7 @@ To use OpenAI instead, export:
 
 ```bash
 export RAGOPS_LLM_PROVIDER=openai
-export OPENAI_API_KEY="your-api-key"
+export OPENAI_API_KEY="api-key"
 export OPENAI_MODEL=gpt-5-nano
 ```
 
@@ -117,7 +117,7 @@ To use Gemini instead, export:
 
 ```bash
 export RAGOPS_LLM_PROVIDER=gemini
-export GEMINI_API_KEY="your-api-key"
+export GEMINI_API_KEY="api-key"
 export GEMINI_MODEL=gemini-3.6-flash
 ```
 
