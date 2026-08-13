@@ -17,6 +17,7 @@ from ragops.evaluation.reranker_runner import (  # noqa: E402
 from ragops.evaluation.runner import load_evaluation_labels, write_evaluation_artifacts  # noqa: E402
 from ragops.reranking.cross_encoder import load_hybrid_rerank_config  # noqa: E402
 from ragops.retrieval.bm25 import load_bm25_index, validate_bm25_index  # noqa: E402
+from ragops.tracking.mlflow import DEFAULT_MLFLOW_CONFIG_PATH, load_mlflow_config, log_prepared_run, prepare_retrieval_run  # noqa: E402
 
 
 def parse_args():
@@ -32,6 +33,8 @@ def parse_args():
     parser.add_argument("--report-output", type=Path, help="Optional Markdown benchmark path.")
     parser.add_argument("--overwrite", action="store_true", help="Replace existing Day 27 artifacts.")
     parser.add_argument("--validate-only", action="store_true", help="Validate config, labels, baselines, and BM25 provenance without querying Qdrant or loading the model.")
+    parser.add_argument("--mlflow-config", type=Path, default=DEFAULT_MLFLOW_CONFIG_PATH, help="MLflow tracking YAML.")
+    parser.add_argument("--skip-mlflow", action="store_true", help="Write evaluation artifacts without logging an MLflow run.")
     return parser.parse_args()
 
 
@@ -166,6 +169,22 @@ def main():
 
     reranked_json_path, reranked_csv_path = write_evaluation_artifacts(reranked_report)
     comparison_path, report_path = write_reranker_comparison_artifacts(comparison, config.output.comparison_path, config.output.report_path)
+    if not args.skip_mlflow:
+        mlflow_config_path = args.mlflow_config if args.mlflow_config.is_absolute() else (PROJECT_ROOT / args.mlflow_config).resolve()
+        tracking_config = load_mlflow_config(mlflow_config_path, project_root=PROJECT_ROOT)
+        source_config_path = args.config if args.config.is_absolute() else (PROJECT_ROOT / args.config).resolve()
+        prepared = prepare_retrieval_run(
+            "reranked",
+            source_config_path,
+            reranked_json_path,
+            reranked_csv_path,
+            comparison_path=comparison_path,
+            benchmark_path=report_path,
+            report=reranked_report,
+        )
+        tracking_result = log_prepared_run(prepared, tracking_config)
+        action = "created" if tracking_result["created"] else "reused"
+        print(f"MLflow run {action}: {tracking_result['run_id']}")
     metrics = reranked_report["metrics"]
     decision = comparison["decision"]
     print(f"Evaluated {metrics['question_count']} hybrid-plus-reranker questions.")

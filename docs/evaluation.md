@@ -4,10 +4,10 @@
 
 The implemented evaluation stack has two distinct layers:
 
-1. Retrieval evaluation (Days 17–19, 23, 25, 27, and the Day 28 refactor) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels and computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k.
+1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, and Day 29 tracking) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; and records the runs in MLflow.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, and Day 28 moves every retrieval candidate behind the same config-driven interface without changing those measurements.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, and Day 29 tracks all four retrieval runs without changing their measurements.
 
 ## Day 28 retrieval construction
 
@@ -18,6 +18,29 @@ make test-retrieval-interface
 ```
 
 Day 28 does not rerun or rewrite the Day 27 benchmark. Its acceptance check is behavioral equivalence under the common interface plus the complete test suite; the reported quality and latency values remain tied to the recorded Day 27 live run.
+
+## Day 29 MLflow tracking
+
+`configs/mlflow.yaml` declares the tracking URI, `ragops-retrieval` experiment, and exact config/JSON/CSV/comparison/Markdown artifact set for dense, BM25, RRF hybrid, and reranked runs. `MLFLOW_TRACKING_URI` is the only connection override. Run names always come from the validated pipeline config and must match the evaluation JSON and every CSV row.
+
+Validate without contacting MLflow:
+
+```bash
+make test-mlflow
+make validate-mlflow
+```
+
+Import the recorded benchmark artifacts and verify the acceptance state:
+
+```bash
+make services-up
+make log-retrieval-runs
+make verify-retrieval-runs
+```
+
+The import path validates the current algorithm sections against each report, requires finite aggregate metrics, requires complete and identically ordered JSON/CSV question IDs, and rejects missing artifacts. It logs flattened configuration parameters; rank metrics; total, warmed, and component latency where available; pipeline YAML; effective configuration; evaluation JSON/CSV; comparison JSON; and Markdown. Each imported run is tagged `ragops_run_source=validated_artifact_import`. A content digest prevents duplicate imports of identical evidence.
+
+The four live evaluation CLIs use the same logger after they successfully write artifacts and tag those runs `ragops_run_source=live_evaluation`. `--validate-only` returns before tracker construction, and `--skip-mlflow` is an explicit opt-out. If artifact upload fails after run creation, the MLflow run is marked `FAILED`; the already-written local evaluation artifacts are retained. The Compose server proxies client artifact uploads into its persistent `mlflow_data` volume, so host-run evaluators never need direct access to the container's `/mlflow` path.
 
 ## Day 23 dense-versus-BM25 comparison
 

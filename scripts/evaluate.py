@@ -8,6 +8,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from ragops.evaluation.runner import evaluate_dense_config, load_evaluation_config, load_evaluation_labels, write_evaluation_artifacts  # noqa: E402
+from ragops.tracking.mlflow import DEFAULT_MLFLOW_CONFIG_PATH, load_mlflow_config, log_prepared_run, prepare_retrieval_run  # noqa: E402
 
 
 def parse_args():
@@ -16,6 +17,8 @@ def parse_args():
     parser.add_argument("--qdrant-url", help="Optional Qdrant URL override.")
     parser.add_argument("--output-dir", type=Path, help="Optional artifact directory override.")
     parser.add_argument("--validate-only", action="store_true", help="Validate configuration and labels without connecting to Qdrant.")
+    parser.add_argument("--mlflow-config", type=Path, default=DEFAULT_MLFLOW_CONFIG_PATH, help="MLflow tracking YAML.")
+    parser.add_argument("--skip-mlflow", action="store_true", help="Write evaluation artifacts without logging an MLflow run.")
     return parser.parse_args()
 
 
@@ -45,6 +48,14 @@ def main():
 
     report = evaluate_dense_config(config, labels, progress=print_progress)
     json_path, csv_path = write_evaluation_artifacts(report)
+    if not args.skip_mlflow:
+        mlflow_config_path = args.mlflow_config if args.mlflow_config.is_absolute() else (PROJECT_ROOT / args.mlflow_config).resolve()
+        tracking_config = load_mlflow_config(mlflow_config_path, project_root=PROJECT_ROOT)
+        source_config_path = args.config if args.config.is_absolute() else (PROJECT_ROOT / args.config).resolve()
+        prepared = prepare_retrieval_run("dense", source_config_path, json_path, csv_path, report=report)
+        tracking_result = log_prepared_run(prepared, tracking_config)
+        action = "created" if tracking_result["created"] else "reused"
+        print(f"MLflow run {action}: {tracking_result['run_id']}")
     metrics = report["metrics"]
     recall_at_5 = metrics["recall_at_k"].get("5")
 

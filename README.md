@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, and measured benchmark reports through Day 28.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, and MLflow retrieval experiment tracking through Day 29.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 28 of the project plan, including a measured hybrid-plus-cross-encoder benchmark and a common retrieval interface. The current baseline includes:
+Implementation is complete through Day 29 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, and four evidence-backed MLflow runs. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -57,6 +57,7 @@ Implementation is complete through Day 28 of the project plan, including a measu
 - a provenance-checked BM25 evaluation CLI, paired per-question comparison, wording-cohort analysis, and reproducible JSON/CSV/Markdown reports
 - a live hybrid evaluator with dense/BM25/fusion component timings, strict corpus and label parity checks, three-way paired outcomes, relevance-group analysis, and failure reporting
 - a live cross-encoder evaluator with a common-depth four-way comparison, controlled pre-rerank ablation, cold/warm component latency, and explicit reranking regressions
+- MLflow logging for dense, BM25, RRF, and reranked evaluations with config-derived run names, flattened parameters, quality/latency metrics, validated CSV/JSON/config/report artifacts, and idempotent artifact imports
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
@@ -67,7 +68,7 @@ Current limitations:
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query and is not suitable for the online path without latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow tracking, cost accounting, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow currently tracks retrieval evaluations only; generation tracking, cost accounting, tracing, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Dense vs BM25 vs Hybrid vs Reranker Benchmark
@@ -91,6 +92,32 @@ Run the interface, RRF, and reranking regression suite with:
 ```bash
 make test-retrieval-interface
 ```
+
+## Track Retrieval Experiments in MLflow
+
+Day 29 configures the `ragops-retrieval` experiment in [`configs/mlflow.yaml`](configs/mlflow.yaml). Run names come directly from the four retrieval config names:
+
+```text
+dense_baseline
+bm25_baseline
+hybrid_rrf
+hybrid_rrf_cross_encoder
+```
+
+Start the MLflow service, validate every source artifact without network access, then import and verify the four recorded benchmarks:
+
+```bash
+make services-up
+make validate-mlflow
+make log-retrieval-runs
+make verify-retrieval-runs
+```
+
+Open `http://127.0.0.1:5000`, select `ragops-retrieval`, and compare the four runs. Each run contains flattened pipeline parameters, MRR/Recall/Hit Rate/nDCG, total and available component latencies, the pipeline YAML, full evaluation JSON, evaluation CSV, and benchmark/comparison artifacts. The reranked run additionally records its controlled pre-rerank metrics and model-load latency.
+
+The importer does not rerun retrieval. It validates config/report algorithm parity, finite metrics, JSON/CSV question order, unique IDs, and artifact presence, then tags the run as `validated_artifact_import`. An SHA256 digest makes the command idempotent: an identical finished run is reused unless `scripts/log_retrieval_runs.py --force` is requested. This preserves the historical Day 19/23/25/27 measurements instead of presenting an import timestamp as a new evaluation.
+
+Future `evaluate.py`, `evaluate_bm25.py`, `evaluate_hybrid.py`, and `evaluate_reranker.py` executions log their newly written artifacts automatically with `ragops_run_source=live_evaluation`. Their `--validate-only` modes never contact MLflow. Use `--skip-mlflow` only when intentionally running an evaluation without tracking. `MLFLOW_TRACKING_URI` overrides the URI in `configs/mlflow.yaml`; host-run commands default to `http://127.0.0.1:5000`. Compose pins MLflow `v3.14.0`, restricts accepted Host headers to the host-loopback and Compose service addresses used by this project, and proxies artifact uploads into the persistent `mlflow_data` volume.
 
 ## Quickstart
 
@@ -486,12 +513,13 @@ query -> BM25 top 25 ---+
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
 - `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker evaluation and comparison, and LLM-as-judge orchestration
+- `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, and evaluation commands; later-milestone script files remain empty placeholders
+- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, evaluation, and MLflow import commands; later-milestone script files remain empty placeholders
 - `tests`: unit, API, dashboard, dataset, retrieval/fusion/reranking, metric, evaluation-runner, and LLM-judge tests; later-milestone test files remain empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 29: configure MLflow tracking, define experiment naming and tags, and log retrieval evaluation parameters, metrics, and artifacts without changing the measured Day 27 result.
+Proceed to Day 30: define versioned pipeline metadata, write the pipeline registry, assign baseline/candidate/production aliases, and document promotion semantics.

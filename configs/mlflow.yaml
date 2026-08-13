@@ -1,0 +1,31 @@
+schema_version: 1
+tracking_uri: http://127.0.0.1:5000
+experiment_name: ragops-retrieval
+
+runs:
+  - pipeline: dense
+    config_path: configs/dense_baseline.yaml
+    report_path: reports/evaluations/dense_baseline.json
+    csv_path: reports/evaluations/dense_baseline.csv
+    benchmark_path: reports/week3_dense_baseline.md
+
+  - pipeline: bm25
+    config_path: configs/bm25_baseline.yaml
+    report_path: reports/evaluations/bm25_baseline.json
+    csv_path: reports/evaluations/bm25_baseline.csv
+    comparison_path: reports/evaluations/bm25_vs_dense.json
+    benchmark_path: reports/week4_bm25_comparison.md
+
+  - pipeline: hybrid
+    config_path: configs/hybrid.yaml
+    report_path: reports/evaluations/hybrid_rrf.json
+    csv_path: reports/evaluations/hybrid_rrf.csv
+    comparison_path: reports/evaluations/hybrid_vs_baselines.json
+    benchmark_path: reports/week4_hybrid_comparison.md
+
+  - pipeline: reranked
+    config_path: configs/hybrid_rerank.yaml
+    report_path: reports/evaluations/hybrid_rrf_cross_encoder.json
+    csv_path: reports/evaluations/hybrid_rrf_cross_encoder.csv
+    comparison_path: reports/evaluations/reranker_vs_baselines.json
+    benchmark_path: reports/week4_reranker_comparison.md

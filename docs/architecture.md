@@ -9,7 +9,7 @@ RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline 
 - An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
 - Offline hybrid and reranked CLIs that retrieve independent dense and BM25 candidate pools, fuse ranks without normalizing incompatible raw scores, and optionally apply a cross-encoder.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, and the Day 28 common-interface refactor are implemented. Routing, caching, tracing, canary gates, failure mining, monitoring, generation cost accounting, and MLflow experiment logging remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, and Day 29 MLflow retrieval tracking are implemented. Routing, caching, tracing, canary gates, failure mining, monitoring, and generation cost accounting remain planned.
 
 ## System Diagram
 
@@ -65,6 +65,8 @@ flowchart LR
         Metrics --> Reports["JSON + CSV reports"]
         Reports --> Paired["Three-way ranks + cohorts + failures"]
         Paired --> Comparison["Comparison JSON + Markdown"]
+        Reports --> MLflow[(MLflow retrieval experiment)]
+        Comparison --> MLflow
     end
 
     subgraph GenerationEvaluation[Offline generation evaluation]
@@ -95,6 +97,7 @@ flowchart LR
 | Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
 | Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
+| Experiment tracker | `src/ragops/tracking/mlflow.py`, `scripts/log_retrieval_runs.py` | Validate retrieval evidence, flatten configs and metrics, log or import idempotent MLflow runs, upload CSV/JSON/YAML/Markdown artifacts, and verify the four-run acceptance state. |
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
@@ -316,11 +319,11 @@ Raw documents and processed embedding JSONL are intentionally ignored by Git. Th
 | --- | --- | --- |
 | Qdrant HTTP | `http://127.0.0.1:6333` | Docker Compose exposes the Qdrant service on the host. |
 | Qdrant gRPC | `127.0.0.1:6334` | Exposed but not used by the current Python path. |
-| MLflow | `http://127.0.0.1:5000` | Available for later experiment tracking; not used by the current request path. |
+| MLflow | `http://127.0.0.1:5000` | Stores the four retrieval evaluation runs; it is not used by the online request path. |
 | FastAPI | `http://127.0.0.1:8000` | Provides `/health`, `/retrieve`, `/query`, and `/docs`. |
 | Streamlit | `http://localhost:8501` | Calls FastAPI using `RAGOPS_API_URL`. |
 
-When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127.0.0.1:6333`. Docker Compose overrides it with `http://qdrant:6333` for the API container. Streamlit defaults to `http://127.0.0.1:8000`; override `RAGOPS_API_URL` when the API is elsewhere.
+When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127.0.0.1:6333`. Docker Compose overrides it with `http://qdrant:6333` for the API container. Host-run evaluation commands use `http://127.0.0.1:5000` for MLflow; another Compose service would use `http://mlflow:5000`. Streamlit defaults to `http://127.0.0.1:8000`; override `RAGOPS_API_URL` when the API is elsewhere.
 
 Generation configuration is resolved once when `create_app()` initializes its client:
 
@@ -355,7 +358,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 - Ingestion and index building load the full current record set into memory.
 - Source references are usually corpus-relative paths rather than public documentation URLs.
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
-- MLflow is provisioned by Docker Compose but no application or evaluation code logs runs to it yet.
+- MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged yet.
 - Tracing, SQLite persistence, routing, semantic caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 
 ## Planned Placeholders
