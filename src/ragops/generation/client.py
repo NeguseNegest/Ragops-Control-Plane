@@ -1,6 +1,31 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ragops.generation.citations import build_citations, format_citations
+
+
+class GenerationUsage(BaseModel):
+    """Provider-reported token counts for one generation request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_total(self):
+        if self.total_tokens < self.input_tokens + self.output_tokens:
+            raise ValueError("total_tokens must not be smaller than input_tokens plus output_tokens.")
+        return self
+
+
+class GeneratedText(BaseModel):
+    """Raw provider output plus optional authoritative usage metadata."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1)
+    usage: GenerationUsage | None = None
 
 
 class GenerationResult(BaseModel):
@@ -10,6 +35,7 @@ class GenerationResult(BaseModel):
     citations: list
     citation_text: str
     used_chunk_ids: list
+    usage: GenerationUsage | None = None
 
 
 class GenerationClient:
@@ -18,8 +44,15 @@ class GenerationClient:
         """Generate answer text from one completed prompt."""
         raise NotImplementedError("Generation clients must implement generate(prompt).")
 
+    def generate_with_metadata(self, prompt):
+        """Generate text while preserving compatibility with text-only clients."""
+        return GeneratedText(text=self.generate(prompt))
+
 
 class LocalTemplateGenerationClient(GenerationClient):
+
+    provider = "template"
+    model = "local-template-v1"
 
     def generate(self, prompt):
         """Return a simple cited answer without calling an external model."""
@@ -96,5 +129,19 @@ def generate_answer(query, chunks, client=None):
     if client is None:
         client = LocalTemplateGenerationClient()
 
-    answer = client.generate(prompt)
-    return GenerationResult(answer=answer, citations=citations, citation_text=format_citations(citations), used_chunk_ids=used_chunk_ids(chunks))
+    generate_with_metadata = getattr(client, "generate_with_metadata", None)
+    if callable(generate_with_metadata):
+        generated = generate_with_metadata(prompt)
+    else:
+        generated = GeneratedText(text=client.generate(prompt))
+    if isinstance(generated, str):
+        generated = GeneratedText(text=generated)
+    else:
+        generated = GeneratedText.model_validate(generated)
+    return GenerationResult(
+        answer=generated.text,
+        citations=citations,
+        citation_text=format_citations(citations),
+        used_chunk_ids=used_chunk_ids(chunks),
+        usage=generated.usage,
+    )

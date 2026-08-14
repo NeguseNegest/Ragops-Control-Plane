@@ -10,6 +10,7 @@ import ragops.app as app_module
 from ragops.generation.client import GenerationResult
 from ragops.retrieval.dense import RetrievedChunk
 from ragops.tracing import store as store_module
+from ragops.tracing.context import COMPONENT_TIMING_FIELDS
 from ragops.tracing.store import (
     TRACE_SCHEMA_VERSION,
     FeedbackRecord,
@@ -86,7 +87,7 @@ def test_initialize_creates_versioned_schema_and_required_tables(tmp_path):
 
 def test_trace_and_ranked_chunks_round_trip(tmp_path):
     store = make_store(tmp_path)
-    trace = make_trace()
+    trace = make_trace(embedding_ms=4.0, dense_ms=3.0, generation_ms=10.0)
 
     assert store.record_trace(trace, make_chunks()) == trace.trace_id
 
@@ -97,6 +98,11 @@ def test_trace_and_ranked_chunks_round_trip(tmp_path):
     assert chunks[0].metadata == {"section": 1, "title": "FastAPI"}
     assert chunks[0].used_for_generation is True
     assert chunks[1].used_for_generation is False
+    assert loaded.component_latencies().recorded() == {
+        "embedding_ms": 4.0,
+        "dense_ms": 3.0,
+        "generation_ms": 10.0,
+    }
     assert store.counts() == {"feedback": 0, "retrieved_chunks": 2, "traces": 1}
 
 
@@ -122,6 +128,12 @@ def test_trace_rejects_invalid_status_fields_and_naive_timestamps():
         make_trace(status="error")
     with pytest.raises(ValidationError, match="timezone-aware"):
         make_trace(created_at=datetime(2026, 8, 14, 12, 0))
+    with pytest.raises(ValidationError, match="greater than or equal"):
+        make_trace(embedding_ms=-1.0)
+    with pytest.raises(ValidationError, match="finite"):
+        make_trace(generation_ms=float("inf"))
+    with pytest.raises(ValidationError, match="generation latency"):
+        make_trace(endpoint="retrieve", answer=None, generation_ms=1.0)
 
 
 def test_trace_chunks_require_contiguous_ranks_unique_ids_and_matching_count(tmp_path):
@@ -227,6 +239,54 @@ def test_schema_migrates_version_one_without_deleting_related_records(tmp_path):
         assert connection.execute("PRAGMA user_version").fetchone()[0] == TRACE_SCHEMA_VERSION
 
 
+def test_schema_migrates_version_two_and_adds_empty_component_timings(tmp_path):
+    path = tmp_path / "version-two.sqlite3"
+    trace = make_trace(retrieved_chunk_count=0)
+    legacy_schema = "\n".join(
+        line
+        for line in store_module._TRACE_SCHEMA_SQL.splitlines()
+        if not any(line.strip().startswith(f"{field} REAL") for field in COMPONENT_TIMING_FIELDS)
+    )
+    with sqlite3.connect(path) as connection:
+        connection.executescript(legacy_schema)
+        connection.execute("PRAGMA user_version = 2")
+        connection.execute(
+            """
+            INSERT INTO traces (
+                trace_id, created_at, completed_at, endpoint, query, requested_top_k,
+                pipeline_name, pipeline_version, status, retrieved_chunk_count,
+                answer, total_latency_ms, error_type, error_message
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                trace.trace_id,
+                trace.created_at.isoformat(),
+                trace.completed_at.isoformat(),
+                trace.endpoint,
+                trace.query,
+                trace.requested_top_k,
+                trace.pipeline_name,
+                trace.pipeline_version,
+                trace.status,
+                0,
+                trace.answer,
+                trace.total_latency_ms,
+                None,
+                None,
+            ),
+        )
+
+    store = TraceStore(path).initialize()
+    migrated = store.get_trace(trace.trace_id)
+
+    assert migrated == trace
+    assert migrated.component_latencies().recorded() == {}
+    with sqlite3.connect(path) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(traces)").fetchall()}
+        assert set(COMPONENT_TIMING_FIELDS).issubset(columns)
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == TRACE_SCHEMA_VERSION
+
+
 def test_newer_schema_version_is_rejected(tmp_path):
     path = tmp_path / "future.sqlite3"
     with sqlite3.connect(path) as connection:
@@ -258,7 +318,37 @@ def test_real_api_store_records_every_successful_and_failed_query(monkeypatch, t
         metadata={"title": "FastAPI"},
         source_url="fastapi/tutorial.md",
     )
-    monkeypatch.setattr(app_module, "retrieve_chunks", lambda query, top_k: [chunk])
+    class Definition:
+        name = "dense_baseline"
+        route = "dense"
+        config = type(
+            "Config",
+            (),
+            {"version": "1.0.0", "status": "approved", "retriever_interface": "common_v1"},
+        )()
+
+        @property
+        def identity(self):
+            return configured_pipeline_identity(name=self.name, version=self.config.version)
+
+    class Execution:
+        chunks = [chunk]
+
+        @staticmethod
+        def cache_status():
+            return {}
+
+    class Runtime:
+        @staticmethod
+        def select(name):
+            assert name == "dense_baseline"
+            return Definition()
+
+        @staticmethod
+        def retrieve(definition, query, top_k, timings):
+            timings.update({"embedding_ms": 2.0, "dense_ms": 1.0})
+            return Execution()
+
     monkeypatch.setattr(
         app_module,
         "generate_answer",
@@ -275,11 +365,16 @@ def test_real_api_store_records_every_successful_and_failed_query(monkeypatch, t
             trace_store=store,
             pipeline_name="dense_baseline",
             pipeline_version="1.0.0",
+            pipeline_runtime=Runtime(),
         )
     )
 
     successful = client.post("/query", json={"query": "What is FastAPI?", "top_k": 1})
-    monkeypatch.setattr(app_module, "retrieve_chunks", lambda query, top_k: (_ for _ in ()).throw(RuntimeError("offline")))
+    monkeypatch.setattr(
+        app_module,
+        "retrieve_chunks",
+        lambda query, top_k, timings: (_ for _ in ()).throw(RuntimeError("offline")),
+    )
     failed = client.post("/retrieve", json={"query": "What is Qdrant?", "top_k": 1})
 
     assert successful.status_code == 200
@@ -290,6 +385,9 @@ def test_real_api_store_records_every_successful_and_failed_query(monkeypatch, t
     query_trace = next(trace for trace in traces if trace.endpoint == "query")
     assert query_trace.pipeline_name == "dense_baseline"
     assert query_trace.pipeline_version == "1.0.0"
+    assert query_trace.embedding_ms == 2.0
+    assert query_trace.dense_ms == 1.0
+    assert query_trace.generation_ms is not None
     assert store.list_retrieved_chunks(query_trace.trace_id)[0].used_for_generation is True
     assert store.counts() == {"feedback": 0, "retrieved_chunks": 1, "traces": 2}
 

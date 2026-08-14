@@ -1,17 +1,28 @@
 import os
-import time
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
 from ragops import __version__
-from ragops.api.schemas import CitationResponse, QueryRequest, QueryResponse, RetrievedChunkResponse, RetrieveRequest, RetrieveResponse
+from ragops.api.pipelines import PipelineExecutionError, PipelineResourceError, PipelineRuntime
+from ragops.api.schemas import (
+    CitationResponse,
+    QueryCostResponse,
+    QueryDebugResponse,
+    QueryRequest,
+    QueryResponse,
+    RetrievedChunkResponse,
+    RetrieveRequest,
+    RetrieveResponse,
+)
 from ragops.generation.client import generate_answer
+from ragops.generation.cost import configured_generation_pricing, estimate_generation_cost, generation_model, generation_provider
 from ragops.generation.factory import create_generation_client
 from ragops.indexing.qdrant import DEFAULT_QDRANT_URL, create_qdrant_client
 from ragops.retrieval.dense import retrieve_dense
+from ragops.tracing.context import TraceContext
 from ragops.tracing.store import (
     RetrievedChunkTrace,
     TraceRecord,
@@ -54,19 +65,14 @@ def get_qdrant_url():
     return qdrant_url.rstrip("/")
 
 
-def retrieve_chunks(query, top_k):
+def retrieve_chunks(query, top_k, timings=None):
     """Retrieve chunks from Qdrant and close the client afterward."""
     client = create_qdrant_client(get_qdrant_url())
 
     try:
-        return retrieve_dense(query=query, client=client, top_k=top_k)
+        return retrieve_dense(query=query, client=client, top_k=top_k, timings=timings)
     finally:
         close_qdrant_client(client)
-
-
-def elapsed_ms(start_time):
-    """Return elapsed milliseconds from a perf_counter start time."""
-    return (time.perf_counter() - start_time) * 1000
 
 
 def create_trace_store(path=None):
@@ -102,12 +108,14 @@ def persist_request_trace(
     top_k,
     chunks,
     latency_ms,
+    component_latencies,
     answer=None,
     used_chunk_ids=(),
     error=None,
+    pipeline_identity=None,
 ):
     """Persist one completed API attempt or return a trace-specific service error."""
-    pipeline_identity = app.state.pipeline_identity
+    pipeline_identity = pipeline_identity or app.state.pipeline_identity
     status = "error" if error is not None else "success"
     error_type = type(error).__name__ if error is not None else None
     error_message = (str(error).strip() or error_type) if error is not None else None
@@ -124,6 +132,7 @@ def persist_request_trace(
         retrieved_chunk_count=len(chunks),
         answer=answer,
         total_latency_ms=latency_ms,
+        **component_latencies.model_dump(),
         error_type=error_type,
         error_message=error_message,
     )
@@ -134,7 +143,7 @@ def persist_request_trace(
     return trace_id
 
 
-def create_app(generation_client=None, trace_store=None, pipeline_name=None, pipeline_version=None):
+def create_app(generation_client=None, trace_store=None, pipeline_name=None, pipeline_version=None, pipeline_runtime=None, generation_pricing=None):
     app = FastAPI(
         title="RAGOps Control Plane",
         version=__version__,
@@ -143,6 +152,8 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
     app.state.generation_client = generation_client if generation_client is not None else create_generation_client()
     app.state.trace_store = trace_store if trace_store is not None else create_trace_store()
     app.state.pipeline_identity = configured_pipeline_identity(name=pipeline_name, version=pipeline_version)
+    app.state.pipeline_runtime = pipeline_runtime if pipeline_runtime is not None else PipelineRuntime()
+    app.state.generation_pricing = generation_pricing if generation_pricing is not None else configured_generation_pricing()
 
     @app.get("/health", response_model=HealthResponse)
     def health():
@@ -151,14 +162,15 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
     @app.post("/retrieve", response_model=RetrieveResponse)
     def retrieve(request: RetrieveRequest):
         """Retrieve relevant context chunks for a given query."""
-        start_time = time.perf_counter()
+        trace_context = TraceContext()
         created_at = datetime.now(UTC)
         trace_id = str(uuid4())
         chunks = []
 
         try:
-            chunks = retrieve_chunks(request.query, request.top_k)
+            chunks = retrieve_chunks(request.query, request.top_k, timings=trace_context.timings)
         except ValueError as error:
+            component_latencies = trace_context.snapshot()
             persist_request_trace(
                 app,
                 trace_id=trace_id,
@@ -167,11 +179,13 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
                 query=request.query,
                 top_k=request.top_k,
                 chunks=chunks,
-                latency_ms=elapsed_ms(start_time),
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
                 error=error,
             )
             raise HTTPException(status_code=400, detail=str(error)) from error
         except Exception as error:
+            component_latencies = trace_context.snapshot()
             persist_request_trace(
                 app,
                 trace_id=trace_id,
@@ -180,13 +194,15 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
                 query=request.query,
                 top_k=request.top_k,
                 chunks=chunks,
-                latency_ms=elapsed_ms(start_time),
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
                 error=error,
             )
             raise HTTPException(status_code=503, detail="Unable to retrieve chunks.") from error
 
         response_chunks = [chunk_to_response(chunk) for chunk in chunks]
-        latency_ms = elapsed_ms(start_time)
+        latency_ms = trace_context.total_ms()
+        component_latencies = trace_context.snapshot()
         persist_request_trace(
             app,
             trace_id=trace_id,
@@ -196,21 +212,35 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
             top_k=request.top_k,
             chunks=chunks,
             latency_ms=latency_ms,
+            component_latencies=component_latencies,
         )
-        return RetrieveResponse(query=request.query, top_k=request.top_k, chunks=response_chunks, latency_ms=latency_ms)
+        return RetrieveResponse(
+            query=request.query,
+            top_k=request.top_k,
+            chunks=response_chunks,
+            latency_ms=latency_ms,
+            component_latencies=component_latencies,
+        )
 
     @app.post("/query", response_model=QueryResponse)
-    def query(request: QueryRequest):
+    def query(request: QueryRequest, response: Response):
         """Retrieve context and generate a cited answer."""
-        start_time = time.perf_counter()
+        trace_context = TraceContext()
         created_at = datetime.now(UTC)
         trace_id = str(uuid4())
         chunks = []
+        definition = app.state.pipeline_runtime.select(request.config)
 
         try:
-            chunks = retrieve_chunks(request.query, request.top_k)
-            generation_result = generate_answer(query=request.query, chunks=chunks, client=app.state.generation_client)
+            execution = app.state.pipeline_runtime.retrieve(
+                definition,
+                request.query,
+                request.top_k,
+                timings=trace_context.timings,
+            )
+            chunks = execution.chunks
         except ValueError as error:
+            component_latencies = trace_context.snapshot()
             persist_request_trace(
                 app,
                 trace_id=trace_id,
@@ -219,11 +249,54 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
                 query=request.query,
                 top_k=request.top_k,
                 chunks=chunks,
-                latency_ms=elapsed_ms(start_time),
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
                 error=error,
+                pipeline_identity=definition.identity,
             )
-            raise HTTPException(status_code=400, detail=str(error)) from error
+            raise HTTPException(status_code=400, detail=str(error), headers={"X-Trace-ID": trace_id}) from error
+        except PipelineResourceError as error:
+            component_latencies = trace_context.snapshot()
+            persist_request_trace(
+                app,
+                trace_id=trace_id,
+                created_at=created_at,
+                endpoint="query",
+                query=request.query,
+                top_k=request.top_k,
+                chunks=chunks,
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
+                error=error,
+                pipeline_identity=definition.identity,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Selected query pipeline is unavailable.",
+                headers={"X-Trace-ID": trace_id},
+            ) from error
+        except PipelineExecutionError as error:
+            component_latencies = trace_context.snapshot()
+            persist_request_trace(
+                app,
+                trace_id=trace_id,
+                created_at=created_at,
+                endpoint="query",
+                query=request.query,
+                top_k=request.top_k,
+                chunks=chunks,
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
+                error=error,
+                pipeline_identity=definition.identity,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Unable to retrieve chunks with the selected pipeline.",
+                headers={"X-Trace-ID": trace_id},
+            ) from error
         except Exception as error:
+            component_latencies = trace_context.snapshot()
             persist_request_trace(
                 app,
                 trace_id=trace_id,
@@ -232,14 +305,80 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
                 query=request.query,
                 top_k=request.top_k,
                 chunks=chunks,
-                latency_ms=elapsed_ms(start_time),
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
                 error=error,
+                pipeline_identity=definition.identity,
             )
-            raise HTTPException(status_code=503, detail="Unable to generate answer.") from error
+            raise HTTPException(
+                status_code=503,
+                detail="Unable to retrieve chunks with the selected pipeline.",
+                headers={"X-Trace-ID": trace_id},
+            ) from error
+
+        try:
+            with trace_context.measure("generation"):
+                generation_result = generate_answer(query=request.query, chunks=chunks, client=app.state.generation_client)
+        except ValueError as error:
+            component_latencies = trace_context.snapshot()
+            persist_request_trace(
+                app,
+                trace_id=trace_id,
+                created_at=created_at,
+                endpoint="query",
+                query=request.query,
+                top_k=request.top_k,
+                chunks=chunks,
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
+                error=error,
+                pipeline_identity=definition.identity,
+            )
+            raise HTTPException(status_code=400, detail=str(error), headers={"X-Trace-ID": trace_id}) from error
+        except Exception as error:
+            component_latencies = trace_context.snapshot()
+            persist_request_trace(
+                app,
+                trace_id=trace_id,
+                created_at=created_at,
+                endpoint="query",
+                query=request.query,
+                top_k=request.top_k,
+                chunks=chunks,
+                latency_ms=trace_context.total_ms(),
+                component_latencies=component_latencies,
+                error=error,
+                pipeline_identity=definition.identity,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Unable to generate answer.",
+                headers={"X-Trace-ID": trace_id},
+            ) from error
 
         response_chunks = [chunk_to_response(chunk) for chunk in chunks]
         response_citations = [citation_to_response(citation) for citation in generation_result.citations]
-        latency_ms = elapsed_ms(start_time)
+        generation_cost = estimate_generation_cost(
+            app.state.generation_client,
+            generation_result.usage,
+            pricing=app.state.generation_pricing,
+        )
+        cost_response = QueryCostResponse(**generation_cost.__dict__)
+        debug_response = None
+        if request.debug:
+            debug_response = QueryDebugResponse(
+                pipeline_id=f"{definition.name}@{definition.config.version}",
+                pipeline_status=definition.config.status,
+                retriever_interface=definition.config.retriever_interface,
+                requested_top_k=request.top_k,
+                returned_chunks=len(chunks),
+                configured_depths=definition.candidate_depths(),
+                generation_provider=generation_provider(app.state.generation_client),
+                generation_model=generation_model(app.state.generation_client),
+                resource_cache_hits=execution.cache_status(),
+            )
+        latency_ms = trace_context.total_ms()
+        component_latencies = trace_context.snapshot()
         persist_request_trace(
             app,
             trace_id=trace_id,
@@ -249,10 +388,17 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
             top_k=request.top_k,
             chunks=chunks,
             latency_ms=latency_ms,
+            component_latencies=component_latencies,
             answer=generation_result.answer,
             used_chunk_ids=generation_result.used_chunk_ids,
+            pipeline_identity=definition.identity,
         )
+        response.headers["X-Trace-ID"] = trace_id
         return QueryResponse(
+            trace_id=trace_id,
+            route=definition.route,
+            config=definition.name,
+            config_version=definition.config.version,
             query=request.query,
             answer=generation_result.answer,
             citations=response_citations,
@@ -260,6 +406,9 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
             chunks=response_chunks,
             used_chunk_ids=generation_result.used_chunk_ids,
             latency_ms=latency_ms,
+            component_latencies=component_latencies,
+            cost=cost_response,
+            debug=debug_response,
         )
 
     return app

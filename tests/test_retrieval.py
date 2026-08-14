@@ -58,6 +58,8 @@ def test_build_retrieved_chunks_adds_ranks_in_result_order():
 
 def test_retrieve_dense_embeds_searches_and_returns_chunks(monkeypatch):
     calls = {}
+    timings = {}
+    clock_values = iter([0.0, 0.01, 0.02, 0.05])
 
     def fake_embed_query(query, embedding_model):
         calls["embed"] = (query, embedding_model)
@@ -70,8 +72,29 @@ def test_retrieve_dense_embeds_searches_and_returns_chunks(monkeypatch):
     monkeypatch.setattr(dense, "embed_query", fake_embed_query)
     monkeypatch.setattr(dense, "search_index", fake_search_index)
 
-    chunks = retrieve_dense("  install qdrant  ", client="fake-client", top_k=2, collection_name="test_chunks", embedding_model="fake-model")
+    chunks = retrieve_dense(
+        "  install qdrant  ",
+        client="fake-client",
+        top_k=2,
+        collection_name="test_chunks",
+        embedding_model="fake-model",
+        timings=timings,
+        clock=lambda: next(clock_values),
+    )
 
     assert calls["embed"] == ("install qdrant", "fake-model")
     assert calls["search"] == ("fake-client", "test_chunks", [0.1, 0.2, 0.3], 2)
     assert [chunk.chunk_id for chunk in chunks] == ["chunk-1", "chunk-2"]
+    assert timings == {"embedding_ms": pytest.approx(10.0), "dense_ms": pytest.approx(30.0)}
+
+
+def test_retrieve_dense_retains_partial_component_time_when_search_fails(monkeypatch):
+    timings = {}
+    clock_values = iter([0.0, 0.01, 0.02, 0.05])
+    monkeypatch.setattr(dense, "embed_query", lambda query, embedding_model: [0.1])
+    monkeypatch.setattr(dense, "search_index", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
+
+    with pytest.raises(RuntimeError, match="offline"):
+        retrieve_dense("query", client="client", timings=timings, clock=lambda: next(clock_values))
+
+    assert timings == {"embedding_ms": pytest.approx(10.0), "dense_ms": pytest.approx(30.0)}

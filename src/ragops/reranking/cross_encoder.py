@@ -299,7 +299,10 @@ def rerank_chunks(query, chunks, reranker, candidate_top_k=DEFAULT_RERANK_CANDID
         scores = reranker.score(query, candidates)
     except Exception as error:
         raise RuntimeError(f"Cross-encoder reranking failed: {error}") from error
-    reranker_latency_ms = max(0.0, (clock() - started_at) * 1000)
+    finally:
+        reranker_latency_ms = max(0.0, (clock() - started_at) * 1000)
+        if timings is not None:
+            timings["reranker_ms"] = reranker_latency_ms
     if len(scores) != len(candidates):
         raise ValueError(f"Reranker returned {len(scores)} scores for {len(candidates)} candidates.")
 
@@ -331,8 +334,6 @@ def rerank_chunks(query, chunks, reranker, candidate_top_k=DEFAULT_RERANK_CANDID
                 source_url=candidate.source_url,
             )
         )
-    if timings is not None:
-        timings["reranker_ms"] = reranker_latency_ms
     return results
 
 
@@ -360,19 +361,21 @@ class CrossEncoderRerankedRetriever(Retriever):
 
         stage_timings = {}
         started_at = self.clock()
-        candidates = self.candidate_retriever.retrieve(query, top_k=self.candidate_top_k, timings=stage_timings)
-        results = rerank_chunks(
-            query,
-            candidates,
-            self.reranker,
-            candidate_top_k=self.candidate_top_k,
-            top_k=top_k,
-            clock=self.clock,
-            timings=stage_timings,
-        )
-        stage_timings["total_ms"] = max(0.0, (self.clock() - started_at) * 1000)
-        if timings is not None:
-            timings.update(stage_timings)
+        try:
+            candidates = self.candidate_retriever.retrieve(query, top_k=self.candidate_top_k, timings=stage_timings)
+            results = rerank_chunks(
+                query,
+                candidates,
+                self.reranker,
+                candidate_top_k=self.candidate_top_k,
+                top_k=top_k,
+                clock=self.clock,
+                timings=stage_timings,
+            )
+        finally:
+            stage_timings["total_ms"] = max(0.0, (self.clock() - started_at) * 1000)
+            if timings is not None:
+                timings.update(stage_timings)
         return candidates, results
 
     def retrieve(self, query, top_k=None, timings=None):

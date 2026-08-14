@@ -55,7 +55,8 @@ class FunctionRetriever(Retriever):
         top_k = resolve_top_k(top_k, self.default_top_k)
         validate_timings(timings)
         started_at = self.clock() if timings is not None and self.timing_name else None
-        results = list(self.function(query=query, top_k=top_k, **self.parameters))
-        if started_at is not None:
-            timings[self.timing_name] = max(0.0, (self.clock() - started_at) * 1000)
-        return results
+        try:
+            return list(self.function(query=query, top_k=top_k, **self.parameters))
+        finally:
+            if started_at is not None:
+                timings[self.timing_name] = max(0.0, (self.clock() - started_at) * 1000)

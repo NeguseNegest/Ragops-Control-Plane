@@ -465,10 +465,11 @@ class BM25Retriever(Retriever):
         top_k = resolve_top_k(top_k, self.default_top_k)
         validate_timings(timings)
         started_at = self.clock() if timings is not None else None
-        results = self.index.search(query, top_k=top_k)
-        if started_at is not None:
-            timings["bm25_ms"] = max(0.0, (self.clock() - started_at) * 1000)
-        return results
+        try:
+            return self.index.search(query, top_k=top_k)
+        finally:
+            if started_at is not None:
+                timings["bm25_ms"] = max(0.0, (self.clock() - started_at) * 1000)
 
 
 def retrieve_bm25(query, index, top_k=DEFAULT_TOP_K):

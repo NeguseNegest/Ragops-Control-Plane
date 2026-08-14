@@ -1,7 +1,7 @@
 import pytest
 
 from ragops.generation.citations import build_citations
-from ragops.generation.client import GenerationResult, LocalTemplateGenerationClient, build_context, build_generation_prompt, generate_answer, used_chunk_ids, validate_generation_inputs
+from ragops.generation.client import GeneratedText, GenerationResult, GenerationUsage, LocalTemplateGenerationClient, build_context, build_generation_prompt, generate_answer, used_chunk_ids, validate_generation_inputs
 from ragops.retrieval.dense import RetrievedChunk
 
 
@@ -77,6 +77,19 @@ def test_generate_answer_uses_fake_client_and_returns_generation_result():
     assert result.citation_text == "[1] FastAPI Tutorial - fastapi/docs/tutorial.md"
     assert result.used_chunk_ids == ["chunk-1"]
     assert "What is FastAPI?" in client.prompt
+
+
+def test_generate_answer_preserves_provider_usage_metadata():
+    class FakeClient:
+        def generate_with_metadata(self, prompt):
+            return GeneratedText(
+                text="FastAPI is used to build APIs. [1]",
+                usage=GenerationUsage(input_tokens=100, output_tokens=12, total_tokens=112),
+            )
+
+    result = generate_answer("What is FastAPI?", [make_chunk()], client=FakeClient())
+
+    assert result.usage == GenerationUsage(input_tokens=100, output_tokens=12, total_tokens=112)
 
 
 def test_used_chunk_ids_preserves_retrieval_order():

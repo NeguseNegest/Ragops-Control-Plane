@@ -353,36 +353,50 @@ class HybridRetriever(Retriever):
         if self.dense_top_k < top_k or self.bm25_top_k < top_k:
             raise ValueError("Candidate depths must each be at least top_k.")
 
-        dense_started_at = self.clock()
+        dense_stage_timings = {}
+        dense_started_at = self.clock() if timings is not None else None
         try:
-            dense_results = list(self.dense_retriever.retrieve(query, top_k=self.dense_top_k))
+            dense_results = list(
+                self.dense_retriever.retrieve(
+                    query,
+                    top_k=self.dense_top_k,
+                    timings=dense_stage_timings if timings is not None else None,
+                )
+            )
         except Exception as error:
             raise RuntimeError(f"Dense candidate retrieval failed: {error}") from error
-        dense_latency_ms = max(0.0, (self.clock() - dense_started_at) * 1000)
+        finally:
+            if dense_started_at is not None:
+                dense_stage_timings.setdefault("dense_ms", max(0.0, (self.clock() - dense_started_at) * 1000))
+                timings.update(dense_stage_timings)
 
-        bm25_started_at = self.clock()
+        bm25_stage_timings = {}
+        bm25_started_at = self.clock() if timings is not None else None
         try:
-            bm25_results = list(self.bm25_retriever.retrieve(query, top_k=self.bm25_top_k))
+            bm25_results = list(
+                self.bm25_retriever.retrieve(
+                    query,
+                    top_k=self.bm25_top_k,
+                    timings=bm25_stage_timings if timings is not None else None,
+                )
+            )
         except Exception as error:
             raise RuntimeError(f"BM25 candidate retrieval failed: {error}") from error
-        bm25_latency_ms = max(0.0, (self.clock() - bm25_started_at) * 1000)
+        finally:
+            if bm25_started_at is not None:
+                bm25_stage_timings.setdefault("bm25_ms", max(0.0, (self.clock() - bm25_started_at) * 1000))
+                timings.update(bm25_stage_timings)
 
-        fusion_started_at = self.clock()
-        results = reciprocal_rank_fusion(
-            {"dense": dense_results, "bm25": bm25_results},
-            top_k=top_k,
-            rank_constant=self.rank_constant,
-        )
-        fusion_latency_ms = max(0.0, (self.clock() - fusion_started_at) * 1000)
-        if timings is not None:
-            timings.update(
-                {
-                    "dense_ms": dense_latency_ms,
-                    "bm25_ms": bm25_latency_ms,
-                    "fusion_ms": fusion_latency_ms,
-                }
+        fusion_started_at = self.clock() if timings is not None else None
+        try:
+            return reciprocal_rank_fusion(
+                {"dense": dense_results, "bm25": bm25_results},
+                top_k=top_k,
+                rank_constant=self.rank_constant,
             )
-        return results
+        finally:
+            if fusion_started_at is not None:
+                timings["fusion_ms"] = max(0.0, (self.clock() - fusion_started_at) * 1000)
 
 
 def build_hybrid_retriever(config, client, index, dense_retriever=retrieve_dense, bm25_retriever=retrieve_bm25, clock=time.perf_counter):

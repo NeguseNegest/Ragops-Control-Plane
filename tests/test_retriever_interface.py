@@ -76,6 +76,17 @@ def test_dense_and_bm25_implement_the_common_interface():
     assert sparse.retrieve("alpha", top_k=1)[0].chunk_id == "a"
 
 
+def test_bm25_interface_records_sparse_stage_latency():
+    clock_values = iter([0.0, 0.025])
+    sparse = BM25Retriever(make_index(), default_top_k=1, clock=lambda: next(clock_values))
+    timings = {}
+
+    results = sparse.retrieve("alpha", timings=timings)
+
+    assert results[0].chunk_id == "a"
+    assert timings == {"bm25_ms": pytest.approx(25.0)}
+
+
 def test_hybrid_interface_runs_rrf_and_records_stage_timings():
     dense = StubRetriever([make_chunk("dense", 1), make_chunk("shared", 2)])
     sparse = StubRetriever([make_chunk("sparse", 1), make_chunk("shared", 2)])
@@ -87,8 +98,8 @@ def test_hybrid_interface_runs_rrf_and_records_stage_timings():
 
     assert [result.chunk_id for result in results] == ["shared", "dense"]
     assert results[0].metadata[FUSION_METADATA_KEY]["sources"].keys() == {"dense", "bm25"}
-    assert dense.calls == [("query", 2, None)]
-    assert sparse.calls == [("query", 2, None)]
+    assert dense.calls == [("query", 2, {"dense_ms": pytest.approx(10.0)})]
+    assert sparse.calls == [("query", 2, {"bm25_ms": pytest.approx(20.0)})]
     assert timings == {"dense_ms": 10.0, "bm25_ms": 20.0, "fusion_ms": pytest.approx(1.0)}
 
 

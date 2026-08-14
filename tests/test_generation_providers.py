@@ -9,24 +9,26 @@ from ragops.generation.providers import GeminiGenerationClient, OpenAIGeneration
 
 class FakeOpenAIResponses:
 
-    def __init__(self, output_text="OpenAI answer [1]"):
+    def __init__(self, output_text="OpenAI answer [1]", usage=None):
         self.output_text = output_text
+        self.usage = usage
         self.calls = []
 
     def create(self, **kwargs):
         self.calls.append(kwargs)
-        return SimpleNamespace(output_text=self.output_text)
+        return SimpleNamespace(output_text=self.output_text, usage=self.usage)
 
 
 class FakeGeminiInteractions:
 
-    def __init__(self, output_text="Gemini answer [1]"):
+    def __init__(self, output_text="Gemini answer [1]", usage=None):
         self.output_text = output_text
+        self.usage = usage
         self.calls = []
 
     def create(self, **kwargs):
         self.calls.append(kwargs)
-        return SimpleNamespace(output_text=self.output_text)
+        return SimpleNamespace(output_text=self.output_text, usage=self.usage)
 
 
 def test_openai_generation_client_uses_responses_api():
@@ -49,6 +51,28 @@ def test_gemini_generation_client_uses_interactions_api():
 
     assert answer == "Gemini answer [1]"
     assert interactions.calls == [{"model": "test-gemini-model", "input": "Grounded prompt"}]
+
+
+def test_openai_generation_client_preserves_response_usage():
+    usage = SimpleNamespace(input_tokens=120, output_tokens=30, total_tokens=150)
+    responses = FakeOpenAIResponses(usage=usage)
+    client = OpenAIGenerationClient(model="test-openai-model", client=SimpleNamespace(responses=responses))
+
+    generated = client.generate_with_metadata("Grounded prompt")
+
+    assert generated.text == "OpenAI answer [1]"
+    assert generated.usage.model_dump() == {"input_tokens": 120, "output_tokens": 30, "total_tokens": 150}
+
+
+def test_gemini_generation_client_preserves_interaction_usage():
+    usage = SimpleNamespace(total_input_tokens=90, total_output_tokens=20, total_tokens=115)
+    interactions = FakeGeminiInteractions(usage=usage)
+    client = GeminiGenerationClient(model="test-gemini-model", client=SimpleNamespace(interactions=interactions))
+
+    generated = client.generate_with_metadata("Grounded prompt")
+
+    assert generated.text == "Gemini answer [1]"
+    assert generated.usage.model_dump() == {"input_tokens": 90, "output_tokens": 20, "total_tokens": 115}
 
 
 @pytest.mark.parametrize(

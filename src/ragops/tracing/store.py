@@ -10,8 +10,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ragops.pipeline_registry import PipelineVersion
+from ragops.tracing.context import COMPONENT_TIMING_FIELDS, ComponentLatencies
 
-TRACE_SCHEMA_VERSION = 2
+TRACE_SCHEMA_VERSION = 3
 DEFAULT_TRACE_DB_PATH = Path("data/traces/ragops_traces.sqlite3")
 TRACE_TABLES = frozenset({"traces", "retrieved_chunks", "feedback"})
 
@@ -29,6 +30,12 @@ CREATE TABLE IF NOT EXISTS traces (
     retrieved_chunk_count INTEGER NOT NULL CHECK (retrieved_chunk_count >= 0),
     answer TEXT,
     total_latency_ms REAL NOT NULL CHECK (total_latency_ms >= 0),
+    embedding_ms REAL CHECK (embedding_ms IS NULL OR embedding_ms >= 0),
+    dense_ms REAL CHECK (dense_ms IS NULL OR dense_ms >= 0),
+    bm25_ms REAL CHECK (bm25_ms IS NULL OR bm25_ms >= 0),
+    fusion_ms REAL CHECK (fusion_ms IS NULL OR fusion_ms >= 0),
+    reranker_ms REAL CHECK (reranker_ms IS NULL OR reranker_ms >= 0),
+    generation_ms REAL CHECK (generation_ms IS NULL OR generation_ms >= 0),
     error_type TEXT,
     error_message TEXT,
     CHECK (
@@ -124,6 +131,20 @@ COMMIT;
 PRAGMA foreign_keys = ON;
 """
 
+_MIGRATE_2_TO_3_SQL = """
+BEGIN IMMEDIATE;
+
+ALTER TABLE traces ADD COLUMN embedding_ms REAL CHECK (embedding_ms IS NULL OR embedding_ms >= 0);
+ALTER TABLE traces ADD COLUMN dense_ms REAL CHECK (dense_ms IS NULL OR dense_ms >= 0);
+ALTER TABLE traces ADD COLUMN bm25_ms REAL CHECK (bm25_ms IS NULL OR bm25_ms >= 0);
+ALTER TABLE traces ADD COLUMN fusion_ms REAL CHECK (fusion_ms IS NULL OR fusion_ms >= 0);
+ALTER TABLE traces ADD COLUMN reranker_ms REAL CHECK (reranker_ms IS NULL OR reranker_ms >= 0);
+ALTER TABLE traces ADD COLUMN generation_ms REAL CHECK (generation_ms IS NULL OR generation_ms >= 0);
+PRAGMA user_version = 3;
+
+COMMIT;
+"""
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -152,6 +173,12 @@ class TraceRecord(StrictModel):
     retrieved_chunk_count: int = Field(ge=0)
     answer: str | None = None
     total_latency_ms: float = Field(ge=0)
+    embedding_ms: float | None = Field(default=None, ge=0)
+    dense_ms: float | None = Field(default=None, ge=0)
+    bm25_ms: float | None = Field(default=None, ge=0)
+    fusion_ms: float | None = Field(default=None, ge=0)
+    reranker_ms: float | None = Field(default=None, ge=0)
+    generation_ms: float | None = Field(default=None, ge=0)
     error_type: str | None = None
     error_message: str | None = None
 
@@ -184,11 +211,11 @@ class TraceRecord(StrictModel):
             raise ValueError("Trace timestamps must be timezone-aware.")
         return value.astimezone(UTC)
 
-    @field_validator("total_latency_ms")
+    @field_validator("total_latency_ms", *COMPONENT_TIMING_FIELDS)
     @classmethod
     def validate_finite_latency(cls, value):
-        if not math.isfinite(value):
-            raise ValueError("Trace total latency must be finite.")
+        if value is not None and not math.isfinite(value):
+            raise ValueError("Trace latencies must be finite.")
         return value
 
     @model_validator(mode="after")
@@ -201,7 +228,13 @@ class TraceRecord(StrictModel):
             raise ValueError("Error traces must contain error type and message.")
         if self.endpoint == "retrieve" and self.answer is not None:
             raise ValueError("Retrieve traces must not contain a generated answer.")
+        if self.endpoint == "retrieve" and self.generation_ms is not None:
+            raise ValueError("Retrieve traces must not contain generation latency.")
         return self
+
+    def component_latencies(self):
+        """Return the validated component-latency response/storage view."""
+        return ComponentLatencies.model_validate({field: getattr(self, field) for field in COMPONENT_TIMING_FIELDS})
 
 
 class RetrievedChunkTrace(StrictModel):
@@ -339,9 +372,14 @@ class TraceStore:
             if current_version == 0:
                 connection.executescript(_TRACE_SCHEMA_SQL)
                 connection.execute(f"PRAGMA user_version = {TRACE_SCHEMA_VERSION}")
-            elif current_version == 1:
+                current_version = TRACE_SCHEMA_VERSION
+            if current_version == 1:
                 connection.executescript(_MIGRATE_1_TO_2_SQL)
-            elif current_version < TRACE_SCHEMA_VERSION:
+                current_version = 2
+            if current_version == 2:
+                connection.executescript(_MIGRATE_2_TO_3_SQL)
+                current_version = 3
+            if current_version < TRACE_SCHEMA_VERSION:
                 raise ValueError(f"No migration is available from trace schema {current_version} to {TRACE_SCHEMA_VERSION}.")
         self.validate_schema()
         return self
@@ -364,6 +402,7 @@ class TraceStore:
                 "retrieved_chunk_count",
                 "answer",
                 "total_latency_ms",
+                *COMPONENT_TIMING_FIELDS,
                 "error_type",
                 "error_message",
             },
@@ -436,6 +475,12 @@ class TraceStore:
             trace.retrieved_chunk_count,
             trace.answer,
             trace.total_latency_ms,
+            trace.embedding_ms,
+            trace.dense_ms,
+            trace.bm25_ms,
+            trace.fusion_ms,
+            trace.reranker_ms,
+            trace.generation_ms,
             trace.error_type,
             trace.error_message,
         )
@@ -445,8 +490,9 @@ class TraceStore:
                 INSERT INTO traces (
                     trace_id, created_at, completed_at, endpoint, query, requested_top_k,
                     pipeline_name, pipeline_version, status, retrieved_chunk_count,
-                    answer, total_latency_ms, error_type, error_message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    answer, total_latency_ms, embedding_ms, dense_ms, bm25_ms,
+                    fusion_ms, reranker_ms, generation_ms, error_type, error_message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 trace_values,
             )

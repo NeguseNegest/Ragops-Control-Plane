@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, and durable online request traces through Day 31.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, and a selectable production query endpoint through Day 33.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 31 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, and an online SQLite trace store. The current baseline includes:
+Implementation is complete through Day 33 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, an online SQLite trace store, request-scoped component timings, and a production `/query` contract. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -49,6 +49,8 @@ Implementation is complete through Day 31 of the project plan, including a measu
 - ranked chunks, provenance metadata, and deduplicated citations
 - selectable offline-template, OpenAI Responses API, and Gemini Interactions API generation clients
 - `GET /health`, `POST /retrieve`, and `POST /query`
+- explicit `dense_baseline`, `hybrid_rrf`, and `hybrid_rrf_cross_encoder` selection on `POST /query`, with lazy BM25/cross-encoder reuse and request-scoped Qdrant clients
+- response trace IDs, route/config provenance, opt-in debug diagnostics, and honest zero/estimated/unavailable generation cost states
 - Streamlit query interface with answers, citations, evidence, scores, and latency
 - local and Docker Qdrant configuration through `QDRANT_URL`
 - request validation, API error translation, and dashboard error handling
@@ -60,18 +62,19 @@ Implementation is complete through Day 31 of the project plan, including a measu
 - MLflow logging for dense, BM25, RRF, and reranked evaluations with config-derived run names, flattened parameters, quality/latency metrics, validated CSV/JSON/config/report artifacts, and idempotent artifact imports
 - a deterministic pipeline registry with semantic versions, lifecycle status, config checksums, common-depth evidence, MLflow references, and guarded baseline/candidate/production aliases
 - atomic SQLite request tracing for successful and failed `/retrieve` and `/query` calls, including pipeline provenance and the complete ranked evidence set
+- a monotonic trace context that captures embedding, dense search, BM25, RRF fusion, cross-encoder, and generation latency, retains partial timings on failure, and returns the timing shape through both online endpoints
 - a feedback table linked to traces, schema/version validation, a migration path, and a persistent Docker volume
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
 Current limitations:
 
-- Dense retrieval remains the only retriever connected to the online API. BM25, RRF hybrid, and hybrid-plus-reranker retrieval are available through offline CLIs but are not exposed through `POST /retrieve` and `POST /query`.
+- `POST /query` exposes dense, RRF hybrid, and hybrid-plus-reranker retrieval by explicit config selection; `POST /retrieve` and the Streamlit form still use dense retrieval only. Rule-based automatic routing is a later milestone.
 - Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; version `hybrid_rrf@1.0.0` is therefore `rejected` and has no registry alias.
-- The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query and is not suitable for the online path without latency optimization or selective routing.
+- The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. MLflow currently tracks retrieval evaluations only; generation tracking, cost accounting, component-level online timings, routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query cost is returned but not persisted or aggregated; MLflow currently tracks retrieval evaluations only, and routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates remain planned.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Dense vs BM25 vs Hybrid vs Reranker Benchmark
@@ -130,7 +133,7 @@ Day 30 treats every retrieval YAML as a named semantic version with a lifecycle 
 | --- | --- | --- | --- |
 | `baseline` | `bm25_baseline@1.0.0` | `approved` | Measured comparison control. |
 | `candidate` | `hybrid_rrf_cross_encoder@1.0.0` | `evaluated` | Quality-leading version awaiting latency/operational gates. |
-| `production` | `dense_baseline@1.0.0` | `approved` | Dense retrieval currently used by the FastAPI path. |
+| `production` | `dense_baseline@1.0.0` | `approved` | Dense retrieval used by the default FastAPI query path. |
 
 `hybrid_rrf@1.0.0` is retained with status `rejected` because it did not beat BM25. Rejected, retired, draft, missing, or stale versions cannot receive aliases. `baseline` and `production` must point to `approved` versions; `candidate` must point to an `evaluated` or `approved` version.
 
@@ -152,7 +155,7 @@ Three related tables preserve the request:
 
 | Table | Stored data |
 | --- | --- |
-| `traces` | UUID, UTC timestamps, endpoint, raw query, requested depth, pipeline name/version, success/error status, answer, total latency, and error details. |
+| `traces` | UUID, UTC timestamps, endpoint, raw query, requested depth, pipeline name/version, success/error status, answer, total latency, six optional component latencies, and error details. |
 | `retrieved_chunks` | One row per ranked chunk with IDs, full text, score, source, deterministic metadata JSON, and whether generation used it. |
 | `feedback` | Optional positive/negative rating or comment tied to an existing trace. Day 31 supplies the repository method; a feedback HTTP endpoint is not added yet. |
 
@@ -164,9 +167,27 @@ make validate-trace-store
 make test-tracing
 ```
 
-`RAGOPS_TRACE_DB_PATH` changes the database location. `RAGOPS_PIPELINE_NAME` and `RAGOPS_PIPELINE_VERSION` record the explicitly deployed runtime identity; their defaults are `dense_baseline` and `1.0.0`. Docker Compose mounts `/app/data/traces` from the named `ragops_trace_data` volume, so API restarts do not discard traces. The database and WAL files are runtime state and remain ignored by Git. See [`docs/tracing.md`](docs/tracing.md) for the schema contract, transaction behavior, and operational limits.
+`RAGOPS_TRACE_DB_PATH` changes the database location. `RAGOPS_PIPELINE_NAME` and `RAGOPS_PIPELINE_VERSION` remain the identity for dense-only `/retrieve`; `/query` records the name and version of the request-selected config. Docker Compose mounts `/app/data/traces` from the named `ragops_trace_data` volume, so API restarts do not discard traces. The database and WAL files are runtime state and remain ignored by Git. See [`docs/tracing.md`](docs/tracing.md) for the schema contract, transaction behavior, and operational limits.
 
-Malformed bodies rejected by FastAPI before an endpoint handler runs return HTTP 422 and do not have enough validated request fields to create a Day 31 trace. Component timings and returning the trace ID in the response deliberately remain Days 32 and 33.
+Day 32 adds `component_latencies` to successful `/retrieve` and `/query` responses:
+
+```json
+{
+  "latency_ms": 18.7,
+  "component_latencies": {
+    "embedding_ms": 7.2,
+    "dense_ms": 4.1,
+    "bm25_ms": null,
+    "fusion_ms": null,
+    "reranker_ms": null,
+    "generation_ms": 6.5
+  }
+}
+```
+
+`dense_ms` measures Qdrant search and result normalization separately from `embedding_ms`. BM25, fusion, and reranker values are populated when the corresponding `/query` config runs. `/retrieve` has no generation stage, while `/query` records generation even if the provider raises. The same component values are persisted on the trace row. Timers use `perf_counter`, retain completed or failed-stage measurements, and do not include SQLite persistence in `latency_ms`.
+
+Day 33 adds `config` and `debug` request fields and returns `trace_id`, `route`, exact config/version, citations, chunks, total/component latency, and generation cost state. The same trace ID is also returned as `X-Trace-ID`; accepted error responses carry that header as well. See [`docs/api.md`](docs/api.md) for examples and error semantics. Malformed bodies rejected by FastAPI before an endpoint handler runs still return HTTP 422 and do not have enough validated fields to create a trace.
 
 ## Quickstart
 
@@ -207,6 +228,8 @@ export GEMINI_MODEL=gemini-3.6-flash
 ```
 
 Both API keys may be present, but `RAGOPS_LLM_PROVIDER` selects exactly one runtime provider: `template`, `openai`, or `gemini`. Restart the API after changing it. Keep real API keys out of the repository. The ignored `.env` file can hold local values, but `make serve` does not load that file automatically; export the values into the shell first. Docker Compose reads `.env` for variable substitution and passes the selected provider configuration to the API container.
+
+The template provider reports a zero generation cost. OpenAI and Gemini responses preserve SDK token usage. To calculate an estimate, configure both `RAGOPS_LLM_INPUT_USD_PER_MILLION_TOKENS` and `RAGOPS_LLM_OUTPUT_USD_PER_MILLION_TOKENS` with rates appropriate to the selected model. If usage or pricing is missing, `cost.status` is `unavailable` and `amount_usd` is `null`; the API never presents missing cost data as zero.
 
 ### Prepare the corpus and index
 
@@ -560,10 +583,11 @@ query -> BM25 top 25 ---+
 - `src/ragops/indexing`: Qdrant collection creation and indexing
 - `src/ragops/retrieval`: common retriever contract and factory, dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
-- `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
+- `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
+- `src/ragops/generation`: citations, grounded prompts, provider selection, template/OpenAI/Gemini clients, provider usage normalization, and cost estimation
 - `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker evaluation and comparison, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
-- `src/ragops/tracing`: validated SQLite schemas and atomic trace, retrieved-evidence, and feedback persistence
+- `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
@@ -573,4 +597,4 @@ query -> BM25 top 25 ---+
 
 ## Next Milestone
 
-Proceed to Day 32: add a trace context manager that captures embedding, dense, BM25, reranker, and generation timings and returns those component latencies with each query response.
+Proceed to Day 34: strengthen the API test suite with a CI-friendly small corpus and end-to-end health, retrieval, query, and invalid-request coverage.

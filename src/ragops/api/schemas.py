@@ -1,6 +1,15 @@
-from typing import Any
+from typing import Any, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from ragops.api.pipelines import QueryConfigName, QueryRoute
+from ragops.pipeline_registry import PipelineStatus, PipelineVersion
+from ragops.tracing.context import ComponentLatencies
+
+
+class StrictResponseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class RetrieveRequest(BaseModel):
@@ -26,12 +35,15 @@ class RetrieveResponse(BaseModel):
     top_k: int
     chunks: list[RetrievedChunkResponse]
     latency_ms: float
+    component_latencies: ComponentLatencies
 
 
 class QueryRequest(BaseModel):
     """Request body for POST /query."""
     query: str = Field(..., description="The user question to answer.")
     top_k: int = Field(5, ge=1, le=20, description="The number of retrieved chunks to use.")
+    config: QueryConfigName = Field("dense_baseline", description="The registered retrieval config to execute.")
+    debug: bool = Field(False, description="Include non-sensitive pipeline and runtime diagnostics.")
 
 
 class CitationResponse(BaseModel):
@@ -44,8 +56,48 @@ class CitationResponse(BaseModel):
     chunk_ids: list[str]
 
 
+class QueryCostResponse(StrictResponseModel):
+    """Generation cost state without pretending an unavailable value is zero."""
+
+    amount_usd: float | None = Field(default=None, ge=0)
+    currency: Literal["USD"] = "USD"
+    status: Literal["zero_cost", "estimated", "unavailable"]
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def validate_cost_state(self):
+        if self.status == "unavailable" and self.amount_usd is not None:
+            raise ValueError("Unavailable cost must not contain an amount.")
+        if self.status != "unavailable" and self.amount_usd is None:
+            raise ValueError("Available cost must contain an amount.")
+        token_values = (self.input_tokens, self.output_tokens, self.total_tokens)
+        if any(value is not None for value in token_values) and not all(value is not None for value in token_values):
+            raise ValueError("Generation token counts must be all present or all absent.")
+        return self
+
+
+class QueryDebugResponse(StrictResponseModel):
+    """Diagnostics emitted only when the caller explicitly enables debug mode."""
+
+    pipeline_id: str
+    pipeline_status: PipelineStatus
+    retriever_interface: Literal["common_v1"]
+    requested_top_k: int = Field(gt=0)
+    returned_chunks: int = Field(ge=0)
+    configured_depths: dict[str, int]
+    generation_provider: str
+    generation_model: str | None = None
+    resource_cache_hits: dict[str, bool]
+
+
 class QueryResponse(BaseModel):
     """Response body for POST /query."""
+    trace_id: UUID
+    route: QueryRoute
+    config: QueryConfigName
+    config_version: PipelineVersion
     query: str
     answer: str
     citations: list[CitationResponse]
@@ -53,3 +105,6 @@ class QueryResponse(BaseModel):
     chunks: list[RetrievedChunkResponse]
     used_chunk_ids: list[str]
     latency_ms: float
+    component_latencies: ComponentLatencies
+    cost: QueryCostResponse
+    debug: QueryDebugResponse | None = None

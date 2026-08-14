@@ -79,16 +79,37 @@ class DenseRetriever(Retriever):
         query = validate_query(query)
         top_k = resolve_top_k(top_k, self.default_top_k)
         validate_timings(timings)
-        started_at = self.clock() if timings is not None else None
-        query_vector = embed_query(query, self.embedding_model)
-        results = search_index(self.client, self.collection_name, query_vector, top_k=top_k)
-        chunks = build_retrieved_chunks(results)
-        if started_at is not None:
-            timings["dense_ms"] = max(0.0, (self.clock() - started_at) * 1000)
-        return chunks
+        embedding_started_at = self.clock() if timings is not None else None
+        try:
+            query_vector = embed_query(query, self.embedding_model)
+        finally:
+            if embedding_started_at is not None:
+                timings["embedding_ms"] = max(0.0, (self.clock() - embedding_started_at) * 1000)
+
+        dense_started_at = self.clock() if timings is not None else None
+        try:
+            results = search_index(self.client, self.collection_name, query_vector, top_k=top_k)
+            return build_retrieved_chunks(results)
+        finally:
+            if dense_started_at is not None:
+                timings["dense_ms"] = max(0.0, (self.clock() - dense_started_at) * 1000)
 
 
-def retrieve_dense(query, client, top_k=DEFAULT_TOP_K, collection_name=DEFAULT_COLLECTION_NAME, embedding_model=DEFAULT_EMBEDDING_MODEL):
+def retrieve_dense(
+    query,
+    client,
+    top_k=DEFAULT_TOP_K,
+    collection_name=DEFAULT_COLLECTION_NAME,
+    embedding_model=DEFAULT_EMBEDDING_MODEL,
+    timings=None,
+    clock=time.perf_counter,
+):
     """Embed one query, search Qdrant, and return ranked dense results."""
-    retriever = DenseRetriever(client, collection_name=collection_name, embedding_model=embedding_model, default_top_k=top_k)
-    return retriever.retrieve(query)
+    retriever = DenseRetriever(
+        client,
+        collection_name=collection_name,
+        embedding_model=embedding_model,
+        default_top_k=top_k,
+        clock=clock,
+    )
+    return retriever.retrieve(query, timings=timings)

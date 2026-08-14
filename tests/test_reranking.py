@@ -197,8 +197,17 @@ def test_rerank_chunks_identifies_model_failure():
         def score(self, query, chunks):
             raise OSError("model unavailable")
 
+    timings = {}
     with pytest.raises(RuntimeError, match="Cross-encoder reranking failed.*model unavailable"):
-        rerank_chunks("query", [make_chunk("a", 1)], FailedReranker())
+        rerank_chunks(
+            "query",
+            [make_chunk("a", 1)],
+            FailedReranker(),
+            clock=IncrementingClock(step=0.125),
+            timings=timings,
+        )
+
+    assert timings == {"reranker_ms": 125.0}
 
 
 def test_retrieve_hybrid_reranked_runs_all_stages_and_records_timings():
