@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, and MLflow retrieval experiment tracking through Day 29.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, and a validated pipeline registry through Day 30.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 29 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, and four evidence-backed MLflow runs. The current baseline includes:
+Implementation is complete through Day 30 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, and versioned baseline/candidate/production aliases. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -58,13 +58,14 @@ Implementation is complete through Day 29 of the project plan, including a measu
 - a live hybrid evaluator with dense/BM25/fusion component timings, strict corpus and label parity checks, three-way paired outcomes, relevance-group analysis, and failure reporting
 - a live cross-encoder evaluator with a common-depth four-way comparison, controlled pre-rerank ablation, cold/warm component latency, and explicit reranking regressions
 - MLflow logging for dense, BM25, RRF, and reranked evaluations with config-derived run names, flattened parameters, quality/latency metrics, validated CSV/JSON/config/report artifacts, and idempotent artifact imports
+- a deterministic pipeline registry with semantic versions, lifecycle status, config checksums, common-depth evidence, MLflow references, and guarded baseline/candidate/production aliases
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
 Current limitations:
 
 - Dense retrieval remains the only retriever connected to the online API. BM25, RRF hybrid, and hybrid-plus-reranker retrieval are available through offline CLIs but are not exposed through `POST /retrieve` and `POST /query`.
-- Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; it is an evaluated candidate, not the selected retrieval baseline.
+- Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; version `hybrid_rrf@1.0.0` is therefore `rejected` and has no registry alias.
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query and is not suitable for the online path without latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
@@ -118,6 +119,28 @@ Open `http://127.0.0.1:5000`, select `ragops-retrieval`, and compare the four ru
 The importer does not rerun retrieval. It validates config/report algorithm parity, finite metrics, JSON/CSV question order, unique IDs, and artifact presence, then tags the run as `validated_artifact_import`. An SHA256 digest makes the command idempotent: an identical finished run is reused unless `scripts/log_retrieval_runs.py --force` is requested. This preserves the historical Day 19/23/25/27 measurements instead of presenting an import timestamp as a new evaluation.
 
 Future `evaluate.py`, `evaluate_bm25.py`, `evaluate_hybrid.py`, and `evaluate_reranker.py` executions log their newly written artifacts automatically with `ragops_run_source=live_evaluation`. Their `--validate-only` modes never contact MLflow. Use `--skip-mlflow` only when intentionally running an evaluation without tracking. `MLFLOW_TRACKING_URI` overrides the URI in `configs/mlflow.yaml`; host-run commands default to `http://127.0.0.1:5000`. Compose pins MLflow `v3.14.0`, restricts accepted Host headers to the host-loopback and Compose service addresses used by this project, and proxies artifact uploads into the persistent `mlflow_data` volume.
+
+## Version and Promote Retrieval Pipelines
+
+Day 30 treats every retrieval YAML as a named semantic version with a lifecycle status. [`configs/pipeline_registry.yaml`](configs/pipeline_registry.yaml) declares the evidence catalog and alias assignments; [`reports/pipeline_registry.json`](reports/pipeline_registry.json) is the generated, checked-in registry snapshot.
+
+| Alias | Pipeline ID | Status | Meaning |
+| --- | --- | --- | --- |
+| `baseline` | `bm25_baseline@1.0.0` | `approved` | Measured comparison control. |
+| `candidate` | `hybrid_rrf_cross_encoder@1.0.0` | `evaluated` | Quality-leading version awaiting latency/operational gates. |
+| `production` | `dense_baseline@1.0.0` | `approved` | Dense retrieval currently used by the FastAPI path. |
+
+`hybrid_rrf@1.0.0` is retained with status `rejected` because it did not beat BM25. Rejected, retired, draft, missing, or stale versions cannot receive aliases. `baseline` and `production` must point to `approved` versions; `candidate` must point to an `evaluated` or `approved` version.
+
+Build or validate the registry with:
+
+```bash
+make test-pipeline-registry
+make build-pipeline-registry
+make validate-pipeline-registry
+```
+
+Validation rechecks the complete Day 29 evidence bundles, requires the Day 27 common top-five comparison, recomputes config SHA256 values and evidence digests, and requires the checked-in JSON to exactly match its sources. An executable setting change creates a new semantic version; a lifecycle or alias change updates registry metadata after review. Promotion changes an alias only after evaluation and approval—it does not deploy or reconfigure FastAPI by itself. The complete versioning, promotion, rollback, and status rules are in [`docs/pipeline_registry.md`](docs/pipeline_registry.md).
 
 ## Quickstart
 
@@ -514,6 +537,7 @@ query -> BM25 top 25 ---+
 - `src/ragops/generation`: citations, grounded prompts, provider selection, and template/OpenAI/Gemini clients
 - `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker evaluation and comparison, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
+- `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints and end-to-end request flow
 - `dashboard/app.py`: Streamlit query playground
 - `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, evaluation, and MLflow import commands; later-milestone script files remain empty placeholders
@@ -522,4 +546,4 @@ query -> BM25 top 25 ---+
 
 ## Next Milestone
 
-Proceed to Day 30: define versioned pipeline metadata, write the pipeline registry, assign baseline/candidate/production aliases, and document promotion semantics.
+Proceed to Day 31: add the SQLite trace store with trace, retrieved-chunk, and feedback tables so every online query can create a durable trace record.

@@ -8,8 +8,9 @@ RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline 
 - An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
 - An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
 - Offline hybrid and reranked CLIs that retrieve independent dense and BM25 candidate pools, fuse ranks without normalizing incompatible raw scores, and optionally apply a cross-encoder.
+- A deterministic pipeline-registry workflow that binds versioned configs to validated evaluation evidence and guarded baseline/candidate/production aliases.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, and Day 29 MLflow retrieval tracking are implemented. Routing, caching, tracing, canary gates, failure mining, monitoring, and generation cost accounting remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, and the Day 30 pipeline registry are implemented. Routing, caching, tracing, canary gates, failure mining, monitoring, and generation cost accounting remain planned.
 
 ## System Diagram
 
@@ -69,6 +70,14 @@ flowchart LR
         Comparison --> MLflow
     end
 
+    subgraph Registry[Pipeline registry]
+        VersionedConfigs["Versioned retrieval YAMLs"] --> RegistryBuilder[Registry builder and validator]
+        Comparison --> RegistryBuilder
+        MLflowCatalog["configs/mlflow.yaml"] --> RegistryBuilder
+        RegistryBuilder --> RegistryJSON["reports/pipeline_registry.json"]
+        RegistryJSON --> Aliases["baseline / candidate / production"]
+    end
+
     subgraph GenerationEvaluation[Offline generation evaluation]
         JudgeConfig[generation_judge.yaml] --> Sample["10-question stratified sample"]
         Golden --> Sample
@@ -98,6 +107,7 @@ flowchart LR
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
 | Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | Experiment tracker | `src/ragops/tracking/mlflow.py`, `scripts/log_retrieval_runs.py` | Validate retrieval evidence, flatten configs and metrics, log or import idempotent MLflow runs, upload CSV/JSON/YAML/Markdown artifacts, and verify the four-run acceptance state. |
+| Pipeline registry | `src/ragops/pipeline_registry.py`, `scripts/build_pipeline_registry.py` | Validate semantic versions and lifecycle status, bind configs to common-depth evidence and MLflow identity, compute checksums, enforce alias policy, and atomically generate the registry snapshot. |
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
@@ -117,7 +127,15 @@ flowchart LR
 
 Day 28 moves runtime composition behind `Retriever.retrieve(query, top_k=None, timings=None)`. `DenseRetriever` owns a Qdrant client and embedding settings, `BM25Retriever` owns a loaded sparse index, `HybridRetriever` composes both candidate retrievers before RRF, and `CrossEncoderRerankedRetriever` composes over the hybrid candidate pool. The config factory selects one of these four pipelines from the validated model; it does not infer candidate depths or model names from call-site defaults.
 
-The four checked-in retrieval configs explicitly declare `retriever_interface: common_v1`. Their existing component sections remain authoritative for collection, index, model, RRF, candidate-depth, final-depth, and evaluation settings. An unknown interface version is rejected during Pydantic validation. Legacy retrieval functions delegate to or adapt the same objects so CLI, API, evaluator, and test injection call sites remain compatible during the refactor.
+The four checked-in retrieval configs explicitly declare `retriever_interface: common_v1`, a semantic `version`, and a lifecycle `status`. Their existing component sections remain authoritative for collection, index, model, RRF, candidate-depth, final-depth, and evaluation settings. An unknown interface or malformed semantic version is rejected during Pydantic validation. Legacy retrieval functions delegate to or adapt the same objects so CLI, API, evaluator, and test injection call sites remain compatible during the refactor.
+
+## Pipeline Registry and Promotion Boundary
+
+Day 30 generates `reports/pipeline_registry.json` from the versioned retrieval YAMLs, the Day 29 artifact catalog, and the Day 27 common top-five comparison. Registry generation repeats the source-evidence validation, computes each config SHA256, records the evidence digest and comparable quality/latency summary, and rejects a checked-in artifact that has drifted from any source.
+
+Aliases are validated pointers to exact `name@version` identities. `baseline` points to approved BM25, `candidate` points to the evaluated cross-encoder pipeline, and `production` points to the approved dense config used by the current API algorithm. The negative unweighted-RRF result remains registered as rejected without an alias. Draft, rejected, retired, missing, and stale entries cannot be selected; baseline and production require approved status.
+
+This is a control-plane boundary, not runtime deployment. Moving the `production` alias records a reviewed promotion decision but does not make FastAPI load a different retriever. Deployment wiring, evaluation gates, and canary automation remain later milestones. Detailed version, promotion, and rollback rules are in `docs/pipeline_registry.md`.
 
 Day 24 combines the existing indexes at query time:
 
@@ -319,7 +337,7 @@ Raw documents and processed embedding JSONL are intentionally ignored by Git. Th
 | --- | --- | --- |
 | Qdrant HTTP | `http://127.0.0.1:6333` | Docker Compose exposes the Qdrant service on the host. |
 | Qdrant gRPC | `127.0.0.1:6334` | Exposed but not used by the current Python path. |
-| MLflow | `http://127.0.0.1:5000` | Stores the four retrieval evaluation runs; it is not used by the online request path. |
+| MLflow | `http://127.0.0.1:5000` | Stores retrieval evaluation runs and version/status tags; it is not used by the online request path. |
 | FastAPI | `http://127.0.0.1:8000` | Provides `/health`, `/retrieve`, `/query`, and `/docs`. |
 | Streamlit | `http://localhost:8501` | Calls FastAPI using `RAGOPS_API_URL`. |
 
@@ -349,6 +367,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 ## Current Limitations
 
 - Dense retrieval remains the only online retriever. BM25, RRF hybrid, and hybrid-plus-reranker retrieval are available offline, but none is exposed through the API.
+- The `production` registry alias documents the selected online version but does not dynamically configure or deploy the API; deployment integration is intentionally not claimed by Day 30.
 - The cross-encoder has the highest measured MRR@5 on the current labels, but its warmed stage averages about 4.27 seconds per query. It remains an offline candidate until latency is reduced or routing limits its use.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
 - The prompt asks the model to stay grounded and say “I do not know,” but the runtime does not classify unsupported queries, verify answer claims, check citation use, or enforce refusal behavior. The offline judge measures these qualities after the fact. Structured citations describe all retrieved context, not necessarily only evidence referenced by the answer.

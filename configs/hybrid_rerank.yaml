@@ -1,4 +1,6 @@
 name: hybrid_rrf_cross_encoder
+version: 1.0.0
+status: evaluated
 retriever_interface: common_v1
 
 input:

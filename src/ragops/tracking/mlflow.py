@@ -383,6 +383,14 @@ def prepare_retrieval_run(
         "ragops_artifact_validation": "passed",
         "ragops_artifact_digest": artifact_digest,
     }
+    if "version" in params and "status" in params:
+        tags.update(
+            {
+                "ragops_pipeline_version": params["version"],
+                "ragops_pipeline_status": params["status"],
+                "ragops_pipeline_id": f"{report['run_name']}@{params['version']}",
+            }
+        )
     return {
         "run_name": report["run_name"],
         "pipeline": pipeline,

@@ -10,6 +10,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from rank_bm25 import BM25Okapi
 
+from ragops.pipeline_registry import PipelineStatus, PipelineVersion
 from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE, Retriever, resolve_top_k, validate_timings
 from ragops.retrieval.dense import DEFAULT_TOP_K, RetrievedChunk, source_url_from_metadata, validate_query
 
@@ -116,6 +117,8 @@ class BM25Config(StrictModel):
     """Complete BM25 index configuration with optional Day 23 evaluation."""
 
     name: str = Field(min_length=1)
+    version: PipelineVersion = "0.1.0"
+    status: PipelineStatus = "draft"
     retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     input: BM25InputConfig
     retriever: BM25RetrieverConfig

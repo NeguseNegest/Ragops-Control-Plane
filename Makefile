@@ -5,8 +5,9 @@ PIP := $(BIN)/python -m pip
 HYBRID_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 RERANK_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 MLFLOW_CONFIG ?= configs/mlflow.yaml
+PIPELINE_REGISTRY_CONFIG ?= configs/pipeline_registry.yaml
 
-.PHONY: setup lint test test-mlflow test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-mlflow log-retrieval-runs verify-retrieval-runs validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-mlflow test-pipeline-registry test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry validate-dense-evaluation evaluate-dense validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -21,6 +22,9 @@ test:
 
 test-mlflow:
 	$(BIN)/python -m pytest tests/test_mlflow_tracking.py
+
+test-pipeline-registry:
+	$(BIN)/python -m pytest tests/test_pipeline_registry.py
 
 test-retrieval-interface:
 	$(BIN)/python -m pytest tests/test_retriever_interface.py tests/test_hybrid.py tests/test_reranking.py
@@ -57,6 +61,12 @@ log-retrieval-runs:
 
 verify-retrieval-runs:
 	PYTHONPATH=src $(BIN)/python scripts/log_retrieval_runs.py --config $(MLFLOW_CONFIG) --verify-only
+
+validate-pipeline-registry:
+	PYTHONPATH=src $(BIN)/python scripts/build_pipeline_registry.py --config $(PIPELINE_REGISTRY_CONFIG) --validate-only
+
+build-pipeline-registry:
+	PYTHONPATH=src $(BIN)/python scripts/build_pipeline_registry.py --config $(PIPELINE_REGISTRY_CONFIG) --overwrite
 
 validate-dense-evaluation:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only

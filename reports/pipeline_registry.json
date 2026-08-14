@@ -1,0 +1,167 @@
+{
+  "aliases": {
+    "baseline": "bm25_baseline@1.0.0",
+    "candidate": "hybrid_rrf_cross_encoder@1.0.0",
+    "production": "dense_baseline@1.0.0"
+  },
+  "pipelines": [
+    {
+      "config": {
+        "path": "configs/dense_baseline.yaml",
+        "sha256": "ebc0e67ea08211905b94328ac4302b71e237833600aae689d5fc533d7f82fbc1"
+      },
+      "evaluation": {
+        "artifact_digest": "10c621599f9702991072b671d9c8f08efab210662305cb6d605f4d27d9259c27",
+        "benchmark_path": "reports/week3_dense_baseline.md",
+        "comparison_path": "reports/evaluations/reranker_vs_baselines.json",
+        "metric_scope": "All five rankings are truncated to the common final depth of 5; MRR is therefore MRR@5.",
+        "metrics": {
+          "average_latency_ms": 679.8677906044759,
+          "comparison_depth": 5,
+          "hit_rate_at_1": 0.26666666666666666,
+          "hit_rate_at_3": 0.3111111111111111,
+          "hit_rate_at_5": 0.4444444444444444,
+          "mrr_at_5": 0.3162962962962963,
+          "ndcg_at_1": 0.26666666666666666,
+          "ndcg_at_3": 0.29179843896825464,
+          "ndcg_at_5": 0.3472742577852025,
+          "recall_at_1": 0.26666666666666666,
+          "recall_at_3": 0.3111111111111111,
+          "recall_at_5": 0.4444444444444444
+        },
+        "question_count": 45,
+        "report_path": "reports/evaluations/dense_baseline.json",
+        "run_name": "dense_baseline"
+      },
+      "name": "dense_baseline",
+      "pipeline_id": "dense_baseline@1.0.0",
+      "pipeline_type": "dense",
+      "retriever_interface": "common_v1",
+      "status": "approved",
+      "tracking": {
+        "experiment_name": "ragops-retrieval",
+        "run_name": "dense_baseline"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "config": {
+        "path": "configs/bm25_baseline.yaml",
+        "sha256": "6aefb52d5be69e0b792d4554d2094ae5b3be26e46f94b5b55274a3f62bfec4cc"
+      },
+      "evaluation": {
+        "artifact_digest": "fe8f0466beacac42a896a424e21dc4f8cb2cdd4245a92429c53281110a63673f",
+        "benchmark_path": "reports/week4_bm25_comparison.md",
+        "comparison_path": "reports/evaluations/reranker_vs_baselines.json",
+        "metric_scope": "All five rankings are truncated to the common final depth of 5; MRR is therefore MRR@5.",
+        "metrics": {
+          "average_latency_ms": 87.8566984876266,
+          "comparison_depth": 5,
+          "hit_rate_at_1": 0.4666666666666667,
+          "hit_rate_at_3": 0.7555555555555555,
+          "hit_rate_at_5": 0.8444444444444444,
+          "mrr_at_5": 0.6151851851851852,
+          "ndcg_at_1": 0.4666666666666667,
+          "ndcg_at_3": 0.6372970618254026,
+          "ndcg_at_5": 0.6726578391537809,
+          "recall_at_1": 0.4666666666666667,
+          "recall_at_3": 0.7555555555555555,
+          "recall_at_5": 0.8444444444444444
+        },
+        "question_count": 45,
+        "report_path": "reports/evaluations/bm25_baseline.json",
+        "run_name": "bm25_baseline"
+      },
+      "name": "bm25_baseline",
+      "pipeline_id": "bm25_baseline@1.0.0",
+      "pipeline_type": "bm25",
+      "retriever_interface": "common_v1",
+      "status": "approved",
+      "tracking": {
+        "experiment_name": "ragops-retrieval",
+        "run_name": "bm25_baseline"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "config": {
+        "path": "configs/hybrid.yaml",
+        "sha256": "7b9619c7d5cd2a34e4beac4f1e0f321f17925e72511e15f2d8bfbbdef01aaa9e"
+      },
+      "evaluation": {
+        "artifact_digest": "fd0d637bd9a94703e3631328c3e3d7e98c868def64e98d5f5c6e8bead9348d9f",
+        "benchmark_path": "reports/week4_hybrid_comparison.md",
+        "comparison_path": "reports/evaluations/reranker_vs_baselines.json",
+        "metric_scope": "All five rankings are truncated to the common final depth of 5; MRR is therefore MRR@5.",
+        "metrics": {
+          "average_latency_ms": 837.416598555218,
+          "comparison_depth": 5,
+          "hit_rate_at_1": 0.4666666666666667,
+          "hit_rate_at_3": 0.6444444444444445,
+          "hit_rate_at_5": 0.7555555555555555,
+          "mrr_at_5": 0.5640740740740741,
+          "ndcg_at_1": 0.4666666666666667,
+          "ndcg_at_3": 0.5671937558730185,
+          "ndcg_at_5": 0.6111512622510531,
+          "recall_at_1": 0.4666666666666667,
+          "recall_at_3": 0.6444444444444445,
+          "recall_at_5": 0.7555555555555555
+        },
+        "question_count": 45,
+        "report_path": "reports/evaluations/hybrid_rrf.json",
+        "run_name": "hybrid_rrf"
+      },
+      "name": "hybrid_rrf",
+      "pipeline_id": "hybrid_rrf@1.0.0",
+      "pipeline_type": "hybrid",
+      "retriever_interface": "common_v1",
+      "status": "rejected",
+      "tracking": {
+        "experiment_name": "ragops-retrieval",
+        "run_name": "hybrid_rrf"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "config": {
+        "path": "configs/hybrid_rerank.yaml",
+        "sha256": "8bfe814d373cf0e8f491c1df9e4954443e2926a6112508f0250f09f0e74ae801"
+      },
+      "evaluation": {
+        "artifact_digest": "486fdf2d0e3bf7da2bc656155c0a23eaf281ef9a55bb8b403940e96d388bb227",
+        "benchmark_path": "reports/week4_reranker_comparison.md",
+        "comparison_path": "reports/evaluations/reranker_vs_baselines.json",
+        "metric_scope": "All five rankings are truncated to the common final depth of 5; MRR is therefore MRR@5.",
+        "metrics": {
+          "average_latency_ms": 4681.59426162278,
+          "comparison_depth": 5,
+          "hit_rate_at_1": 0.5777777777777777,
+          "hit_rate_at_3": 0.7555555555555555,
+          "hit_rate_at_5": 0.8444444444444444,
+          "mrr_at_5": 0.6888888888888889,
+          "ndcg_at_1": 0.5777777777777777,
+          "ndcg_at_3": 0.6899430673015925,
+          "ndcg_at_5": 0.7282254280192273,
+          "recall_at_1": 0.5777777777777777,
+          "recall_at_3": 0.7555555555555555,
+          "recall_at_5": 0.8444444444444444
+        },
+        "question_count": 45,
+        "report_path": "reports/evaluations/hybrid_rrf_cross_encoder.json",
+        "run_name": "hybrid_rrf_cross_encoder"
+      },
+      "name": "hybrid_rrf_cross_encoder",
+      "pipeline_id": "hybrid_rrf_cross_encoder@1.0.0",
+      "pipeline_type": "reranked",
+      "retriever_interface": "common_v1",
+      "status": "evaluated",
+      "tracking": {
+        "experiment_name": "ragops-retrieval",
+        "run_name": "hybrid_rrf_cross_encoder"
+      },
+      "version": "1.0.0"
+    }
+  ],
+  "registry_name": "ragops-retrieval",
+  "schema_version": 1
+}

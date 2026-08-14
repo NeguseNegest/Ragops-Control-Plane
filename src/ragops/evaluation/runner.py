@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from ragops.evaluation.retrieval_labels import RetrievalLabel, load_retrieval_labels
 from ragops.evaluation.retrieval_metrics import evaluate_retrieval_metrics, hit_at_k, ndcg_at_k, normalize_k_values, recall_at_k, reciprocal_rank
 from ragops.indexing.qdrant import DEFAULT_COLLECTION_NAME, DEFAULT_QDRANT_URL, create_qdrant_client
+from ragops.pipeline_registry import PipelineStatus, PipelineVersion
 from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE
 from ragops.retrieval.dense import DEFAULT_EMBEDDING_MODEL, retrieve_dense
 
@@ -73,6 +74,8 @@ class RetrievalEvaluationConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1)
+    version: PipelineVersion = "0.1.0"
+    status: PipelineStatus = "draft"
     retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     retriever: DenseRetrieverEvaluationConfig
     evaluation: EvaluationDatasetConfig

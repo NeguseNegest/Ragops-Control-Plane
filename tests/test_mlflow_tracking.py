@@ -155,6 +155,7 @@ def test_checked_in_mlflow_config_prepares_all_four_validated_runs():
     assert all(any(path.suffix == ".csv" for path, _ in run["artifacts"]) for run in prepared)
     assert prepared[-1]["metrics"]["mrr"] == pytest.approx(0.6888888888888889)
     assert prepared[-1]["metrics"]["reranker_latency_after_first_average_ms"] == pytest.approx(4274.931078750259)
+    assert prepared[-1]["tags"]["ragops_pipeline_id"] == "hybrid_rrf_cross_encoder@1.0.0"
 
 
 def test_tracking_uri_uses_environment_override(monkeypatch, tmp_path):

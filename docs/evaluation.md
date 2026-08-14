@@ -4,10 +4,10 @@
 
 The implemented evaluation stack has two distinct layers:
 
-1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, and Day 29 tracking) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; and records the runs in MLflow.
+1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, Day 29 tracking, and the Day 30 registry) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; records the runs in MLflow; and binds those evidence bundles to versioned pipeline identities.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, and Day 29 tracks all four retrieval runs without changing their measurements.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, and Day 30 registers their versions and promotion roles without changing their measurements.
 
 ## Day 28 retrieval construction
 
@@ -41,6 +41,21 @@ make verify-retrieval-runs
 The import path validates the current algorithm sections against each report, requires finite aggregate metrics, requires complete and identically ordered JSON/CSV question IDs, and rejects missing artifacts. It logs flattened configuration parameters; rank metrics; total, warmed, and component latency where available; pipeline YAML; effective configuration; evaluation JSON/CSV; comparison JSON; and Markdown. Each imported run is tagged `ragops_run_source=validated_artifact_import`. A content digest prevents duplicate imports of identical evidence.
 
 The four live evaluation CLIs use the same logger after they successfully write artifacts and tag those runs `ragops_run_source=live_evaluation`. `--validate-only` returns before tracker construction, and `--skip-mlflow` is an explicit opt-out. If artifact upload fails after run creation, the MLflow run is marked `FAILED`; the already-written local evaluation artifacts are retained. The Compose server proxies client artifact uploads into its persistent `mlflow_data` volume, so host-run evaluators never need direct access to the container's `/mlflow` path.
+
+## Day 30 pipeline registry
+
+All four retrieval YAMLs now explicitly declare `version` and `status`. The generated `reports/pipeline_registry.json` binds each `name@version` to its config checksum, validated Day 29 evidence digest, MLflow experiment/run identity, and metrics from `reports/evaluations/reranker_vs_baselines.json`.
+
+Registry metrics deliberately come from the Day 27 common top-five comparison. Using raw MRR from each historical report would compare dense/BM25/RRF depth 10 against reranked depth 5, so the registry records MRR@5 and the shared Recall/Hit Rate/nDCG cutoffs instead. Historical average latency is retained as context and remains subject to the cold-start and cross-process limitations already documented in the Day 27 report.
+
+Current decisions are:
+
+- `dense_baseline@1.0.0`: approved, `production`, because dense is the online API implementation.
+- `bm25_baseline@1.0.0`: approved, `baseline`, because it is the practical measured comparison control.
+- `hybrid_rrf@1.0.0`: rejected, no alias, because it trails BM25.
+- `hybrid_rrf_cross_encoder@1.0.0`: evaluated, `candidate`, because it leads MRR@5 but has material latency.
+
+Run `make build-pipeline-registry` after an intentional version/status/alias change and `make validate-pipeline-registry` in normal validation. The validator rejects stale source hashes or evidence, missing explicit metadata, invalid semantic versions, dangling aliases, and aliases to ineligible lifecycle states. Promotion and rollback policy is documented in `docs/pipeline_registry.md`; alias movement does not itself deploy a pipeline.
 
 ## Day 23 dense-versus-BM25 comparison
 

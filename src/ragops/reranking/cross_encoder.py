@@ -10,6 +10,7 @@ import yaml
 from pydantic import Field, field_validator, model_validator
 
 from ragops.indexing.qdrant import DEFAULT_COLLECTION_NAME
+from ragops.pipeline_registry import PipelineStatus, PipelineVersion
 from ragops.retrieval.base import COMMON_RETRIEVER_INTERFACE, FunctionRetriever, Retriever, resolve_top_k, validate_timings
 from ragops.retrieval.bm25 import BM25Config, BM25InputConfig, BM25RetrieverConfig
 from ragops.retrieval.dense import DEFAULT_EMBEDDING_MODEL, RetrievedChunk, retrieve_dense, validate_query
@@ -112,6 +113,8 @@ class HybridRerankConfig(StrictModel):
     """Dense plus BM25 fusion followed by cross-encoder reranking."""
 
     name: str = Field(min_length=1)
+    version: PipelineVersion = "0.1.0"
+    status: PipelineStatus = "draft"
     retriever_interface: Literal["common_v1"] = COMMON_RETRIEVER_INTERFACE
     input: BM25InputConfig
     dense: HybridDenseConfig
@@ -145,7 +148,13 @@ class HybridRerankConfig(StrictModel):
 
     def bm25_validation_config(self):
         """Build the index-only BM25 config expected by provenance validation."""
-        return BM25Config(name=f"{self.name}_bm25", input=self.input, retriever=self.bm25)
+        return BM25Config(
+            name=f"{self.name}_bm25",
+            version=self.version,
+            status=self.status,
+            input=self.input,
+            retriever=self.bm25,
+        )
 
 
 def load_hybrid_rerank_config(config_path, project_root=None):

@@ -1,4 +1,6 @@
 name: hybrid_rrf
+version: 1.0.0
+status: rejected
 retriever_interface: common_v1
 
 input:

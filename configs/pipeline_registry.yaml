@@ -1,0 +1,10 @@
+schema_version: 1
+registry_name: ragops-retrieval
+catalog_path: configs/mlflow.yaml
+comparison_path: reports/evaluations/reranker_vs_baselines.json
+output_path: reports/pipeline_registry.json
+
+aliases:
+  baseline: bm25_baseline@1.0.0
+  candidate: hybrid_rrf_cross_encoder@1.0.0
+  production: dense_baseline@1.0.0
