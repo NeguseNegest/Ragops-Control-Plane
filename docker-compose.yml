@@ -11,6 +11,11 @@ services:
       OPENAI_MODEL: "${OPENAI_MODEL:-gpt-5-nano}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       GEMINI_MODEL: "${GEMINI_MODEL:-gemini-3.6-flash}"
+      RAGOPS_TRACE_DB_PATH: "/app/data/traces/ragops_traces.sqlite3"
+      RAGOPS_PIPELINE_NAME: "${RAGOPS_PIPELINE_NAME:-dense_baseline}"
+      RAGOPS_PIPELINE_VERSION: "${RAGOPS_PIPELINE_VERSION:-1.0.0}"
+    volumes:
+      - ragops_trace_data:/app/data/traces
     depends_on:
       - qdrant
 
@@ -52,3 +57,4 @@ services:
 volumes:
   qdrant_storage:
   mlflow_data:
+  ragops_trace_data:

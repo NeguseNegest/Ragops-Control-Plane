@@ -7,12 +7,24 @@ from ragops.generation.client import GenerationResult
 from ragops.retrieval.dense import RetrievedChunk
 
 
+class RecordingTraceStore:
+    def __init__(self, fail=False):
+        self.calls = []
+        self.fail = fail
+
+    def record_trace(self, trace, chunks):
+        if self.fail:
+            raise OSError("trace database unavailable")
+        self.calls.append((trace, chunks))
+        return trace.trace_id
+
+
 def make_chunk():
     return RetrievedChunk(chunk_id="chunk-1", document_id="doc-1", text="FastAPI is a Python web framework.", score=0.91, rank=1, metadata={"title": "FastAPI Docs", "relative_path": "fastapi/tutorial.md"}, source_url="fastapi/tutorial.md")
 
 
-def make_client():
-    return TestClient(app_module.create_app())
+def make_client(trace_store=None):
+    return TestClient(app_module.create_app(trace_store=trace_store or RecordingTraceStore()))
 
 
 def test_package_version_is_declared():
@@ -47,10 +59,14 @@ def test_docs_are_available():
 
 def test_create_app_uses_injected_generation_client():
     generation_client = object()
+    trace_store = RecordingTraceStore()
 
-    app = app_module.create_app(generation_client=generation_client)
+    app = app_module.create_app(generation_client=generation_client, trace_store=trace_store)
 
     assert app.state.generation_client is generation_client
+    assert app.state.trace_store is trace_store
+    assert app.state.pipeline_identity.name == "dense_baseline"
+    assert app.state.pipeline_identity.version == "1.0.0"
 
 
 def test_get_qdrant_url_uses_local_default(monkeypatch):
@@ -121,6 +137,7 @@ def test_retrieve_chunks_closes_client_after_failure(monkeypatch):
 
 def test_retrieve_returns_chunks(monkeypatch):
     calls = {}
+    trace_store = RecordingTraceStore()
 
     def fake_retrieve_chunks(query, top_k):
         calls["query"] = query
@@ -128,7 +145,7 @@ def test_retrieve_returns_chunks(monkeypatch):
         return [make_chunk()]
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)
-    client = make_client()
+    client = make_client(trace_store)
 
     response = client.post("/retrieve", json={"query": "What is FastAPI?", "top_k": 1})
     body = response.json()
@@ -140,6 +157,12 @@ def test_retrieve_returns_chunks(monkeypatch):
     assert body["latency_ms"] >= 0
     assert body["chunks"][0]["chunk_id"] == "chunk-1"
     assert body["chunks"][0]["source_url"] == "fastapi/tutorial.md"
+    trace, stored_chunks = trace_store.calls[0]
+    assert trace.endpoint == "retrieve"
+    assert trace.status == "success"
+    assert trace.retrieved_chunk_count == 1
+    assert stored_chunks[0].chunk_id == "chunk-1"
+    assert stored_chunks[0].used_for_generation is False
 
 
 @pytest.mark.parametrize(("endpoint", "top_k"), [("/retrieve", 0), ("/retrieve", 21), ("/query", 0), ("/query", 21)])
@@ -167,7 +190,8 @@ def test_query_returns_answer_citations_chunks_and_latency(monkeypatch):
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)
     monkeypatch.setattr(app_module, "generate_answer", fake_generate_answer)
-    client = TestClient(app_module.create_app(generation_client=generation_client))
+    trace_store = RecordingTraceStore()
+    client = TestClient(app_module.create_app(generation_client=generation_client, trace_store=trace_store))
 
     response = client.post("/query", json={"query": "What is FastAPI?", "top_k": 1})
     body = response.json()
@@ -181,6 +205,11 @@ def test_query_returns_answer_citations_chunks_and_latency(monkeypatch):
     assert body["chunks"][0]["chunk_id"] == "chunk-1"
     assert body["used_chunk_ids"] == ["chunk-1"]
     assert body["latency_ms"] >= 0
+    trace, stored_chunks = trace_store.calls[0]
+    assert trace.endpoint == "query"
+    assert trace.status == "success"
+    assert trace.answer == "FastAPI is a Python web framework. [1]"
+    assert stored_chunks[0].used_for_generation is True
 
 
 def test_empty_query_returns_400(monkeypatch):
@@ -188,12 +217,18 @@ def test_empty_query_returns_400(monkeypatch):
         raise ValueError("query must not be empty.")
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)
-    client = make_client()
+    trace_store = RecordingTraceStore()
+    client = make_client(trace_store)
 
     response = client.post("/retrieve", json={"query": "   ", "top_k": 1})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "query must not be empty."
+    trace, chunks = trace_store.calls[0]
+    assert trace.query == "   "
+    assert trace.status == "error"
+    assert trace.error_type == "ValueError"
+    assert chunks == []
 
 
 def test_retrieve_failure_returns_503(monkeypatch):
@@ -201,12 +236,15 @@ def test_retrieve_failure_returns_503(monkeypatch):
         raise RuntimeError("qdrant unavailable")
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)
-    client = make_client()
+    trace_store = RecordingTraceStore()
+    client = make_client(trace_store)
 
     response = client.post("/retrieve", json={"query": "What is FastAPI?", "top_k": 1})
 
     assert response.status_code == 503
     assert response.json()["detail"] == "Unable to retrieve chunks."
+    assert trace_store.calls[0][0].status == "error"
+    assert trace_store.calls[0][0].error_message == "qdrant unavailable"
 
 
 def test_query_generation_failure_returns_503(monkeypatch):
@@ -218,9 +256,24 @@ def test_query_generation_failure_returns_503(monkeypatch):
 
     monkeypatch.setattr(app_module, "retrieve_chunks", fake_retrieve_chunks)
     monkeypatch.setattr(app_module, "generate_answer", fake_generate_answer)
-    client = make_client()
+    trace_store = RecordingTraceStore()
+    client = make_client(trace_store)
 
     response = client.post("/query", json={"query": "What is FastAPI?", "top_k": 1})
 
     assert response.status_code == 503
     assert response.json()["detail"] == "Unable to generate answer."
+    trace, stored_chunks = trace_store.calls[0]
+    assert trace.status == "error"
+    assert trace.retrieved_chunk_count == 1
+    assert stored_chunks[0].chunk_id == "chunk-1"
+
+
+def test_trace_persistence_failure_returns_503(monkeypatch):
+    monkeypatch.setattr(app_module, "retrieve_chunks", lambda query, top_k: [make_chunk()])
+    client = make_client(RecordingTraceStore(fail=True))
+
+    response = client.post("/retrieve", json={"query": "What is FastAPI?", "top_k": 1})
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Unable to persist query trace."

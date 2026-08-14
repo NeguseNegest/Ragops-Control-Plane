@@ -2,15 +2,16 @@
 
 ## Current Scope
 
-RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline BM25, RRF hybrid, and cross-encoder-reranked retrievers over local FastAPI, MLflow, and Qdrant documentation. It has four implemented workflows:
+RAGOps Control Plane currently provides a dense-retrieval RAG path plus offline BM25, RRF hybrid, and cross-encoder-reranked retrievers over local FastAPI, MLflow, and Qdrant documentation. Its implemented workflows are:
 
 - An offline workflow that cleans and chunks documentation, then builds both a dense Qdrant index and a portable BM25 index.
 - An online workflow that retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI and Streamlit.
 - An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
 - Offline hybrid and reranked CLIs that retrieve independent dense and BM25 candidate pools, fuse ranks without normalizing incompatible raw scores, and optionally apply a cross-encoder.
 - A deterministic pipeline-registry workflow that binds versioned configs to validated evaluation evidence and guarded baseline/candidate/production aliases.
+- An online observability workflow that atomically stores each accepted retrieval/query attempt and its ranked evidence in SQLite, with a related feedback model for later UI/API integration.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, and the Day 30 pipeline registry are implemented. Routing, caching, tracing, canary gates, failure mining, monitoring, and generation cost accounting remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, and the Day 31 SQLite trace store are implemented. Component-level online timing, routing, caching, canary gates, failure mining, monitoring, and generation cost accounting remain planned.
 
 ## System Diagram
 
@@ -36,6 +37,7 @@ flowchart LR
         Retrieved --> Citations[Citations and prompt]
         Citations --> Generator["Configured generator\ntemplate / OpenAI / Gemini"]
         Generator --> API
+        API -->|"atomic success or error trace"| TraceDB[(SQLite trace store)]
         API -->|JSON response| Streamlit
     end
 
@@ -108,9 +110,10 @@ flowchart LR
 | Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | Experiment tracker | `src/ragops/tracking/mlflow.py`, `scripts/log_retrieval_runs.py` | Validate retrieval evidence, flatten configs and metrics, log or import idempotent MLflow runs, upload CSV/JSON/YAML/Markdown artifacts, and verify the four-run acceptance state. |
 | Pipeline registry | `src/ragops/pipeline_registry.py`, `scripts/build_pipeline_registry.py` | Validate semantic versions and lifecycle status, bind configs to common-depth evidence and MLflow identity, compute checksums, enforce alias policy, and atomically generate the registry snapshot. |
+| Trace store | `src/ragops/tracing/store.py`, `scripts/init_trace_store.py` | Validate and migrate SQLite schema state; atomically persist requests with ordered evidence; and store feedback against existing trace IDs. |
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
-| API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; and close Qdrant clients. |
+| API | `src/ragops/app.py` | Expose health, retrieval, and query endpoints; translate errors; close Qdrant clients; and persist success/error traces before returning. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
 
 ## Offline Data Flow
@@ -136,6 +139,14 @@ Day 30 generates `reports/pipeline_registry.json` from the versioned retrieval Y
 Aliases are validated pointers to exact `name@version` identities. `baseline` points to approved BM25, `candidate` points to the evaluated cross-encoder pipeline, and `production` points to the approved dense config used by the current API algorithm. The negative unweighted-RRF result remains registered as rejected without an alias. Draft, rejected, retired, missing, and stale entries cannot be selected; baseline and production require approved status.
 
 This is a control-plane boundary, not runtime deployment. Moving the `production` alias records a reviewed promotion decision but does not make FastAPI load a different retriever. Deployment wiring, evaluation gates, and canary automation remain later milestones. Detailed version, promotion, and rollback rules are in `docs/pipeline_registry.md`.
+
+## SQLite Trace Boundary
+
+Day 31 initializes a versioned SQLite database when FastAPI starts. Each accepted `/retrieve` or `/query` invocation receives a UUID and UTC start time before retrieval. On success, the API stores the request result and all ranked chunks before returning the response. On validation, retrieval, or generation failure inside the handler, it stores the error and any evidence retrieved before the failure, then returns the existing 400/503 response. Trace and chunk inserts share one transaction; invalid metadata, rank gaps, duplicates, or a database error roll back the whole trace.
+
+The `traces` row owns request/pipeline provenance and whole-request latency. `retrieved_chunks` has a cascading foreign key, one-based rank key, per-trace chunk uniqueness, full evidence text, JSON metadata, and `used_for_generation`. `feedback` also cascades from the trace and accepts a positive/negative rating, a non-empty comment, or both. No feedback HTTP route exists yet. The store uses WAL mode, foreign-key enforcement, a busy timeout, schema validation, and bounded newest-first reads. Detailed fields and failure semantics are in `docs/tracing.md`.
+
+The trace path defaults to `data/traces/ragops_traces.sqlite3`; Compose uses the persistent `ragops_trace_data` volume. Pipeline provenance defaults to `dense_baseline@1.0.0` and can be explicitly set with `RAGOPS_PIPELINE_NAME` and `RAGOPS_PIPELINE_VERSION`. This records the deployed identity but does not make the Day 30 registry alias dynamically configure the API.
 
 Day 24 combines the existing indexes at query time:
 
@@ -338,6 +349,7 @@ Raw documents and processed embedding JSONL are intentionally ignored by Git. Th
 | Qdrant HTTP | `http://127.0.0.1:6333` | Docker Compose exposes the Qdrant service on the host. |
 | Qdrant gRPC | `127.0.0.1:6334` | Exposed but not used by the current Python path. |
 | MLflow | `http://127.0.0.1:5000` | Stores retrieval evaluation runs and version/status tags; it is not used by the online request path. |
+| SQLite traces | `data/traces/ragops_traces.sqlite3` | Stores accepted `/retrieve` and `/query` attempts plus ranked evidence and feedback; Compose persists it in `ragops_trace_data`. |
 | FastAPI | `http://127.0.0.1:8000` | Provides `/health`, `/retrieve`, `/query`, and `/docs`. |
 | Streamlit | `http://localhost:8501` | Calls FastAPI using `RAGOPS_API_URL`. |
 
@@ -352,6 +364,9 @@ Generation configuration is resolved once when `create_app()` initializes its cl
 | `OPENAI_MODEL` | `gpt-5-nano` | Model passed to the OpenAI Responses API client. |
 | `GEMINI_API_KEY` | none | Required only when the selected runtime provider is `gemini`; also used by synthetic generation when Gemini is requested. |
 | `GEMINI_MODEL` | `gemini-3.6-flash` | Model passed to the Gemini Interactions API client. |
+| `RAGOPS_TRACE_DB_PATH` | `data/traces/ragops_traces.sqlite3` | Host path for the SQLite trace database; Compose supplies its persistent container path. |
+| `RAGOPS_PIPELINE_NAME` | `dense_baseline` | Runtime pipeline name recorded on every trace. |
+| `RAGOPS_PIPELINE_VERSION` | `1.0.0` | Semantic runtime pipeline version recorded on every trace. |
 
 Both provider credentials may be configured simultaneously, but the online API uses only the selected provider until it is restarted. The synthetic QA and Day 20 judge CLIs are different: they load `.env` themselves and can assign OpenAI and Gemini separate roles in the same batch. Host-run `make serve` and `make dashboard` do not load `.env` automatically. Docker Compose does read `.env` and forwards generation settings to the API container.
 
@@ -361,6 +376,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 - Query validation failures detected by the retrieval or generation layer return HTTP 400.
 - Unexpected retrieval failures return HTTP 503 from `/retrieve`.
 - Unexpected retrieval or generation failures return HTTP 503 from `/query`.
+- Trace persistence failures return HTTP 503, including when the underlying retrieval/generation work succeeded.
 - Streamlit converts connection failures and API error details into readable page messages.
 - Qdrant clients are closed after both successful and failed retrieval calls.
 
@@ -377,8 +393,8 @@ Both provider credentials may be configured simultaneously, but the online API u
 - Ingestion and index building load the full current record set into memory.
 - Source references are usually corpus-relative paths rather than public documentation URLs.
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
-- MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged yet.
-- Tracing, SQLite persistence, routing, semantic caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
+- Component-level tracing, trace IDs in API responses, feedback endpoints, routing, semantic caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
 
 ## Planned Placeholders
 
