@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime
+from functools import partial
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Response
@@ -65,12 +66,16 @@ def get_qdrant_url():
     return qdrant_url.rstrip("/")
 
 
-def retrieve_chunks(query, top_k, timings=None):
+def retrieve_chunks(query, top_k, timings=None, client_factory=None, query_embedder=None):
     """Retrieve chunks from Qdrant and close the client afterward."""
-    client = create_qdrant_client(get_qdrant_url())
+    client_factory = client_factory or create_qdrant_client
+    client = client_factory(get_qdrant_url())
 
     try:
-        return retrieve_dense(query=query, client=client, top_k=top_k, timings=timings)
+        parameters = {"query": query, "client": client, "top_k": top_k, "timings": timings}
+        if query_embedder is not None:
+            parameters["query_embedder"] = query_embedder
+        return retrieve_dense(**parameters)
     finally:
         close_qdrant_client(client)
 
@@ -143,7 +148,16 @@ def persist_request_trace(
     return trace_id
 
 
-def create_app(generation_client=None, trace_store=None, pipeline_name=None, pipeline_version=None, pipeline_runtime=None, generation_pricing=None):
+def create_app(
+    generation_client=None,
+    trace_store=None,
+    pipeline_name=None,
+    pipeline_version=None,
+    pipeline_runtime=None,
+    generation_pricing=None,
+    retrieval_client_factory=None,
+    query_embedder=None,
+):
     app = FastAPI(
         title="RAGOps Control Plane",
         version=__version__,
@@ -152,8 +166,21 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
     app.state.generation_client = generation_client if generation_client is not None else create_generation_client()
     app.state.trace_store = trace_store if trace_store is not None else create_trace_store()
     app.state.pipeline_identity = configured_pipeline_identity(name=pipeline_name, version=pipeline_version)
-    app.state.pipeline_runtime = pipeline_runtime if pipeline_runtime is not None else PipelineRuntime()
+    if pipeline_runtime is None:
+        runtime_parameters = {}
+        if retrieval_client_factory is not None:
+            runtime_parameters["client_factory"] = retrieval_client_factory
+        if query_embedder is not None:
+            runtime_parameters["query_embedder"] = query_embedder
+        pipeline_runtime = PipelineRuntime(**runtime_parameters)
+    app.state.pipeline_runtime = pipeline_runtime
     app.state.generation_pricing = generation_pricing if generation_pricing is not None else configured_generation_pricing()
+    retrieval_parameters = {}
+    if retrieval_client_factory is not None:
+        retrieval_parameters["client_factory"] = retrieval_client_factory
+    if query_embedder is not None:
+        retrieval_parameters["query_embedder"] = query_embedder
+    app.state.retrieve_chunks = partial(retrieve_chunks, **retrieval_parameters) if retrieval_parameters else retrieve_chunks
 
     @app.get("/health", response_model=HealthResponse)
     def health():
@@ -168,7 +195,7 @@ def create_app(generation_client=None, trace_store=None, pipeline_name=None, pip
         chunks = []
 
         try:
-            chunks = retrieve_chunks(request.query, request.top_k, timings=trace_context.timings)
+            chunks = app.state.retrieve_chunks(request.query, request.top_k, timings=trace_context.timings)
         except ValueError as error:
             component_latencies = trace_context.snapshot()
             persist_request_trace(

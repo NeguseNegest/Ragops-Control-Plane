@@ -68,12 +68,25 @@ def build_retrieved_chunks(results):
 class DenseRetriever(Retriever):
     """Configured dense retriever implementing the common retrieval interface."""
 
-    def __init__(self, client, collection_name=DEFAULT_COLLECTION_NAME, embedding_model=DEFAULT_EMBEDDING_MODEL, default_top_k=DEFAULT_TOP_K, clock=time.perf_counter):
+    def __init__(
+        self,
+        client,
+        collection_name=DEFAULT_COLLECTION_NAME,
+        embedding_model=DEFAULT_EMBEDDING_MODEL,
+        default_top_k=DEFAULT_TOP_K,
+        clock=time.perf_counter,
+        query_embedder=None,
+    ):
         super().__init__(default_top_k)
         self.client = client
         self.collection_name = collection_name
         self.embedding_model = embedding_model
         self.clock = clock
+        if query_embedder is None:
+            query_embedder = embed_query
+        if not callable(query_embedder):
+            raise ValueError("query_embedder must be callable.")
+        self.query_embedder = query_embedder
 
     def retrieve(self, query, top_k=None, timings=None):
         query = validate_query(query)
@@ -81,7 +94,7 @@ class DenseRetriever(Retriever):
         validate_timings(timings)
         embedding_started_at = self.clock() if timings is not None else None
         try:
-            query_vector = embed_query(query, self.embedding_model)
+            query_vector = self.query_embedder(query, self.embedding_model)
         finally:
             if embedding_started_at is not None:
                 timings["embedding_ms"] = max(0.0, (self.clock() - embedding_started_at) * 1000)
@@ -103,6 +116,7 @@ def retrieve_dense(
     embedding_model=DEFAULT_EMBEDDING_MODEL,
     timings=None,
     clock=time.perf_counter,
+    query_embedder=None,
 ):
     """Embed one query, search Qdrant, and return ranked dense results."""
     retriever = DenseRetriever(
@@ -111,5 +125,6 @@ def retrieve_dense(
         embedding_model=embedding_model,
         default_top_k=top_k,
         clock=clock,
+        query_embedder=query_embedder,
     )
     return retriever.retrieve(query, timings=timings)

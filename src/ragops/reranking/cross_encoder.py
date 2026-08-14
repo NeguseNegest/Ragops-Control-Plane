@@ -382,7 +382,16 @@ class CrossEncoderRerankedRetriever(Retriever):
         return self.retrieve_with_candidates(query, top_k=top_k, timings=timings)[1]
 
 
-def build_hybrid_reranked_retriever(config, client, index, reranker, dense_retriever=retrieve_dense, bm25_retriever=None, clock=time.perf_counter):
+def build_hybrid_reranked_retriever(
+    config,
+    client,
+    index,
+    reranker,
+    dense_retriever=retrieve_dense,
+    bm25_retriever=None,
+    clock=time.perf_counter,
+    query_embedder=None,
+):
     """Build the complete common-interface reranked pipeline from config."""
     if bm25_retriever is None:
         from ragops.retrieval.bm25 import retrieve_bm25
@@ -395,6 +404,7 @@ def build_hybrid_reranked_retriever(config, client, index, reranker, dense_retri
         dense_retriever=dense_retriever,
         bm25_retriever=bm25_retriever,
         clock=clock,
+        query_embedder=query_embedder,
     )
     return CrossEncoderRerankedRetriever(
         candidate_retriever,

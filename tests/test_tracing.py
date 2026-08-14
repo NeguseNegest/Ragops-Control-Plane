@@ -359,22 +359,17 @@ def test_real_api_store_records_every_successful_and_failed_query(monkeypatch, t
             used_chunk_ids=["chunk-1"],
         ),
     )
-    client = TestClient(
-        app_module.create_app(
-            generation_client=object(),
-            trace_store=store,
-            pipeline_name="dense_baseline",
-            pipeline_version="1.0.0",
-            pipeline_runtime=Runtime(),
-        )
+    app = app_module.create_app(
+        generation_client=object(),
+        trace_store=store,
+        pipeline_name="dense_baseline",
+        pipeline_version="1.0.0",
+        pipeline_runtime=Runtime(),
     )
+    client = TestClient(app)
 
     successful = client.post("/query", json={"query": "What is FastAPI?", "top_k": 1})
-    monkeypatch.setattr(
-        app_module,
-        "retrieve_chunks",
-        lambda query, top_k, timings: (_ for _ in ()).throw(RuntimeError("offline")),
-    )
+    app.state.retrieve_chunks = lambda query, top_k, timings: (_ for _ in ()).throw(RuntimeError("offline"))
     failed = client.post("/retrieve", json={"query": "What is Qdrant?", "top_k": 1})
 
     assert successful.status_code == 200

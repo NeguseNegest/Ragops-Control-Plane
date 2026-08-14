@@ -11,8 +11,9 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A deterministic pipeline-registry workflow that binds versioned configs to validated evaluation evidence and guarded baseline/candidate/production aliases.
 - An online observability workflow that measures request components with a monotonic trace context and atomically stores each accepted retrieval/query attempt, its stage latencies, and its ranked evidence in SQLite, with a related feedback model for later UI/API integration.
 - A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
+- An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, and the Day 33 production query endpoint are implemented. Automatic routing, caching, canary gates, failure mining, monitoring, and persisted cost accounting remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, and the Day 34 API CI suite are implemented. Automatic routing, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
 
 ## System Diagram
 
@@ -123,6 +124,8 @@ flowchart LR
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, and production query endpoints; select configs; translate stage-aware errors; return trace/route/debug/cost/timing data; and persist matching success/error traces before returning. |
+| API integration suite | `tests/test_api_integration.py`, `configs/ci_small.yaml` | Seed in-memory Qdrant from a checked-in corpus, inject deterministic query embeddings, use isolated SQLite state, and verify complete HTTP/storage behavior without external services. |
+| API CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt` | Lint and run the focused offline API suite on Python 3.12 with only the dependencies needed by that path. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
 
 ## Offline Data Flow
@@ -409,13 +412,13 @@ Both provider credentials may be configured simultaneously, but the online API u
 - Source references are usually corpus-relative paths rather than public documentation URLs.
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
-- Feedback endpoints, automatic routing, semantic caching, canary gates, failure mining, monitoring, and CI evaluation gates are not implemented.
+- Feedback endpoints, automatic routing, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Day 34 supplies API CI coverage; it does not yet enforce retrieval or generation benchmark thresholds.
 
 ## Planned Placeholders
 
 The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
 
-- configurations: `routed.yaml`, `cached_routed.yaml`, and `ci_small.yaml`
+- configurations: `routed.yaml` and `cached_routed.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
 - tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
 - topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`

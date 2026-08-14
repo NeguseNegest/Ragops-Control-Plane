@@ -127,3 +127,17 @@ The price inputs are operator-controlled because model prices change. Estimates 
 | Trace persistence failure | 503 | `Unable to persist query trace.` | No success is claimed |
 
 Internal exception text is retained in the local trace for diagnosis but is not reflected to clients. Run the focused contract suite with `make test-query-endpoint`.
+
+## Offline Integration Test
+
+Day 34 adds a hermetic acceptance path for this contract. `tests/test_api_integration.py` creates the application through `create_app`, initializes a real in-memory Qdrant collection from `tests/fixtures/ci_small_corpus.jsonl`, injects deterministic query vectors defined by `configs/ci_small.yaml`, and writes traces to a per-test temporary SQLite database. It therefore crosses the HTTP, validation, dense-retrieval, citation, template-generation, latency, cost, and persistence boundaries without relying on Docker, a network service, an API key, or a downloaded model.
+
+The integration cases verify:
+
+- `/health` returns the package version without creating a trace;
+- `/retrieve` returns the expected ranked fixture chunk and persists matching unused evidence;
+- `/query` returns matching body/header/storage trace IDs, config provenance, citations, used chunks, timings, debug output, and zero template cost;
+- malformed bodies, invalid depths, unknown configs, and wrong field types return HTTP 422 before creating a trace; and
+- an accepted whitespace-only query returns the documented traced HTTP 400 response.
+
+Run the GitHub Actions-equivalent target locally with `make test-api-ci PYTHON=.venv/bin/python`. The complete CI design and its intentional exclusions are documented in [`ci.md`](ci.md).

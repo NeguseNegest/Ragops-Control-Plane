@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, and a selectable production query endpoint through Day 33.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, and an offline API integration suite through Day 34.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 33 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, an online SQLite trace store, request-scoped component timings, and a production `/query` contract. The current baseline includes:
+Implementation is complete through Day 34 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, an online SQLite trace store, request-scoped component timings, a production `/query` contract, and a self-contained API CI gate. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -64,6 +64,8 @@ Implementation is complete through Day 33 of the project plan, including a measu
 - atomic SQLite request tracing for successful and failed `/retrieve` and `/query` calls, including pipeline provenance and the complete ranked evidence set
 - a monotonic trace context that captures embedding, dense search, BM25, RRF fusion, cross-encoder, and generation latency, retains partial timings on failure, and returns the timing shape through both online endpoints
 - a feedback table linked to traces, schema/version validation, a migration path, and a persistent Docker volume
+- a checked-in four-document vector fixture, deterministic query embeddings, in-memory Qdrant, temporary SQLite, and end-to-end `/health`, `/retrieve`, `/query`, and invalid-request integration tests
+- a lightweight GitHub Actions API job that lints the repository and runs the production request path without Docker, model downloads, external APIs, or the full ML dependency stack
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
@@ -74,7 +76,7 @@ Current limitations:
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query cost is returned but not persisted or aggregated; MLflow currently tracks retrieval evaluations only, and routing, caching, canary gates, failure mining, monitoring, and CI evaluation gates remain planned.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query cost is returned but not persisted or aggregated; MLflow currently tracks retrieval evaluations only, and routing, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Dense vs BM25 vs Hybrid vs Reranker Benchmark
@@ -561,6 +563,16 @@ curl -X POST http://127.0.0.1:8000/query \
   -d '{"query":"How do I create a FastAPI app?","top_k":5}'
 ```
 
+### Run the offline API CI suite
+
+Day 34 checks the real FastAPI, retrieval, generation, and trace-storage composition without requiring Docker or downloading an embedding model. The test harness loads `tests/fixtures/ci_small_corpus.jsonl` into in-memory Qdrant, maps three fixed queries to checked-in three-dimensional vectors, and uses a temporary SQLite trace database.
+
+```bash
+make test-api-ci PYTHON=.venv/bin/python
+```
+
+The same target runs in `.github/workflows/ci.yml` with the deliberately small dependency set in `requirements-ci.txt`. Offline environment flags make an accidental model download fail instead of hiding a test dependency. See [`docs/ci.md`](docs/ci.md) for the fixture contract, coverage boundary, and workflow design.
+
 ## Main Components
 
 ```text
@@ -592,9 +604,9 @@ query -> BM25 top 25 ---+
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
 - `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
-- `tests`: unit, API, dashboard, dataset, retrieval/fusion/reranking, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
+- `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 34: strengthen the API test suite with a CI-friendly small corpus and end-to-end health, retrieval, query, and invalid-request coverage.
+Proceed to Day 35: run the full local service integration review across the API, retrieval evaluation, MLflow evidence, and SQLite traces.

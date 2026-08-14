@@ -123,6 +123,7 @@ class PipelineRuntime:
         index_validator=validate_bm25_index,
         reranker_factory=build_cross_encoder_reranker,
         retriever_factory=build_retriever,
+        query_embedder=None,
     ):
         self.project_root = Path(project_root or Path(__file__).resolve().parents[3]).resolve()
         configured_paths = dict(DEFAULT_PIPELINE_CONFIG_PATHS if config_paths is None else config_paths)
@@ -137,6 +138,9 @@ class PipelineRuntime:
         self.index_validator = index_validator
         self.reranker_factory = reranker_factory
         self.retriever_factory = retriever_factory
+        if query_embedder is not None and not callable(query_embedder):
+            raise ValueError("query_embedder must be callable when provided.")
+        self.query_embedder = query_embedder
         self._resource_lock = Lock()
         self._bm25_indexes = {}
         self._validated_indexes = set()
@@ -214,12 +218,10 @@ class PipelineRuntime:
                     index, bm25_cache_hit = self._bm25_index(definition)
                 if definition.route == "reranked":
                     reranker, reranker_cache_hit = self._reranker(definition)
-                retriever = self.retriever_factory(
-                    definition.config,
-                    client=client,
-                    index=index,
-                    reranker=reranker,
-                )
+                retriever_parameters = {"client": client, "index": index, "reranker": reranker}
+                if self.query_embedder is not None:
+                    retriever_parameters["query_embedder"] = self.query_embedder
+                retriever = self.retriever_factory(definition.config, **retriever_parameters)
             except PipelineResourceError:
                 raise
             except Exception as error:

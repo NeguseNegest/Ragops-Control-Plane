@@ -399,15 +399,27 @@ class HybridRetriever(Retriever):
                 timings["fusion_ms"] = max(0.0, (self.clock() - fusion_started_at) * 1000)
 
 
-def build_hybrid_retriever(config, client, index, dense_retriever=retrieve_dense, bm25_retriever=retrieve_bm25, clock=time.perf_counter):
+def build_hybrid_retriever(
+    config,
+    client,
+    index,
+    dense_retriever=retrieve_dense,
+    bm25_retriever=retrieve_bm25,
+    clock=time.perf_counter,
+    query_embedder=None,
+):
     """Build one common-interface hybrid pipeline from validated config."""
     if dense_retriever is retrieve_dense:
+        parameters = {}
+        if query_embedder is not None:
+            parameters["query_embedder"] = query_embedder
         dense = DenseRetriever(
             client,
             collection_name=config.dense.collection_name,
             embedding_model=config.dense.embedding_model,
             default_top_k=config.dense.top_k,
             clock=clock,
+            **parameters,
         )
     else:
         dense = FunctionRetriever(
