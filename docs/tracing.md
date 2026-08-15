@@ -100,6 +100,12 @@ make test-tracing
 
 Docker Compose sets the database path to `/app/data/traces/ragops_traces.sqlite3` and mounts the named `ragops_trace_data` volume. Local database, WAL, and shared-memory files under `data/traces` are ignored by Git.
 
+## Day 35 integration verification
+
+The live API evaluator optionally opens the same SQLite path as the host API and checks each response after it returns. Verification requires exact agreement on trace UUID, request/pipeline identity, status, answer, total and component latencies, retrieved count, chunk ordering, and `used_for_generation` flags. The recorded 45-question run produced and verified 45 terminal traces with 450 child rows in an isolated temporary database; the normal project-local store stayed unchanged.
+
+The Compose smoke queries separately proved the named volume path across container recreation and process restart. Three successful `dense_baseline@1.0.0` traces persisted with five total ordered chunk rows and zero feedback rows; the first trace, `cb2450bc-5282-4bb1-9fbb-eb4eab08c443`, retained three generation-used chunks. This runtime evidence is documented in `reports/week5_integration_review.md` rather than being confused with the temporary 45-question store.
+
 ## Privacy and Operational Limits
 
 Traces intentionally contain raw queries, generated answers, complete retrieved text, metadata, and error messages. Treat the database as potentially sensitive application data, restrict filesystem/volume access, define retention before production use, and avoid placing secrets or personal data in queries.

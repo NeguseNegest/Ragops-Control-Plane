@@ -12,8 +12,9 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - An online observability workflow that measures request components with a monotonic trace context and atomically stores each accepted retrieval/query attempt, its stage latencies, and its ranked evidence in SQLite, with a related feedback model for later UI/API integration.
 - A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
 - An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
+- A live integration-review workflow that evaluates all verified dense questions through HTTP, requires offline/API ranking parity, cross-checks response traces in SQLite, and verifies the complete retrieval evidence suite in MLflow.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, and the Day 34 API CI suite are implemented. Automatic routing, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, and the Day 35 full integration review are implemented. Automatic routing, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
 
 ## System Diagram
 
@@ -77,6 +78,11 @@ flowchart LR
         Paired --> Comparison["Comparison JSON + Markdown"]
         Reports --> MLflow[(MLflow retrieval experiment)]
         Comparison --> MLflow
+        Labels --> APIEval[Live API evaluator]
+        APIEval -->|"45 POST /query requests"| API
+        APIEval -->|"exact ranking parity"| Reports
+        APIEval -->|"trace verification"| TraceDB
+        APIEval -->|"evidence verification"| MLflow
     end
 
     subgraph Registry[Pipeline registry]
@@ -126,6 +132,8 @@ flowchart LR
 | API | `src/ragops/app.py` | Expose health, retrieval, and production query endpoints; select configs; translate stage-aware errors; return trace/route/debug/cost/timing data; and persist matching success/error traces before returning. |
 | API integration suite | `tests/test_api_integration.py`, `configs/ci_small.yaml` | Seed in-memory Qdrant from a checked-in corpus, inject deterministic query embeddings, use isolated SQLite state, and verify complete HTTP/storage behavior without external services. |
 | API CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt` | Lint and run the focused offline API suite on Python 3.12 with only the dependencies needed by that path. |
+| Live API evaluator | `src/ragops/evaluation/api_runner.py`, `scripts/evaluate_api.py` | Evaluate verified labels through HTTP, validate the complete response contract, compare exact rankings with offline evidence, cross-check SQLite rows, and verify live MLflow evidence. |
+| API container | `Dockerfile`, `requirements-api.txt`, `docker-compose.yml` | Build a CPU-only serving image with cached runtime dependencies, deployment-root configuration, configurable host port, health probing, a persistent model-cache volume, and no tracking/dashboard packages. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
 
 ## Offline Data Flow
@@ -381,6 +389,8 @@ Generation configuration is resolved once when `create_app()` initializes its cl
 | `RAGOPS_LLM_INPUT_USD_PER_MILLION_TOKENS` | none | Optional input-token rate for the selected model; must be paired with the output rate. |
 | `RAGOPS_LLM_OUTPUT_USD_PER_MILLION_TOKENS` | none | Optional output-token rate used with provider-reported usage for an estimated response cost. |
 | `RAGOPS_TRACE_DB_PATH` | `data/traces/ragops_traces.sqlite3` | Host path for the SQLite trace database; Compose supplies its persistent container path. |
+| `RAGOPS_PROJECT_ROOT` | process working directory | Root used to resolve checked-in configs and local artifacts; Compose pins `/app`. |
+| `RAGOPS_API_PORT` | `8000` | Host port published by Compose; the container continues to listen on 8000. |
 | `RAGOPS_PIPELINE_NAME` | `dense_baseline` | Dense-only `/retrieve` trace identity; `/query` uses its selected config. |
 | `RAGOPS_PIPELINE_VERSION` | `1.0.0` | Dense-only `/retrieve` version; `/query` uses its selected config version. |
 
@@ -412,6 +422,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 - Source references are usually corpus-relative paths rather than public documentation URLs.
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
+- The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
 - Feedback endpoints, automatic routing, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Day 34 supplies API CI coverage; it does not yet enforce retrieval or generation benchmark thresholds.
 
 ## Planned Placeholders

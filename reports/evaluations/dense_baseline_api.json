@@ -1,0 +1,4038 @@
+{
+  "api": {
+    "base_url": "http://127.0.0.1:8001",
+    "config": "dense_baseline",
+    "config_version": "1.0.0",
+    "debug": true,
+    "endpoint": "/query",
+    "route": "dense",
+    "service_version": "0.1.0",
+    "top_k": 10
+  },
+  "client_latency_ms": {
+    "average": 645.8724541162761,
+    "maximum": 22728.091138007585,
+    "minimum": 70.06382499821484,
+    "total": 29064.260435232427
+  },
+  "component_latency_ms": {
+    "bm25_ms": null,
+    "dense_ms": {
+      "average": 6.616287907430281,
+      "count": 45,
+      "maximum": 14.869954029563814,
+      "minimum": 5.4993509547784925,
+      "total": 297.73295583436266
+    },
+    "embedding_ms": {
+      "average": 603.312021222276,
+      "count": 45,
+      "maximum": 22617.005837033503,
+      "minimum": 32.28270501131192,
+      "total": 27149.04095500242
+    },
+    "fusion_ms": null,
+    "generation_ms": {
+      "average": 0.11579558356768554,
+      "count": 45,
+      "maximum": 0.41223905282095075,
+      "minimum": 0.08547597099095583,
+      "total": 5.21080126054585
+    },
+    "reranker_ms": null
+  },
+  "configuration": {
+    "evaluation": {
+      "k_values": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "labels_path": "/Users/hej/Ragops-Control-Plane/data/eval/retrieval_labels.jsonl",
+      "minimum_labels": 40
+    },
+    "name": "dense_baseline",
+    "output": {
+      "directory": "/Users/hej/Ragops-Control-Plane/reports/evaluations"
+    },
+    "retriever": {
+      "collection_name": "rag_chunks",
+      "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "qdrant_url": null,
+      "top_k": 10,
+      "type": "dense"
+    },
+    "retriever_interface": "common_v1",
+    "status": "approved",
+    "version": "1.0.0"
+  },
+  "latency_ms": {
+    "average": 636.474117057191,
+    "maximum": 22712.446914985776,
+    "minimum": 61.340223997831345,
+    "total": 28641.335267573595
+  },
+  "metrics": {
+    "hit_rate_at_k": {
+      "1": 0.26666666666666666,
+      "10": 0.6,
+      "3": 0.3111111111111111,
+      "5": 0.4444444444444444
+    },
+    "k_values": [
+      1,
+      3,
+      5,
+      10
+    ],
+    "mrr": 0.33589065255731926,
+    "ndcg_at_k": {
+      "1": 0.26666666666666666,
+      "10": 0.3964208153776173,
+      "3": 0.29179843896825464,
+      "5": 0.3472742577852025
+    },
+    "question_count": 45,
+    "recall_at_k": {
+      "1": 0.26666666666666666,
+      "10": 0.6,
+      "3": 0.3111111111111111,
+      "5": 0.4444444444444444
+    }
+  },
+  "questions": [
+    {
+      "citation_count": 10,
+      "client_latency_ms": 22728.091138007585,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 14.869954029563814,
+        "embedding_ms": 22617.005837033503,
+        "fusion_ms": null,
+        "generation_ms": 0.16744801541790366,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 22712.446914985776,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What does FastAPI read from the request body when you declare a Python type?",
+      "question_id": "sqa-22853a3ab950cd44",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "retrieved_chunk_ids": [
+        "a777bdaf-3ec5-54df-988e-0ae68239000b",
+        "fb7d5f13-d820-570f-b1f8-2623cd70b88f",
+        "383f44b8-6656-5cac-83dd-8a080d8136ad",
+        "1a17b728-c32b-597c-8aee-898d73912ecd",
+        "f6506269-998a-59d3-8aab-61ddf1ae9fb7",
+        "599b482a-07e9-5fe2-9dff-bd6b2266815f",
+        "730c2d80-5822-5849-b4e7-fe55ef5db365",
+        "155b2949-7971-596e-9884-bf9670585371",
+        "5d4a6326-1f6d-51d8-91ad-14e11f3367cb",
+        "9bf97d79-f1ff-5262-a4ac-7371782a7f4e"
+      ],
+      "retrieved_scores": [
+        0.748176,
+        0.7478118,
+        0.7454618,
+        0.7040225,
+        0.6931374,
+        0.69007015,
+        0.68583775,
+        0.6841003,
+        0.6796055,
+        0.6782421
+      ],
+      "route": "dense",
+      "trace_id": "7cb89314-82f4-44ab-97e3-2ba869b6844c",
+      "used_chunk_ids": [
+        "a777bdaf-3ec5-54df-988e-0ae68239000b",
+        "fb7d5f13-d820-570f-b1f8-2623cd70b88f",
+        "383f44b8-6656-5cac-83dd-8a080d8136ad",
+        "1a17b728-c32b-597c-8aee-898d73912ecd",
+        "f6506269-998a-59d3-8aab-61ddf1ae9fb7",
+        "599b482a-07e9-5fe2-9dff-bd6b2266815f",
+        "730c2d80-5822-5849-b4e7-fe55ef5db365",
+        "155b2949-7971-596e-9884-bf9670585371",
+        "5d4a6326-1f6d-51d8-91ad-14e11f3367cb",
+        "9bf97d79-f1ff-5262-a4ac-7371782a7f4e"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 142.16888399096206,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.531319988425821,
+        "embedding_ms": 98.2498360099271,
+        "fusion_ms": null,
+        "generation_ms": 0.10757200652733445,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 134.55116003751755,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What happens if the submitted data is invalid?",
+      "question_id": "sqa-9214bfc1978670e0",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "retrieved_chunk_ids": [
+        "546a9186-f12c-5e10-bd7d-c5a1bbbfb3f9",
+        "bf3840ad-9cfd-5379-9708-385d0a0fd4b4",
+        "38833749-1eac-54fd-aa6f-d72f0e55bb2d",
+        "b91b5707-095e-5625-8635-2a5c5454ad1f",
+        "0e90d982-5e8f-5ac5-93d1-0325003a33b7",
+        "e9ff3e67-d543-5d47-a931-98527351439c",
+        "5c7a8e53-142c-5751-9f12-570eea26ecdf",
+        "ec0fbb02-899e-5a25-8353-28fceccdb329",
+        "2c98b8f0-67e9-5181-954f-84e7f2bd5cc8",
+        "1b9409ba-8c9b-58e3-8c60-5e7cef4b078d"
+      ],
+      "retrieved_scores": [
+        0.4645424,
+        0.3584398,
+        0.3565285,
+        0.35526526,
+        0.35057712,
+        0.33993953,
+        0.33730417,
+        0.33697873,
+        0.32809317,
+        0.3245426
+      ],
+      "route": "dense",
+      "trace_id": "f5554b1a-77c2-4616-af8e-d2f92bb96dab",
+      "used_chunk_ids": [
+        "546a9186-f12c-5e10-bd7d-c5a1bbbfb3f9",
+        "bf3840ad-9cfd-5379-9708-385d0a0fd4b4",
+        "38833749-1eac-54fd-aa6f-d72f0e55bb2d",
+        "b91b5707-095e-5625-8635-2a5c5454ad1f",
+        "0e90d982-5e8f-5ac5-93d1-0325003a33b7",
+        "e9ff3e67-d543-5d47-a931-98527351439c",
+        "5c7a8e53-142c-5751-9f12-570eea26ecdf",
+        "ec0fbb02-899e-5a25-8353-28fceccdb329",
+        "2c98b8f0-67e9-5181-954f-84e7f2bd5cc8",
+        "1b9409ba-8c9b-58e3-8c60-5e7cef4b078d"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 173.0386100243777,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 7.3109089862555265,
+        "embedding_ms": 135.50742500228807,
+        "fusion_ms": null,
+        "generation_ms": 0.11312501737847924,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 166.4116220199503,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What schemas are generated for your model and where can you use them?",
+      "question_id": "sqa-bd90c5a97e0740e5",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "retrieved_chunk_ids": [
+        "8df8da26-e2fa-5b29-99d4-b5dae8103bac",
+        "d14691c9-067a-5272-a4c6-b915ea2ad12d",
+        "bc61dba4-a0d1-58e2-a46b-26e623d65fa6",
+        "23f71e8b-5e03-5953-adc4-861ed3d5bc12",
+        "aef1f0dd-d983-5081-80ea-49fdc787db37",
+        "eaf9e709-f0cb-55c9-b656-de6f47f19f86",
+        "b974d384-0c75-58cb-b297-7423ac691b99",
+        "5e6681ea-7f02-5200-be3a-2d49f66dc6c6",
+        "df909fca-3fb7-54ae-bca3-dbdaf286ac6b",
+        "a2cdbd99-142e-58ce-bd1f-467fae09ee28"
+      ],
+      "retrieved_scores": [
+        0.5727953,
+        0.54518723,
+        0.5448041,
+        0.5192715,
+        0.5174556,
+        0.51452136,
+        0.5018212,
+        0.49985063,
+        0.49756056,
+        0.48736557
+      ],
+      "route": "dense",
+      "trace_id": "0a117754-5927-4940-8e47-bc0da8062172",
+      "used_chunk_ids": [
+        "8df8da26-e2fa-5b29-99d4-b5dae8103bac",
+        "d14691c9-067a-5272-a4c6-b915ea2ad12d",
+        "bc61dba4-a0d1-58e2-a46b-26e623d65fa6",
+        "23f71e8b-5e03-5953-adc4-861ed3d5bc12",
+        "aef1f0dd-d983-5081-80ea-49fdc787db37",
+        "eaf9e709-f0cb-55c9-b656-de6f47f19f86",
+        "b974d384-0c75-58cb-b297-7423ac691b99",
+        "5e6681ea-7f02-5200-be3a-2d49f66dc6c6",
+        "df909fca-3fb7-54ae-bca3-dbdaf286ac6b",
+        "a2cdbd99-142e-58ce-bd1f-467fae09ee28"
+      ]
+    },
+    {
+      "citation_count": 7,
+      "client_latency_ms": 235.01194099662825,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 8.031559002120048,
+        "embedding_ms": 191.08760100789368,
+        "fusion_ms": null,
+        "generation_ms": 0.2371370210312307,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 223.16680697258562,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Which nested field key is used in the HTTP, Python, TypeScript, Rust, and Java examples to specify the sightseeing condition?",
+      "question_id": "sqa-8111f18ad4679ac4",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "retrieved_chunk_ids": [
+        "0125f6dd-23cf-5f1a-9e64-c85049837518",
+        "6ba1e29f-9e70-57bc-8ada-65ef002bb98c",
+        "b41d49e0-d98f-5ba8-aff7-e2f05689bf3f",
+        "121eaa37-5945-53c0-972d-acef39e2d821",
+        "c2a5b047-04d6-5e57-9e0b-584f785701cd",
+        "e9db4492-aa9f-5454-a432-c07358043dd6",
+        "59451a8a-ea06-5a90-bb36-20f6b91436e0",
+        "a8e30ba2-c1f4-5480-918c-c6b9ecec8f2e",
+        "196100ec-aba4-5501-ac31-89da33d1b265",
+        "7fa20fa6-bb3b-5f2a-833b-662137689ec1"
+      ],
+      "retrieved_scores": [
+        0.46337634,
+        0.41893804,
+        0.4076591,
+        0.40430212,
+        0.40079352,
+        0.3991298,
+        0.39225566,
+        0.38876823,
+        0.38744208,
+        0.3860632
+      ],
+      "route": "dense",
+      "trace_id": "4d9d30f5-6d74-40e0-b98e-ecba6e039c90",
+      "used_chunk_ids": [
+        "0125f6dd-23cf-5f1a-9e64-c85049837518",
+        "6ba1e29f-9e70-57bc-8ada-65ef002bb98c",
+        "b41d49e0-d98f-5ba8-aff7-e2f05689bf3f",
+        "121eaa37-5945-53c0-972d-acef39e2d821",
+        "c2a5b047-04d6-5e57-9e0b-584f785701cd",
+        "e9db4492-aa9f-5454-a432-c07358043dd6",
+        "59451a8a-ea06-5a90-bb36-20f6b91436e0",
+        "a8e30ba2-c1f4-5480-918c-c6b9ecec8f2e",
+        "196100ec-aba4-5501-ac31-89da33d1b265",
+        "7fa20fa6-bb3b-5f2a-833b-662137689ec1"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 121.47572298999876,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.4993509547784925,
+        "embedding_ms": 85.31196700641885,
+        "fusion_ms": null,
+        "generation_ms": 0.08547597099095583,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 114.97520195553079,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "In the Go client initialization, what host and port are configured?",
+      "question_id": "sqa-e27ab4d10e8d4e5f",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "retrieved_chunk_ids": [
+        "e7dded3e-c071-50b1-b3d9-ef34c8c3af9d",
+        "757f5ceb-4f2c-5fdf-b3a6-c352241766b2",
+        "f4019142-991e-5d1d-9ec6-f14f7346673a",
+        "85fe5bba-3a23-54ab-8b22-8c547f3dde71",
+        "2d453ba8-e855-51ab-9ce3-f26a6ce69944",
+        "8ed49aa0-4b8d-51f3-ac14-fbe57e67fa54",
+        "d0311a50-751b-55e0-98fd-9f8a205aea03",
+        "f01bb5bb-0518-5415-a630-6fa06fe896d4",
+        "82592107-24c0-5227-941b-122c09eec225",
+        "139545dc-0181-5dd9-9af9-8b22fa0dc7cc"
+      ],
+      "retrieved_scores": [
+        0.5769328,
+        0.5591557,
+        0.49432403,
+        0.42939562,
+        0.4232881,
+        0.42075694,
+        0.4142998,
+        0.4142998,
+        0.4022711,
+        0.40079445
+      ],
+      "route": "dense",
+      "trace_id": "edd0c0f5-3c6c-4e70-936e-59966756e4a9",
+      "used_chunk_ids": [
+        "e7dded3e-c071-50b1-b3d9-ef34c8c3af9d",
+        "757f5ceb-4f2c-5fdf-b3a6-c352241766b2",
+        "f4019142-991e-5d1d-9ec6-f14f7346673a",
+        "85fe5bba-3a23-54ab-8b22-8c547f3dde71",
+        "2d453ba8-e855-51ab-9ce3-f26a6ce69944",
+        "8ed49aa0-4b8d-51f3-ac14-fbe57e67fa54",
+        "d0311a50-751b-55e0-98fd-9f8a205aea03",
+        "f01bb5bb-0518-5415-a630-6fa06fe896d4",
+        "82592107-24c0-5227-941b-122c09eec225",
+        "139545dc-0181-5dd9-9af9-8b22fa0dc7cc"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 142.25633797468618,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.65385602042079,
+        "embedding_ms": 98.99242996471003,
+        "fusion_ms": null,
+        "generation_ms": 0.13633299386128783,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 129.9703869735822,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What HTTP endpoint is shown for scrolling points in a collection?",
+      "question_id": "sqa-54a24f6e54a73e24",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "retrieved_chunk_ids": [
+        "fb14cabd-52d6-5ae8-8716-c706c5ca2353",
+        "c75ad278-dcc7-5344-adab-561ad7332a2e",
+        "f311edcf-015a-5178-b7ab-db7145c2ff50",
+        "5555f152-9a93-5f65-8d49-d74c1ba2fb08",
+        "685dfd31-2025-59a5-a5ed-4e77fe3ad7c0",
+        "b74aea2b-2c48-5227-9472-d3b645d83e7e",
+        "7ff8bf2b-05ff-5b50-9404-6a8a27b38124",
+        "e7255cb9-68bf-55f7-9a29-6a382ccde5a4",
+        "ee27ae87-f659-5bc6-bc1b-dc9ce76a95ed",
+        "0b1e0612-7c7b-59ae-9e4c-d6cd011ace31"
+      ],
+      "retrieved_scores": [
+        0.59412396,
+        0.5200304,
+        0.51294196,
+        0.50459075,
+        0.4865678,
+        0.48251304,
+        0.47966975,
+        0.47478825,
+        0.4707545,
+        0.44861984
+      ],
+      "route": "dense",
+      "trace_id": "17f1ef79-754b-4bfa-8d8f-667dfc2c92da",
+      "used_chunk_ids": [
+        "fb14cabd-52d6-5ae8-8716-c706c5ca2353",
+        "c75ad278-dcc7-5344-adab-561ad7332a2e",
+        "f311edcf-015a-5178-b7ab-db7145c2ff50",
+        "5555f152-9a93-5f65-8d49-d74c1ba2fb08",
+        "685dfd31-2025-59a5-a5ed-4e77fe3ad7c0",
+        "b74aea2b-2c48-5227-9472-d3b645d83e7e",
+        "7ff8bf2b-05ff-5b50-9404-6a8a27b38124",
+        "e7255cb9-68bf-55f7-9a29-6a382ccde5a4",
+        "ee27ae87-f659-5bc6-bc1b-dc9ce76a95ed",
+        "0b1e0612-7c7b-59ae-9e4c-d6cd011ace31"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 129.29765100125223,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.73361199349165,
+        "embedding_ms": 93.50071498192847,
+        "fusion_ms": null,
+        "generation_ms": 0.0969359534792602,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 122.39331298042089,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Name two advantages of using UploadFile over bytes.",
+      "question_id": "sqa-2312659ece1beeb0",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "13e25c0c-9107-5427-893b-f7cf382486d1",
+        "f7b110c9-1027-52d4-b3bd-ed20f8b76190",
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "cca8ddb1-43ef-55c7-baac-f22c6c0a9bc8",
+        "6e7281c9-df57-58c6-9348-4975c8166b64",
+        "9f658fe5-cdaa-5d1f-a71d-2b8545671edf"
+      ],
+      "retrieved_scores": [
+        0.5377034,
+        0.51318043,
+        0.45655942,
+        0.4551387,
+        0.45426482,
+        0.43456095,
+        0.43307093,
+        0.42743757,
+        0.42707425,
+        0.4234404
+      ],
+      "route": "dense",
+      "trace_id": "60d72aef-6855-48b6-b62e-05fddb0e62cc",
+      "used_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "13e25c0c-9107-5427-893b-f7cf382486d1",
+        "f7b110c9-1027-52d4-b3bd-ed20f8b76190",
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "cca8ddb1-43ef-55c7-baac-f22c6c0a9bc8",
+        "6e7281c9-df57-58c6-9348-4975c8166b64",
+        "9f658fe5-cdaa-5d1f-a71d-2b8545671edf"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 223.28107099747285,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 7.303318998310715,
+        "embedding_ms": 184.91584598086774,
+        "fusion_ms": null,
+        "generation_ms": 0.12589502148330212,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 215.7743989955634,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What happens to a file once its in-memory size limit is exceeded when using UploadFile?",
+      "question_id": "sqa-8f550fc0f0c97fdf",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "694f4dbe-82fb-5c5b-879a-f0a021962ee2",
+        "6e7281c9-df57-58c6-9348-4975c8166b64",
+        "60e51f9d-987d-59f7-9030-6c3c1eca7fa3",
+        "64a5efd5-f239-52f7-8f45-3499bb80353b",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "185355c1-193b-5f69-aa76-5b40b18708ed",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "1374329c-061f-5b73-9972-f34d8a803983"
+      ],
+      "retrieved_scores": [
+        0.5636903,
+        0.48805746,
+        0.4395688,
+        0.42558533,
+        0.4121614,
+        0.4117028,
+        0.40216744,
+        0.40102357,
+        0.39608124,
+        0.3948844
+      ],
+      "route": "dense",
+      "trace_id": "378fe8f3-6709-496a-9f04-dafe1ea40981",
+      "used_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "694f4dbe-82fb-5c5b-879a-f0a021962ee2",
+        "6e7281c9-df57-58c6-9348-4975c8166b64",
+        "60e51f9d-987d-59f7-9030-6c3c1eca7fa3",
+        "64a5efd5-f239-52f7-8f45-3499bb80353b",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "185355c1-193b-5f69-aa76-5b40b18708ed",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "1374329c-061f-5b73-9972-f34d8a803983"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 163.1899059866555,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 12.106465001124889,
+        "embedding_ms": 116.61860602907836,
+        "fusion_ms": null,
+        "generation_ms": 0.10488799307495356,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 151.95731801213697,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.38685280723454163,
+        "3": 0.0,
+        "5": 0.38685280723454163
+      },
+      "question": "What kind of interface does UploadFile expose?",
+      "question_id": "sqa-6de296cda91f5dc6",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.2,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "b1985c60-7321-5f01-8ae0-560bb8b9b88d",
+        "f7b110c9-1027-52d4-b3bd-ed20f8b76190",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "7b419b4f-645d-5b87-a578-09054289e054",
+        "fed849b2-9c59-5da7-be70-e8e4df8c046f",
+        "cca8ddb1-43ef-55c7-baac-f22c6c0a9bc8"
+      ],
+      "retrieved_scores": [
+        0.5802899,
+        0.54359466,
+        0.53017086,
+        0.5190783,
+        0.4885093,
+        0.47389138,
+        0.4708833,
+        0.45633563,
+        0.45381504,
+        0.45237517
+      ],
+      "route": "dense",
+      "trace_id": "e0d42737-05f6-421b-932a-198c135c6942",
+      "used_chunk_ids": [
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "b1985c60-7321-5f01-8ae0-560bb8b9b88d",
+        "f7b110c9-1027-52d4-b3bd-ed20f8b76190",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "7b419b4f-645d-5b87-a578-09054289e054",
+        "fed849b2-9c59-5da7-be70-e8e4df8c046f",
+        "cca8ddb1-43ef-55c7-baac-f22c6c0a9bc8"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 131.89334399066865,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.967042001429945,
+        "embedding_ms": 94.30041396990418,
+        "fusion_ms": null,
+        "generation_ms": 0.08996296674013138,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 124.03950694715604,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What Python object does UploadFile expose that can be passed to libraries expecting a file-like object?",
+      "question_id": "sqa-220fbcfa80439038",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "f7b110c9-1027-52d4-b3bd-ed20f8b76190",
+        "b1985c60-7321-5f01-8ae0-560bb8b9b88d",
+        "35f02885-8e6d-52ac-ae02-b80360ca5c1c",
+        "21ba402e-cc64-55db-842d-f1cdfc288266",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "4329bc47-0e06-5e42-a19e-4176d790fcae",
+        "4b8a61d0-9727-5b59-8752-8394e1b5fa19"
+      ],
+      "retrieved_scores": [
+        0.71125466,
+        0.6722547,
+        0.6195475,
+        0.5875936,
+        0.57637954,
+        0.55083734,
+        0.5419562,
+        0.5406523,
+        0.5383227,
+        0.5363442
+      ],
+      "route": "dense",
+      "trace_id": "a38a04ce-e1c1-4622-851f-9e398b8b0407",
+      "used_chunk_ids": [
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "f7b110c9-1027-52d4-b3bd-ed20f8b76190",
+        "b1985c60-7321-5f01-8ae0-560bb8b9b88d",
+        "35f02885-8e6d-52ac-ae02-b80360ca5c1c",
+        "21ba402e-cc64-55db-842d-f1cdfc288266",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "4329bc47-0e06-5e42-a19e-4176d790fcae",
+        "4b8a61d0-9727-5b59-8752-8394e1b5fa19"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 141.17450400954112,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.491833017207682,
+        "embedding_ms": 97.3203059984371,
+        "fusion_ms": null,
+        "generation_ms": 0.09647500701248646,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 126.97904196102172,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.3010299956639812,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What file format does MLflow use for saving models from a variety of tools?",
+      "question_id": "sqa-7f4b9c901bcac8d2",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.1111111111111111,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "bfd25439-477b-51c7-a2a0-cc786bf90af2",
+        "340a7a12-017b-5c84-9e42-26cdfb3c730b",
+        "c582f4da-9e4e-5225-8bba-2093d7a92012",
+        "6cd7d628-b9df-5ae4-9a13-4750b6722af7",
+        "1c11fb41-d8e9-54c4-a6a8-7ee81559ae91",
+        "8793a7a9-7a3c-5156-96bc-0865d968fe11",
+        "6d5e0afd-78b5-5242-bb94-c944cb587d09",
+        "1617d361-2e2a-5103-a892-4798656621ca",
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "8c1e4db1-8427-5d14-ba4a-0b472044d54c"
+      ],
+      "retrieved_scores": [
+        0.76627666,
+        0.7530581,
+        0.6711812,
+        0.666433,
+        0.66297495,
+        0.6618944,
+        0.65607667,
+        0.6544348,
+        0.6471417,
+        0.6399076
+      ],
+      "route": "dense",
+      "trace_id": "56947a20-d1ac-4644-9a9c-add12e779028",
+      "used_chunk_ids": [
+        "bfd25439-477b-51c7-a2a0-cc786bf90af2",
+        "340a7a12-017b-5c84-9e42-26cdfb3c730b",
+        "c582f4da-9e4e-5225-8bba-2093d7a92012",
+        "6cd7d628-b9df-5ae4-9a13-4750b6722af7",
+        "1c11fb41-d8e9-54c4-a6a8-7ee81559ae91",
+        "8793a7a9-7a3c-5156-96bc-0865d968fe11",
+        "6d5e0afd-78b5-5242-bb94-c944cb587d09",
+        "1617d361-2e2a-5103-a892-4798656621ca",
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "8c1e4db1-8427-5d14-ba4a-0b472044d54c"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 139.75362497149035,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.146831961814314,
+        "embedding_ms": 97.17299800831825,
+        "fusion_ms": null,
+        "generation_ms": 0.10280503192916512,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 126.67639896972105,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which MLflow flavor can log scikit-learn models as artifacts for serving?",
+      "question_id": "sqa-806e7d79beff73b8",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "8166cf8d-fb26-5b10-adf7-87a2e0e7425b",
+        "d9abccc5-476d-55da-8563-74e8bd06d59a",
+        "48221d60-347a-5e15-9650-9f4c4d320300",
+        "ba78a584-07f7-59c6-8ed7-ae12191e11fe",
+        "a8ee798c-3ccd-5c0d-8e75-cdae502be53a",
+        "b99ec21b-03fa-5b59-b38f-a660312b281b",
+        "3411f40b-3eeb-5fbd-91b5-c496bdcdad8d",
+        "97c1cf7d-68fd-570f-a6a2-d171e411d96f",
+        "9d46e62c-bf31-503a-8d63-6e13f236ea61"
+      ],
+      "retrieved_scores": [
+        0.761984,
+        0.70116854,
+        0.69793576,
+        0.6767419,
+        0.6725497,
+        0.66907144,
+        0.6687681,
+        0.66799515,
+        0.66679305,
+        0.66502905
+      ],
+      "route": "dense",
+      "trace_id": "94496bba-0712-4580-95d9-8a86bf89d3e7",
+      "used_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "8166cf8d-fb26-5b10-adf7-87a2e0e7425b",
+        "d9abccc5-476d-55da-8563-74e8bd06d59a",
+        "48221d60-347a-5e15-9650-9f4c4d320300",
+        "ba78a584-07f7-59c6-8ed7-ae12191e11fe",
+        "a8ee798c-3ccd-5c0d-8e75-cdae502be53a",
+        "b99ec21b-03fa-5b59-b38f-a660312b281b",
+        "3411f40b-3eeb-5fbd-91b5-c496bdcdad8d",
+        "97c1cf7d-68fd-570f-a6a2-d171e411d96f",
+        "9d46e62c-bf31-503a-8d63-6e13f236ea61"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 188.51797294337302,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.632584972772747,
+        "embedding_ms": 152.10012602619827,
+        "fusion_ms": null,
+        "generation_ms": 0.08950999472290277,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 181.42013699980453,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What is the exact MLflow command to serve a model located at runs:/<RUN_ID>/model?",
+      "question_id": "sqa-43e609692540e39f",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "f1ed4936-e9ee-5997-8b19-7bf8b8311aca",
+        "9897a50e-a1a2-541d-9908-de62157f571c",
+        "86dd7014-0b0c-5740-8c8b-079fb82b0227",
+        "40c5b877-599f-5c4b-a9ca-4f3833b90f01",
+        "808ec01c-84b3-5fc8-ae67-11264432cdc7",
+        "b4772fbc-ff3a-5756-b4b9-86285ea278e2",
+        "094d3942-a474-590e-8158-17e596d58bdb",
+        "88127d7e-9b5b-529b-bb12-a5ae6a22cc6a",
+        "79d1c8df-2fd0-59be-9f55-a0cfa8d48963",
+        "e9193280-15e3-5efb-903f-487e0c0d80ce"
+      ],
+      "retrieved_scores": [
+        0.81895375,
+        0.8180741,
+        0.79324013,
+        0.79260033,
+        0.78834176,
+        0.7759371,
+        0.7707585,
+        0.7704868,
+        0.7704868,
+        0.7704868
+      ],
+      "route": "dense",
+      "trace_id": "b4c26f11-1f07-4ad8-bad5-76e4ec8c6217",
+      "used_chunk_ids": [
+        "f1ed4936-e9ee-5997-8b19-7bf8b8311aca",
+        "9897a50e-a1a2-541d-9908-de62157f571c",
+        "86dd7014-0b0c-5740-8c8b-079fb82b0227",
+        "40c5b877-599f-5c4b-a9ca-4f3833b90f01",
+        "808ec01c-84b3-5fc8-ae67-11264432cdc7",
+        "b4772fbc-ff3a-5756-b4b9-86285ea278e2",
+        "094d3942-a474-590e-8158-17e596d58bdb",
+        "88127d7e-9b5b-529b-bb12-a5ae6a22cc6a",
+        "79d1c8df-2fd0-59be-9f55-a0cfa8d48963",
+        "e9193280-15e3-5efb-903f-487e0c0d80ce"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 205.67041402682662,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.546936998143792,
+        "embedding_ms": 169.1904419567436,
+        "fusion_ms": null,
+        "generation_ms": 0.09117199806496501,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 198.55360203655437,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What does an MLmodel file declare about each model to enable serving it as a Python function?",
+      "question_id": "sqa-fe6afefa50c92384",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "ce08fa6e-2a0d-5941-a768-721f1d318900",
+        "05701a59-154f-5880-8ad6-03c5b868a610",
+        "8ff9af87-39b6-53d6-88e1-f4662041fb92",
+        "ecf09611-c5f3-557e-8e79-fea8f479b1f6",
+        "f315f40c-0681-5c16-85e5-be7bccbc587b",
+        "12609df4-0eb5-5aa2-bab6-738c76027aca",
+        "670821d3-845a-54ee-9581-9d3395d96255",
+        "9b8cce66-ff93-53cf-8de8-1d18f9c90e7f",
+        "d5ef410f-88f0-55aa-90f9-1cc5e7d5b414",
+        "3d43d5c9-a8b1-5423-8d15-81085af21efd"
+      ],
+      "retrieved_scores": [
+        0.68772745,
+        0.6679971,
+        0.6628001,
+        0.6569241,
+        0.6528728,
+        0.6412461,
+        0.6357116,
+        0.6347142,
+        0.6342299,
+        0.63412416
+      ],
+      "route": "dense",
+      "trace_id": "7695b040-5fc1-4f3e-9ed1-56fababf6096",
+      "used_chunk_ids": [
+        "ce08fa6e-2a0d-5941-a768-721f1d318900",
+        "05701a59-154f-5880-8ad6-03c5b868a610",
+        "8ff9af87-39b6-53d6-88e1-f4662041fb92",
+        "ecf09611-c5f3-557e-8e79-fea8f479b1f6",
+        "f315f40c-0681-5c16-85e5-be7bccbc587b",
+        "12609df4-0eb5-5aa2-bab6-738c76027aca",
+        "670821d3-845a-54ee-9581-9d3395d96255",
+        "9b8cce66-ff93-53cf-8de8-1d18f9c90e7f",
+        "d5ef410f-88f0-55aa-90f9-1cc5e7d5b414",
+        "3d43d5c9-a8b1-5423-8d15-81085af21efd"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 150.09319799719378,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 7.2269070078618824,
+        "embedding_ms": 106.73511604545638,
+        "fusion_ms": null,
+        "generation_ms": 0.14171202201396227,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 137.08848197711632,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.5,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "question": "What HTTP method and path are used to observe the cluster state after synchronization?",
+      "question_id": "sqa-ebcd24ac3da514b9",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.3333333333333333,
+      "relevant_chunk_ids": [
+        "6dc03388-cb65-5ba4-bc45-947108709ffc"
+      ],
+      "retrieved_chunk_ids": [
+        "e26f0a8a-b633-5e94-8c32-e9fd949cfd77",
+        "bef2b7a6-d93c-557c-8e6d-1201d490d06a",
+        "6dc03388-cb65-5ba4-bc45-947108709ffc",
+        "8faf283c-327a-5e5e-b646-e5799233689a",
+        "38099e82-ca9a-5069-ac73-691ec0fab027",
+        "524d97ef-57cb-55e1-85bc-0a0029c67794",
+        "89898e9e-e150-584c-a53d-ee05cbc08c3c",
+        "980dba26-c8f9-5cd0-8925-9369ed4ea946",
+        "9b632705-6882-5423-a70d-7e4305202005",
+        "18e41182-3c05-5fbc-8a72-aec014c7fc99"
+      ],
+      "retrieved_scores": [
+        0.5179317,
+        0.51328874,
+        0.4796801,
+        0.45417845,
+        0.448084,
+        0.44583595,
+        0.44583595,
+        0.43344527,
+        0.43238413,
+        0.43097073
+      ],
+      "route": "dense",
+      "trace_id": "bad22b22-013d-41f2-aea0-c2a071166f74",
+      "used_chunk_ids": [
+        "e26f0a8a-b633-5e94-8c32-e9fd949cfd77",
+        "bef2b7a6-d93c-557c-8e6d-1201d490d06a",
+        "6dc03388-cb65-5ba4-bc45-947108709ffc",
+        "8faf283c-327a-5e5e-b646-e5799233689a",
+        "38099e82-ca9a-5069-ac73-691ec0fab027",
+        "524d97ef-57cb-55e1-85bc-0a0029c67794",
+        "89898e9e-e150-584c-a53d-ee05cbc08c3c",
+        "980dba26-c8f9-5cd0-8925-9369ed4ea946",
+        "9b632705-6882-5423-a70d-7e4305202005",
+        "18e41182-3c05-5fbc-8a72-aec014c7fc99"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 213.023531017825,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.653082964476198,
+        "embedding_ms": 173.77316299825907,
+        "fusion_ms": null,
+        "generation_ms": 0.09363098070025444,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 204.6865599695593,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.43067655807339306,
+        "3": 0.0,
+        "5": 0.43067655807339306
+      },
+      "question": "What does the API return in the response when a browser creates a user with a password using the same input/output model in this example?",
+      "question_id": "sqa-100e77a31882d05f",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.25,
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "retrieved_chunk_ids": [
+        "bc300f0a-cb5d-5071-9712-49e0c956737a",
+        "c062c6b6-3c27-5f83-b5e0-444927a6d261",
+        "a8fcff72-2899-5c27-9b2a-30e1820c05a3",
+        "60e1a507-5db2-5497-b074-bfa41ae03129",
+        "fb6acf0c-7e18-545f-909e-07241e58e53a",
+        "dcbd6115-153b-5627-9a35-cdb144f1c495",
+        "c20af783-e8a4-572f-a88c-16f59674cd23",
+        "51a62730-1dd4-5530-a732-3b348b8134f1",
+        "93e33f7e-5ca5-5e79-8ef8-337c6137f968",
+        "f81e8d78-72b8-5e22-b381-9aa92f8b11eb"
+      ],
+      "retrieved_scores": [
+        0.5413469,
+        0.5153564,
+        0.5004287,
+        0.5002581,
+        0.4932379,
+        0.47037724,
+        0.46117914,
+        0.44509327,
+        0.43992007,
+        0.43511373
+      ],
+      "route": "dense",
+      "trace_id": "26ac3bfa-9cfc-43b3-a153-de2c6c14b060",
+      "used_chunk_ids": [
+        "bc300f0a-cb5d-5071-9712-49e0c956737a",
+        "c062c6b6-3c27-5f83-b5e0-444927a6d261",
+        "a8fcff72-2899-5c27-9b2a-30e1820c05a3",
+        "60e1a507-5db2-5497-b074-bfa41ae03129",
+        "fb6acf0c-7e18-545f-909e-07241e58e53a",
+        "dcbd6115-153b-5627-9a35-cdb144f1c495",
+        "c20af783-e8a4-572f-a88c-16f59674cd23",
+        "51a62730-1dd4-5530-a732-3b348b8134f1",
+        "93e33f7e-5ca5-5e79-8ef8-337c6137f968",
+        "f81e8d78-72b8-5e22-b381-9aa92f8b11eb"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 70.06382499821484,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.857104959432036,
+        "embedding_ms": 33.260715019423515,
+        "fusion_ms": null,
+        "generation_ms": 0.08724699728190899,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 63.37681197328493,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What warning is given about handling a plain password in this section?",
+      "question_id": "sqa-50e37593177ea153",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "retrieved_chunk_ids": [
+        "1f2b0f81-b977-5ffc-beab-61140d98623d",
+        "1a436be5-24d1-594a-812e-bde13f7fdee0",
+        "86772637-c870-56b5-ac28-1e3e77899fa6",
+        "1b9812b0-a486-5c48-a316-99685a5ac391",
+        "fe85d857-4084-5065-b64c-9227d1874677",
+        "5b686fb9-c29a-5c18-ad85-96307bd4ac16",
+        "cf21752e-c385-5d83-b21a-f58b55eaaaed",
+        "af4a0791-6305-54b4-8b22-f88467149c7b",
+        "2345d855-391f-556c-9450-d5318ece6c63",
+        "a8acfe74-5276-5aa2-8395-f3e329a62826"
+      ],
+      "retrieved_scores": [
+        0.46909943,
+        0.4682126,
+        0.46804303,
+        0.46546513,
+        0.46546513,
+        0.4544788,
+        0.4531586,
+        0.42918482,
+        0.42074975,
+        0.40997517
+      ],
+      "route": "dense",
+      "trace_id": "e98b611c-1c89-4c7e-a036-a3cf97373ce0",
+      "used_chunk_ids": [
+        "1f2b0f81-b977-5ffc-beab-61140d98623d",
+        "1a436be5-24d1-594a-812e-bde13f7fdee0",
+        "86772637-c870-56b5-ac28-1e3e77899fa6",
+        "1b9812b0-a486-5c48-a316-99685a5ac391",
+        "fe85d857-4084-5065-b64c-9227d1874677",
+        "5b686fb9-c29a-5c18-ad85-96307bd4ac16",
+        "cf21752e-c385-5d83-b21a-f58b55eaaaed",
+        "af4a0791-6305-54b4-8b22-f88467149c7b",
+        "2345d855-391f-556c-9450-d5318ece6c63",
+        "a8acfe74-5276-5aa2-8395-f3e329a62826"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 70.20373601699248,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.039960018824786,
+        "embedding_ms": 32.28270501131192,
+        "fusion_ms": null,
+        "generation_ms": 0.1736439880914986,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 61.340223997831345,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Which library should be installed to use EmailStr according to the document?",
+      "question_id": "sqa-dc321a1b57e8d142",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "retrieved_chunk_ids": [
+        "81f01c9c-d0f1-5e7f-81cc-7ab4c9c203b7",
+        "4423dca6-66fc-5c79-a516-8a809211c65b",
+        "c1fb5780-02bf-5574-88d3-ad3a069b16ec",
+        "3bce6603-fee4-5137-96f9-1f9ce5d41a9a",
+        "53f5dcfc-6f4c-55fe-87bf-c5731e14d18e",
+        "0132e844-2895-5a2c-b84c-93f180ec3b02",
+        "cf0ee5c2-2e4c-5c64-9d2a-7e33d6e22461",
+        "aaeaa429-0d5c-5647-8dfc-15261cc87f8a",
+        "aa779180-2cce-5f80-9d59-3ebdde3000af",
+        "5ddd7d22-e18d-5992-a2bc-c83a71d7d297"
+      ],
+      "retrieved_scores": [
+        0.41744244,
+        0.3557097,
+        0.35514382,
+        0.34103248,
+        0.33288687,
+        0.32175815,
+        0.32031608,
+        0.31643716,
+        0.30948794,
+        0.3056061
+      ],
+      "route": "dense",
+      "trace_id": "a2432944-d5f4-4d2c-beca-eb8688f06913",
+      "used_chunk_ids": [
+        "81f01c9c-d0f1-5e7f-81cc-7ab4c9c203b7",
+        "4423dca6-66fc-5c79-a516-8a809211c65b",
+        "c1fb5780-02bf-5574-88d3-ad3a069b16ec",
+        "3bce6603-fee4-5137-96f9-1f9ce5d41a9a",
+        "53f5dcfc-6f4c-55fe-87bf-c5731e14d18e",
+        "0132e844-2895-5a2c-b84c-93f180ec3b02",
+        "cf0ee5c2-2e4c-5c64-9d2a-7e33d6e22461",
+        "aaeaa429-0d5c-5647-8dfc-15261cc87f8a",
+        "aa779180-2cce-5f80-9d59-3ebdde3000af",
+        "5ddd7d22-e18d-5992-a2bc-c83a71d7d297"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 167.76085895253345,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.969622987322509,
+        "embedding_ms": 130.37641299888492,
+        "fusion_ms": null,
+        "generation_ms": 0.41223905282095075,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/api_reference/source/rest-api.rst",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 159.25003896700218,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What is the data type of request_time?",
+      "question_id": "sqa-9ec13a094bedbaf2",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "c584436b-b86e-5e08-9299-696550b4562e"
+      ],
+      "retrieved_chunk_ids": [
+        "f7763ffa-5b3e-5caa-924a-adcc58759810",
+        "10228680-b705-5930-91a8-29a1c88505af",
+        "1cf03a70-87a2-50a7-bf44-a3e0770bb8a8",
+        "f5bd1d59-91b8-5f1e-b3d9-8de7ab4d30b9",
+        "b523aca4-673c-5bf6-94fb-703f2af4bc53",
+        "d1d88627-2347-50e8-a02c-d6ba3ba00f0e",
+        "86cedc3b-13e3-5f8d-8797-280cb4a6b4f6",
+        "2888ce29-af60-5322-96eb-cdfdde3bfc2e",
+        "dc7bf71a-2e38-50f7-b27c-fc9121a01d72",
+        "4c78ea89-59fc-54ae-ab8f-5e34ccce915b"
+      ],
+      "retrieved_scores": [
+        0.67349607,
+        0.5581338,
+        0.52661914,
+        0.5166876,
+        0.5136221,
+        0.48719805,
+        0.47469968,
+        0.46697444,
+        0.43389845,
+        0.43246377
+      ],
+      "route": "dense",
+      "trace_id": "2bff9884-96b3-4891-8cdd-c0ea4b3f958f",
+      "used_chunk_ids": [
+        "f7763ffa-5b3e-5caa-924a-adcc58759810",
+        "10228680-b705-5930-91a8-29a1c88505af",
+        "1cf03a70-87a2-50a7-bf44-a3e0770bb8a8",
+        "f5bd1d59-91b8-5f1e-b3d9-8de7ab4d30b9",
+        "b523aca4-673c-5bf6-94fb-703f2af4bc53",
+        "d1d88627-2347-50e8-a02c-d6ba3ba00f0e",
+        "86cedc3b-13e3-5f8d-8797-280cb4a6b4f6",
+        "2888ce29-af60-5322-96eb-cdfdde3bfc2e",
+        "dc7bf71a-2e38-50f7-b27c-fc9121a01d72",
+        "4c78ea89-59fc-54ae-ab8f-5e34ccce915b"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 131.46438403055072,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 8.874228980857879,
+        "embedding_ms": 90.93643201049417,
+        "fusion_ms": null,
+        "generation_ms": 0.1148420269601047,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/api_reference/source/rest-api.rst",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 124.07661898760125,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What happens to the request_preview size and where is the full request stored?",
+      "question_id": "sqa-1333a2c4d6953cf4",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "c584436b-b86e-5e08-9299-696550b4562e"
+      ],
+      "retrieved_chunk_ids": [
+        "b7f06ff7-8fc6-5d2e-bf3c-454ec756ff1d",
+        "e3dafb28-11e1-5e57-8e00-777321b5b229",
+        "68332e95-fd7c-50a8-81b6-bb49f01778cb",
+        "bc283612-eec3-508c-a95c-46f4a2c4efc5",
+        "1cfc500b-e559-53d4-9467-c10b97fd2d12",
+        "9491e057-f317-5544-9bb0-105cf1381cd9",
+        "e2349418-0900-51e7-b846-c3ab1a5e0494",
+        "7806f008-a6a2-5267-9faa-4d4c32ce0ac7",
+        "637d805c-fbe0-5b0d-88fe-49465fc95dac",
+        "57762913-9d02-5dc3-9677-ce79783988b8"
+      ],
+      "retrieved_scores": [
+        0.48694414,
+        0.47608632,
+        0.42686713,
+        0.41671136,
+        0.3986637,
+        0.3984723,
+        0.3893234,
+        0.3874262,
+        0.38660097,
+        0.37793002
+      ],
+      "route": "dense",
+      "trace_id": "bfe2a30d-6aab-453f-91c5-eeae7428bbf5",
+      "used_chunk_ids": [
+        "b7f06ff7-8fc6-5d2e-bf3c-454ec756ff1d",
+        "e3dafb28-11e1-5e57-8e00-777321b5b229",
+        "68332e95-fd7c-50a8-81b6-bb49f01778cb",
+        "bc283612-eec3-508c-a95c-46f4a2c4efc5",
+        "1cfc500b-e559-53d4-9467-c10b97fd2d12",
+        "9491e057-f317-5544-9bb0-105cf1381cd9",
+        "e2349418-0900-51e7-b846-c3ab1a5e0494",
+        "7806f008-a6a2-5267-9faa-4d4c32ce0ac7",
+        "637d805c-fbe0-5b0d-88fe-49465fc95dac",
+        "57762913-9d02-5dc3-9677-ce79783988b8"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 77.25470303557813,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.7997060357593,
+        "embedding_ms": 34.65784096624702,
+        "fusion_ms": null,
+        "generation_ms": 0.09412504732608795,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 69.31896199239418,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What is one alternative to class-based decision making?",
+      "question_id": "sqa-7115fc46a1555f1a",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9"
+      ],
+      "retrieved_chunk_ids": [
+        "f841a884-901c-5796-8380-ebcefe71c19a",
+        "8d5f699d-d9a7-57d3-9b26-b26c84125cd9",
+        "ca32c828-6eae-5272-9eb3-7d7337a999b1",
+        "7796c9cf-a415-5084-92ab-5f4a6979b59d",
+        "bc0063d8-adb7-5fb3-b46d-26f69b249d13",
+        "860b0f32-a33e-5de3-ab80-7f7f3bfe6bb5",
+        "01224342-6246-5b1e-b6f2-9b99f04ff45e",
+        "9f84db01-4275-5385-a2e1-1c121fe308e9",
+        "3462128f-2162-5828-ad8a-2680f768575b",
+        "f2b3ab99-aae9-5fee-a29e-1bfb471bf88b"
+      ],
+      "retrieved_scores": [
+        0.3018593,
+        0.3015389,
+        0.29752603,
+        0.29542953,
+        0.29497498,
+        0.29013616,
+        0.28916925,
+        0.26762068,
+        0.26463693,
+        0.2642166
+      ],
+      "route": "dense",
+      "trace_id": "64a6f742-a11a-4cdb-87af-19e0de428e66",
+      "used_chunk_ids": [
+        "f841a884-901c-5796-8380-ebcefe71c19a",
+        "8d5f699d-d9a7-57d3-9b26-b26c84125cd9",
+        "ca32c828-6eae-5272-9eb3-7d7337a999b1",
+        "7796c9cf-a415-5084-92ab-5f4a6979b59d",
+        "bc0063d8-adb7-5fb3-b46d-26f69b249d13",
+        "860b0f32-a33e-5de3-ab80-7f7f3bfe6bb5",
+        "01224342-6246-5b1e-b6f2-9b99f04ff45e",
+        "9f84db01-4275-5385-a2e1-1c121fe308e9",
+        "3462128f-2162-5828-ad8a-2680f768575b",
+        "f2b3ab99-aae9-5fee-a29e-1bfb471bf88b"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 70.48599701374769,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.192740984261036,
+        "embedding_ms": 34.059302997775376,
+        "fusion_ms": null,
+        "generation_ms": 0.12258003698661923,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 63.07843799004331,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.3333333333333333,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What intermediate representation is needed to implement similarity learning quickly?",
+      "question_id": "sqa-7f32d3b5b1a89fbf",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.14285714285714285,
+      "relevant_chunk_ids": [
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9"
+      ],
+      "retrieved_chunk_ids": [
+        "109824b7-ad32-5527-8375-04711df1be0d",
+        "43dbc8cf-82ae-55d9-a177-60c412d7e4ed",
+        "aa327ab0-587d-5c1e-88bf-0bfa69bc33bb",
+        "4929ccfb-e43b-5a5b-8f5e-3e8af3e177e0",
+        "dd2b6511-88be-5ce3-8c2b-8701c78f4eb0",
+        "9916c2b0-b477-5a89-b3bb-a31256a9a841",
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9",
+        "01224342-6246-5b1e-b6f2-9b99f04ff45e",
+        "31c789da-0b99-59cd-a10a-ab8f3019cb89",
+        "58cc0e54-4542-5d3e-a152-85b9ee37794c"
+      ],
+      "retrieved_scores": [
+        0.6495507,
+        0.5819731,
+        0.578186,
+        0.5714911,
+        0.54460466,
+        0.53911066,
+        0.5352422,
+        0.5257389,
+        0.5188713,
+        0.51523143
+      ],
+      "route": "dense",
+      "trace_id": "2cc0b429-85b0-4288-82bc-c481de717c1e",
+      "used_chunk_ids": [
+        "109824b7-ad32-5527-8375-04711df1be0d",
+        "43dbc8cf-82ae-55d9-a177-60c412d7e4ed",
+        "aa327ab0-587d-5c1e-88bf-0bfa69bc33bb",
+        "4929ccfb-e43b-5a5b-8f5e-3e8af3e177e0",
+        "dd2b6511-88be-5ce3-8c2b-8701c78f4eb0",
+        "9916c2b0-b477-5a89-b3bb-a31256a9a841",
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9",
+        "01224342-6246-5b1e-b6f2-9b99f04ff45e",
+        "31c789da-0b99-59cd-a10a-ab8f3019cb89",
+        "58cc0e54-4542-5d3e-a152-85b9ee37794c"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 136.84654602548108,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.077596975956112,
+        "embedding_ms": 97.88716596085578,
+        "fusion_ms": null,
+        "generation_ms": 0.10088901035487652,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 126.72672496410087,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Which distance measures are given as examples for calculating similarity between embeddings?",
+      "question_id": "sqa-c550d812bb5272e0",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9"
+      ],
+      "retrieved_chunk_ids": [
+        "dd2b6511-88be-5ce3-8c2b-8701c78f4eb0",
+        "85e5569b-74d2-5d84-96d4-003c8a8880f8",
+        "8dbf31a0-cab9-5667-8ca5-93a743589a7f",
+        "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8",
+        "bd76cf72-b17c-59bf-b7b2-8ab6b4f3c829",
+        "43dbc8cf-82ae-55d9-a177-60c412d7e4ed",
+        "109824b7-ad32-5527-8375-04711df1be0d",
+        "c355df8c-50e6-5be9-8b10-cd7d32c29de8",
+        "aa327ab0-587d-5c1e-88bf-0bfa69bc33bb",
+        "11804828-f7d0-587b-8361-67f2d933b267"
+      ],
+      "retrieved_scores": [
+        0.6597541,
+        0.6274443,
+        0.62568593,
+        0.598165,
+        0.5957,
+        0.5837843,
+        0.5725012,
+        0.57018304,
+        0.5603922,
+        0.53799856
+      ],
+      "route": "dense",
+      "trace_id": "43c1085f-0edf-4a1b-b645-f4bbcc2d1af0",
+      "used_chunk_ids": [
+        "dd2b6511-88be-5ce3-8c2b-8701c78f4eb0",
+        "85e5569b-74d2-5d84-96d4-003c8a8880f8",
+        "8dbf31a0-cab9-5667-8ca5-93a743589a7f",
+        "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8",
+        "bd76cf72-b17c-59bf-b7b2-8ab6b4f3c829",
+        "43dbc8cf-82ae-55d9-a177-60c412d7e4ed",
+        "109824b7-ad32-5527-8375-04711df1be0d",
+        "c355df8c-50e6-5be9-8b10-cd7d32c29de8",
+        "aa327ab0-587d-5c1e-88bf-0bfa69bc33bb",
+        "11804828-f7d0-587b-8361-67f2d933b267"
+      ]
+    },
+    {
+      "citation_count": 8,
+      "client_latency_ms": 142.18513999367133,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.817644007038325,
+        "embedding_ms": 106.16060195025057,
+        "fusion_ms": null,
+        "generation_ms": 0.087923021055758,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model/dependencies/index.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 135.21037896862254,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which file contains the information required to restore the model environment using virtualenv, and what three things does it specify?",
+      "question_id": "sqa-c00b9f531d2e5586",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95"
+      ],
+      "retrieved_chunk_ids": [
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95",
+        "78a2e43a-4a18-5617-96f5-19cfa4d6f265",
+        "c7918cda-5605-5387-ba43-714f77173293",
+        "7e5ccc10-a0cf-53ad-879f-39317b9f4842",
+        "048fe627-c7ce-5902-892b-c81fad23331c",
+        "5a1b5901-a307-5f46-8490-7a53e3e12251",
+        "95d68b1c-7604-59de-965b-c9ffda14b661",
+        "b156af7d-3d96-5101-97d8-4901a621ba8d",
+        "bb82dda8-11f6-5d96-a119-875fbb379eb1",
+        "c201a79c-6917-54c7-8179-e666011d24fb"
+      ],
+      "retrieved_scores": [
+        0.64422697,
+        0.49907237,
+        0.48375896,
+        0.48375896,
+        0.47796977,
+        0.45269316,
+        0.45269316,
+        0.43623734,
+        0.43464983,
+        0.43035161
+      ],
+      "route": "dense",
+      "trace_id": "d4e86185-c3f4-4488-a8c3-1c4e0529ab8f",
+      "used_chunk_ids": [
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95",
+        "78a2e43a-4a18-5617-96f5-19cfa4d6f265",
+        "c7918cda-5605-5387-ba43-714f77173293",
+        "7e5ccc10-a0cf-53ad-879f-39317b9f4842",
+        "048fe627-c7ce-5902-892b-c81fad23331c",
+        "5a1b5901-a307-5f46-8490-7a53e3e12251",
+        "95d68b1c-7604-59de-965b-c9ffda14b661",
+        "b156af7d-3d96-5101-97d8-4901a621ba8d",
+        "bb82dda8-11f6-5d96-a119-875fbb379eb1",
+        "c201a79c-6917-54c7-8179-e666011d24fb"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 135.28347702231258,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.791884963400662,
+        "embedding_ms": 97.87638299167156,
+        "fusion_ms": null,
+        "generation_ms": 0.11820899089798331,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 127.15488101821393,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What operation is used to quantify the similarity between the query and document vectors?",
+      "question_id": "sqa-5c5e20dbf84c3f0b",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "ee5a3f6a-d8d9-560f-bd84-d0649f2d8a4d"
+      ],
+      "retrieved_chunk_ids": [
+        "58cc0e54-4542-5d3e-a152-85b9ee37794c",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "3de1d6c3-74c8-5261-a251-61518c9b53fa",
+        "c355df8c-50e6-5be9-8b10-cd7d32c29de8",
+        "1e3084e0-5d0e-5fc1-a384-67463db1dbb0",
+        "39a99338-1b92-54de-a8dc-e5835d67a2a8",
+        "43dbc8cf-82ae-55d9-a177-60c412d7e4ed",
+        "81e35986-281c-5627-8ef4-921116afdeb6",
+        "5d639a14-667f-54de-80fc-5aec049f4005",
+        "3253217e-fe53-528a-9da1-65caddb92a89"
+      ],
+      "retrieved_scores": [
+        0.7576176,
+        0.6887461,
+        0.6831704,
+        0.6543405,
+        0.6536934,
+        0.6445022,
+        0.6443937,
+        0.635731,
+        0.6339266,
+        0.6241478
+      ],
+      "route": "dense",
+      "trace_id": "98416ec3-f656-4d29-b59d-61dde891695e",
+      "used_chunk_ids": [
+        "58cc0e54-4542-5d3e-a152-85b9ee37794c",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "3de1d6c3-74c8-5261-a251-61518c9b53fa",
+        "c355df8c-50e6-5be9-8b10-cd7d32c29de8",
+        "1e3084e0-5d0e-5fc1-a384-67463db1dbb0",
+        "39a99338-1b92-54de-a8dc-e5835d67a2a8",
+        "43dbc8cf-82ae-55d9-a177-60c412d7e4ed",
+        "81e35986-281c-5627-8ef4-921116afdeb6",
+        "5d639a14-667f-54de-80fc-5aec049f4005",
+        "3253217e-fe53-528a-9da1-65caddb92a89"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 175.8802270051092,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 7.380569993983954,
+        "embedding_ms": 130.48297900240868,
+        "fusion_ms": null,
+        "generation_ms": 0.14065299183130264,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 160.94538301695138,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.38685280723454163,
+        "3": 0.0,
+        "5": 0.38685280723454163
+      },
+      "question": "Which standards can be used to establish a secure authentication setup in FastAPI according to the tutorial recap?",
+      "question_id": "sqa-ade53f89f8629636",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.2,
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "retrieved_chunk_ids": [
+        "08795bc3-e7c0-5c9d-a9e8-79a6aa1e9d0b",
+        "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd",
+        "9616f409-9214-5723-895a-458b59478f06",
+        "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "2c389b96-f00f-548b-862f-8afcdd94062c",
+        "5e8a3c95-a811-536b-af16-2ad8dee0bbbb",
+        "c71ca15c-ecef-5019-8a35-cb4da289e4d6",
+        "94e49352-e82b-5ab0-bb87-6a6dc88ed38d",
+        "f48cfb5d-1ea0-565c-a5cb-3376ed7cd094"
+      ],
+      "retrieved_scores": [
+        0.66909003,
+        0.6469768,
+        0.64638245,
+        0.63547075,
+        0.6341695,
+        0.62621045,
+        0.62102944,
+        0.6186638,
+        0.61569077,
+        0.6155686
+      ],
+      "route": "dense",
+      "trace_id": "e32601be-d583-45fc-aa41-79ff2c2d8ae0",
+      "used_chunk_ids": [
+        "08795bc3-e7c0-5c9d-a9e8-79a6aa1e9d0b",
+        "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd",
+        "9616f409-9214-5723-895a-458b59478f06",
+        "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "2c389b96-f00f-548b-862f-8afcdd94062c",
+        "5e8a3c95-a811-536b-af16-2ad8dee0bbbb",
+        "c71ca15c-ecef-5019-8a35-cb4da289e4d6",
+        "94e49352-e82b-5ab0-bb87-6a6dc88ed38d",
+        "f48cfb5d-1ea0-565c-a5cb-3376ed7cd094"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 182.5602850294672,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.934577027801424,
+        "embedding_ms": 145.50544699886814,
+        "fusion_ms": null,
+        "generation_ms": 0.12950203381478786,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 174.6684230165556,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which specific third-party packages are mentioned as easily usable with FastAPI for security handling?",
+      "question_id": "sqa-52abd01126658d4e",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "retrieved_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
+        "80257fa0-1372-5b84-a9cb-a2213b0df8b0",
+        "2c389b96-f00f-548b-862f-8afcdd94062c",
+        "9616f409-9214-5723-895a-458b59478f06",
+        "a7d42f72-5b4b-54ca-bcfb-5eda513f411f",
+        "5cbb7f66-1157-51f2-99ee-2ec4ad0accef",
+        "5e8a3c95-a811-536b-af16-2ad8dee0bbbb",
+        "5b1fa2f1-f7c3-57e4-831e-128d1a9dbae9",
+        "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd"
+      ],
+      "retrieved_scores": [
+        0.7491087,
+        0.6992549,
+        0.66788065,
+        0.6590986,
+        0.6425755,
+        0.63434035,
+        0.61377186,
+        0.6089032,
+        0.60888577,
+        0.60802233
+      ],
+      "route": "dense",
+      "trace_id": "a4efe77e-2ef1-4eb6-bef0-3ca96236a4c4",
+      "used_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
+        "80257fa0-1372-5b84-a9cb-a2213b0df8b0",
+        "2c389b96-f00f-548b-862f-8afcdd94062c",
+        "9616f409-9214-5723-895a-458b59478f06",
+        "a7d42f72-5b4b-54ca-bcfb-5eda513f411f",
+        "5cbb7f66-1157-51f2-99ee-2ec4ad0accef",
+        "5e8a3c95-a811-536b-af16-2ad8dee0bbbb",
+        "5b1fa2f1-f7c3-57e4-831e-128d1a9dbae9",
+        "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 89.26538098603487,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.016717990860343,
+        "embedding_ms": 51.897521945647895,
+        "fusion_ms": null,
+        "generation_ms": 0.10563904652372003,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 81.65589097188786,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What mechanism is used to implement a fine-grained permission system in FastAPI?",
+      "question_id": "sqa-9bbefdf430f9c31f",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "retrieved_chunk_ids": [
+        "a7d42f72-5b4b-54ca-bcfb-5eda513f411f",
+        "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
+        "53d012d4-7ebd-5354-b15b-05df167ce754",
+        "9616f409-9214-5723-895a-458b59478f06",
+        "6fd2aed0-98e6-5e74-8823-4e2cdb247bb9",
+        "93f3ff41-ca0c-5801-87f4-8f5f6e46a00f",
+        "47210980-25b4-5737-b9f8-05f0ec9a3d16",
+        "7a9fa24e-1018-56f1-985d-f70b2546cceb",
+        "70632d28-988a-50f8-aa9b-b1d173603d4c",
+        "58cc7aa9-e028-51ad-8108-edf777b90da5"
+      ],
+      "retrieved_scores": [
+        0.6665945,
+        0.6239483,
+        0.56342137,
+        0.5396491,
+        0.53061175,
+        0.5280946,
+        0.51961684,
+        0.5186652,
+        0.5156859,
+        0.5151955
+      ],
+      "route": "dense",
+      "trace_id": "f690760c-1854-457c-a258-646ed4d36f15",
+      "used_chunk_ids": [
+        "a7d42f72-5b4b-54ca-bcfb-5eda513f411f",
+        "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
+        "53d012d4-7ebd-5354-b15b-05df167ce754",
+        "9616f409-9214-5723-895a-458b59478f06",
+        "6fd2aed0-98e6-5e74-8823-4e2cdb247bb9",
+        "93f3ff41-ca0c-5801-87f4-8f5f6e46a00f",
+        "47210980-25b4-5737-b9f8-05f0ec9a3d16",
+        "7a9fa24e-1018-56f1-985d-f70b2546cceb",
+        "70632d28-988a-50f8-aa9b-b1d173603d4c",
+        "58cc7aa9-e028-51ad-8108-edf777b90da5"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 75.03234199248254,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.789653048850596,
+        "embedding_ms": 38.7760559679009,
+        "fusion_ms": null,
+        "generation_ms": 0.09075994603335857,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 67.66045099357143,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "How does MLflow determine the input and output schema when logging a PythonModel that includes type hints?",
+      "question_id": "sqa-5c5e1373d68176f8",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "retrieved_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "70bbe55a-8991-5310-9c38-65e359003b33",
+        "6dd5ee8e-fb1f-5e2f-a0bf-14db17595334",
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "95c028b7-a820-520b-91af-f46b5579aa37",
+        "e5c0e98d-cdbf-5e19-8809-0f3c690f8de1",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "6d5e0afd-78b5-5242-bb94-c944cb587d09"
+      ],
+      "retrieved_scores": [
+        0.8521882,
+        0.8222414,
+        0.78200674,
+        0.73769045,
+        0.723248,
+        0.7219127,
+        0.7128851,
+        0.7033516,
+        0.7006661,
+        0.69479656
+      ],
+      "route": "dense",
+      "trace_id": "f4e344dd-8b2f-47ce-bba1-990d648c5499",
+      "used_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "70bbe55a-8991-5310-9c38-65e359003b33",
+        "6dd5ee8e-fb1f-5e2f-a0bf-14db17595334",
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "95c028b7-a820-520b-91af-f46b5579aa37",
+        "e5c0e98d-cdbf-5e19-8809-0f3c690f8de1",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "6d5e0afd-78b5-5242-bb94-c944cb587d09"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 128.43447003979236,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.5132660092785954,
+        "embedding_ms": 88.88355805538595,
+        "fusion_ms": null,
+        "generation_ms": 0.09282899554818869,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 120.98978296853602,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What occurs if an explicit signature parameter is provided when logging a PythonModel with type hints?",
+      "question_id": "sqa-4d1f9fc474b0154c",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "retrieved_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "be8a1c31-d72d-5c8b-820b-1ec6a356a509",
+        "95c028b7-a820-520b-91af-f46b5579aa37",
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "095f9743-a28d-56a7-bef3-1abde6b4214c",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "2052b6c0-03db-5627-a2bc-7c8ff3abe47a",
+        "26ac93ca-f305-5cd3-a36b-db4c0004d45c",
+        "ff366582-391a-5df5-b740-3ae1945297c2"
+      ],
+      "retrieved_scores": [
+        0.7379672,
+        0.7091113,
+        0.68521047,
+        0.6584759,
+        0.64739335,
+        0.63816595,
+        0.63531345,
+        0.6286645,
+        0.61450905,
+        0.60115
+      ],
+      "route": "dense",
+      "trace_id": "92bf18de-89da-4b6b-826d-50202cf3a0c8",
+      "used_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "be8a1c31-d72d-5c8b-820b-1ec6a356a509",
+        "95c028b7-a820-520b-91af-f46b5579aa37",
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "095f9743-a28d-56a7-bef3-1abde6b4214c",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "2052b6c0-03db-5627-a2bc-7c8ff3abe47a",
+        "26ac93ca-f305-5cd3-a36b-db4c0004d45c",
+        "ff366582-391a-5df5-b740-3ae1945297c2"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 162.40409901365638,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.700430007185787,
+        "embedding_ms": 123.00579197471961,
+        "fusion_ms": null,
+        "generation_ms": 0.08782400982454419,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 154.40298401517794,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Where must pydantic model type hints be defined to use pydantic objects as inputs for an MLflow PythonModel?",
+      "question_id": "sqa-ceaead1685abb224",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "retrieved_chunk_ids": [
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "22c7a6c4-153c-5e29-b5a9-fb0814d85dba",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "f167d9f9-1f8c-5bcf-bf39-4ed7d07ea4cf",
+        "dae3f1a5-622f-5b1b-b262-e7e42208dfb9",
+        "0d547996-8cfc-55c0-a5f1-cdb5c5b959b2",
+        "19272148-a92a-5307-bac2-286f6e079393",
+        "c8cf8814-d883-5faa-af92-223a57b7cfa0",
+        "670821d3-845a-54ee-9581-9d3395d96255"
+      ],
+      "retrieved_scores": [
+        0.8175288,
+        0.7611121,
+        0.7562407,
+        0.7357036,
+        0.727129,
+        0.7199375,
+        0.7183023,
+        0.70656466,
+        0.70342016,
+        0.7032466
+      ],
+      "route": "dense",
+      "trace_id": "6b1c555e-cbfa-4373-8907-eac79fb21dc2",
+      "used_chunk_ids": [
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "22c7a6c4-153c-5e29-b5a9-fb0814d85dba",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "f167d9f9-1f8c-5bcf-bf39-4ed7d07ea4cf",
+        "dae3f1a5-622f-5b1b-b262-e7e42208dfb9",
+        "0d547996-8cfc-55c0-a5f1-cdb5c5b959b2",
+        "19272148-a92a-5307-bac2-286f6e079393",
+        "c8cf8814-d883-5faa-af92-223a57b7cfa0",
+        "670821d3-845a-54ee-9581-9d3395d96255"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 121.29097402794287,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.995004019699991,
+        "embedding_ms": 82.80361001379788,
+        "fusion_ms": null,
+        "generation_ms": 0.10466203093528748,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 113.58707799809054,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.43067655807339306,
+        "3": 0.0,
+        "5": 0.43067655807339306
+      },
+      "question": "What initial methods can be used to retrieve a subset of documents before applying a reranker?",
+      "question_id": "sqa-673de786b69493ab",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.25,
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "retrieved_chunk_ids": [
+        "4eee9879-b5a6-53c8-ba42-1b8e1936b987",
+        "7d51e744-dbf6-52a2-a3fa-b2cfc50ea5b1",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "32f96027-5a31-5c3c-b402-a3012523f98c",
+        "6c9db370-b94f-5840-a08b-7a40b13ceb8f",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "680f7f7a-1447-555c-8099-b15329ad1fe1",
+        "e3ab69bd-91e2-586a-9c95-eb54ee83e04d",
+        "3489cb2e-f0e8-5051-92f3-234d734ec3e3"
+      ],
+      "retrieved_scores": [
+        0.65982956,
+        0.65371966,
+        0.6106254,
+        0.6081934,
+        0.59511137,
+        0.5813968,
+        0.57599914,
+        0.56953573,
+        0.5675754,
+        0.5665476
+      ],
+      "route": "dense",
+      "trace_id": "f0c42ac9-9336-4e52-a19b-ef4981573a79",
+      "used_chunk_ids": [
+        "4eee9879-b5a6-53c8-ba42-1b8e1936b987",
+        "7d51e744-dbf6-52a2-a3fa-b2cfc50ea5b1",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "32f96027-5a31-5c3c-b402-a3012523f98c",
+        "6c9db370-b94f-5840-a08b-7a40b13ceb8f",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "680f7f7a-1447-555c-8099-b15329ad1fe1",
+        "e3ab69bd-91e2-586a-9c95-eb54ee83e04d",
+        "3489cb2e-f0e8-5051-92f3-234d734ec3e3"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 166.03742202278227,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.993051036261022,
+        "embedding_ms": 127.71058396901935,
+        "fusion_ms": null,
+        "generation_ms": 0.11925498256459832,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 157.50850399490446,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What primary trade-off do rerankers make when evaluating document relevance?",
+      "question_id": "sqa-7d97ec3c52aa5853",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "retrieved_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "0972d759-6eaf-5f22-ac43-ba2d3329821d",
+        "4eee9879-b5a6-53c8-ba42-1b8e1936b987",
+        "b990f7d2-3a5e-5ff2-8646-a85d489103d8",
+        "6c9db370-b94f-5840-a08b-7a40b13ceb8f",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "3e0f8687-4bf1-5ad3-ad63-e5492e034cd9",
+        "04440b38-6c41-5ec5-85c6-f07817da169f",
+        "886b78b8-1e7e-56a9-a016-cdf70ea7bdae"
+      ],
+      "retrieved_scores": [
+        0.7351372,
+        0.6911619,
+        0.6842024,
+        0.67747116,
+        0.66491646,
+        0.6475999,
+        0.64390403,
+        0.6378833,
+        0.6150807,
+        0.6135603
+      ],
+      "route": "dense",
+      "trace_id": "2a30d8b7-40c5-4c79-9b7b-0b46541e926d",
+      "used_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "0972d759-6eaf-5f22-ac43-ba2d3329821d",
+        "4eee9879-b5a6-53c8-ba42-1b8e1936b987",
+        "b990f7d2-3a5e-5ff2-8646-a85d489103d8",
+        "6c9db370-b94f-5840-a08b-7a40b13ceb8f",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "3e0f8687-4bf1-5ad3-ad63-e5492e034cd9",
+        "04440b38-6c41-5ec5-85c6-f07817da169f",
+        "886b78b8-1e7e-56a9-a016-cdf70ea7bdae"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 74.47534200036898,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.537242967169732,
+        "embedding_ms": 36.06965200742707,
+        "fusion_ms": null,
+        "generation_ms": 0.10906101670116186,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 66.06624100822955,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What is the primary function of a reranker in document search?",
+      "question_id": "sqa-580f65fefad3cf3a",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "retrieved_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "b990f7d2-3a5e-5ff2-8646-a85d489103d8",
+        "4eee9879-b5a6-53c8-ba42-1b8e1936b987",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "26611a00-f23c-5b03-886c-c5a5235ad420",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "e3ab69bd-91e2-586a-9c95-eb54ee83e04d",
+        "e1e12822-d48c-559d-a7b3-525e7dcb4099",
+        "7d51e744-dbf6-52a2-a3fa-b2cfc50ea5b1",
+        "6cf582db-9b08-586c-be46-a2691ccb40b0"
+      ],
+      "retrieved_scores": [
+        0.7874368,
+        0.70749503,
+        0.6997785,
+        0.69565696,
+        0.67750907,
+        0.6698142,
+        0.66502833,
+        0.6649306,
+        0.65351206,
+        0.6411912
+      ],
+      "route": "dense",
+      "trace_id": "094e70d9-0262-46f1-b742-be364c68ba51",
+      "used_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "b990f7d2-3a5e-5ff2-8646-a85d489103d8",
+        "4eee9879-b5a6-53c8-ba42-1b8e1936b987",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "26611a00-f23c-5b03-886c-c5a5235ad420",
+        "da6f3012-aad7-5e11-82e2-3dfaa0e917f7",
+        "e3ab69bd-91e2-586a-9c95-eb54ee83e04d",
+        "e1e12822-d48c-559d-a7b3-525e7dcb4099",
+        "7d51e744-dbf6-52a2-a3fa-b2cfc50ea5b1",
+        "6cf582db-9b08-586c-be46-a2691ccb40b0"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 135.44379797531292,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.692735023330897,
+        "embedding_ms": 97.56286500487477,
+        "fusion_ms": null,
+        "generation_ms": 0.10062300134450197,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 126.21442298404872,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which methods can be used to serve static frontend applications in FastAPI?",
+      "question_id": "sqa-bd0d27f9ade799b8",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+      ],
+      "retrieved_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf",
+        "2c389b96-f00f-548b-862f-8afcdd94062c",
+        "3f2b3cf5-ed7c-571a-91b7-02132f538a22",
+        "a1c6e173-f2d3-592c-ba48-dffe26c31534",
+        "601a1e58-27cf-5ccb-9126-342f71d7b6dd",
+        "31bd5655-d3b5-57db-a836-9da5b96a3d6e",
+        "f73fe22c-65c5-5717-8522-f1d569be1f79",
+        "0469cb86-8744-570e-9267-245abf04b4b4",
+        "b1b70117-4a18-538d-8142-8ed9d7351cd6",
+        "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd"
+      ],
+      "retrieved_scores": [
+        0.6438581,
+        0.6354805,
+        0.6261667,
+        0.61397195,
+        0.61228013,
+        0.6118503,
+        0.594159,
+        0.58490807,
+        0.5820744,
+        0.5815052
+      ],
+      "route": "dense",
+      "trace_id": "b645b34b-faa5-4702-bffe-ee67205fd698",
+      "used_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf",
+        "2c389b96-f00f-548b-862f-8afcdd94062c",
+        "3f2b3cf5-ed7c-571a-91b7-02132f538a22",
+        "a1c6e173-f2d3-592c-ba48-dffe26c31534",
+        "601a1e58-27cf-5ccb-9126-342f71d7b6dd",
+        "31bd5655-d3b5-57db-a836-9da5b96a3d6e",
+        "f73fe22c-65c5-5717-8522-f1d569be1f79",
+        "0469cb86-8744-570e-9267-245abf04b4b4",
+        "b1b70117-4a18-538d-8142-8ed9d7351cd6",
+        "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 147.21840200945735,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.6473949807696044,
+        "embedding_ms": 110.83345802035183,
+        "fusion_ms": null,
+        "generation_ms": 0.08839601650834084,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 139.3478619866073,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.3562071871080222,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "In what order does FastAPI evaluate incoming requests when serving static frontend files alongside API routes?",
+      "question_id": "sqa-4cb482f1f218af58",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.16666666666666666,
+      "relevant_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+      ],
+      "retrieved_chunk_ids": [
+        "b3f31a87-8584-56d9-b75c-b208346c764b",
+        "193745b4-227e-54b2-a123-dbeb519f2edd",
+        "cb07910c-caa5-5c71-bdf9-3a13166a2069",
+        "fc275ff5-fdef-5161-a8b4-4d99bde2f972",
+        "4dec0ec5-1923-56d1-ba8e-b05d20bdffba",
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf",
+        "a1c6e173-f2d3-592c-ba48-dffe26c31534",
+        "8f3ad63e-c988-52e8-a359-7f430a9cf57f",
+        "fb7d5f13-d820-570f-b1f8-2623cd70b88f",
+        "9bf97d79-f1ff-5262-a4ac-7371782a7f4e"
+      ],
+      "retrieved_scores": [
+        0.64728475,
+        0.6214508,
+        0.6204565,
+        0.6126301,
+        0.6090659,
+        0.58410764,
+        0.58169454,
+        0.579463,
+        0.57608986,
+        0.56994104
+      ],
+      "route": "dense",
+      "trace_id": "c1d4a9b4-ffd4-4bd4-8d7e-802a146bc67b",
+      "used_chunk_ids": [
+        "b3f31a87-8584-56d9-b75c-b208346c764b",
+        "193745b4-227e-54b2-a123-dbeb519f2edd",
+        "cb07910c-caa5-5c71-bdf9-3a13166a2069",
+        "fc275ff5-fdef-5161-a8b4-4d99bde2f972",
+        "4dec0ec5-1923-56d1-ba8e-b05d20bdffba",
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf",
+        "a1c6e173-f2d3-592c-ba48-dffe26c31534",
+        "8f3ad63e-c988-52e8-a359-7f430a9cf57f",
+        "fb7d5f13-d820-570f-b1f8-2623cd70b88f",
+        "9bf97d79-f1ff-5262-a4ac-7371782a7f4e"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 75.92220098013058,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.03097298881039,
+        "embedding_ms": 39.06137298326939,
+        "fusion_ms": null,
+        "generation_ms": 0.08575496030971408,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 68.02990398136899,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.43067655807339306,
+        "3": 0.0,
+        "5": 0.43067655807339306
+      },
+      "question": "In which section of the MLflow Run details page can a user find and select the model folder to register?",
+      "question_id": "sqa-0962a7db4ec6c78a",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.25,
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "retrieved_chunk_ids": [
+        "0fe449ce-beb7-5fe3-9783-608897b54248",
+        "823e8e92-95ff-517f-848b-d2cbc87e5a90",
+        "40c5b877-599f-5c4b-a9ca-4f3833b90f01",
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "c582f4da-9e4e-5225-8bba-2093d7a92012",
+        "dab53288-de1a-569e-9508-25434c829ffb",
+        "2b28cf17-3bf2-5e45-a1f9-e03da2f1ce21",
+        "86dd7014-0b0c-5740-8c8b-079fb82b0227",
+        "1617d361-2e2a-5103-a892-4798656621ca",
+        "9897a50e-a1a2-541d-9908-de62157f571c"
+      ],
+      "retrieved_scores": [
+        0.7408745,
+        0.7319961,
+        0.7224289,
+        0.7118222,
+        0.7112396,
+        0.709238,
+        0.70794886,
+        0.69195175,
+        0.68745095,
+        0.68116313
+      ],
+      "route": "dense",
+      "trace_id": "45ca0adb-6d59-4d28-85db-e4bb16ad8762",
+      "used_chunk_ids": [
+        "0fe449ce-beb7-5fe3-9783-608897b54248",
+        "823e8e92-95ff-517f-848b-d2cbc87e5a90",
+        "40c5b877-599f-5c4b-a9ca-4f3833b90f01",
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "c582f4da-9e4e-5225-8bba-2093d7a92012",
+        "dab53288-de1a-569e-9508-25434c829ffb",
+        "2b28cf17-3bf2-5e45-a1f9-e03da2f1ce21",
+        "86dd7014-0b0c-5740-8c8b-079fb82b0227",
+        "1617d361-2e2a-5103-a892-4798656621ca",
+        "9897a50e-a1a2-541d-9908-de62157f571c"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 132.9885700251907,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.734903970733285,
+        "embedding_ms": 97.2101489896886,
+        "fusion_ms": null,
+        "generation_ms": 0.08925399743020535,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 125.57189801009372,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.3010299956639812,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What options are available in the Model dropdown menu on the model registration form?",
+      "question_id": "sqa-a8ee8614cd6dc87b",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.1111111111111111,
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "retrieved_chunk_ids": [
+        "114648d3-2fdd-57c6-97cb-99b391fb3cd8",
+        "65a2d2ab-ac53-5b3e-a5e3-6df9bead624e",
+        "5a2e5ee7-d318-5a2f-818d-4cedceea350b",
+        "c162f072-c9f5-5642-a179-f4248ee3c8e1",
+        "39c3200c-9569-567d-a1d7-bbdd889f9808",
+        "e1a3f6ad-0bac-5416-956d-bc12ecf9463e",
+        "a937d585-360d-5b0e-90a5-79bbc2a23302",
+        "fcab9161-86f0-59ad-a8d3-99e22e617f62",
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "5fc8a87c-ccc5-5b58-a409-3467f8ef026e"
+      ],
+      "retrieved_scores": [
+        0.5263455,
+        0.4681418,
+        0.45254853,
+        0.44657466,
+        0.44596416,
+        0.44224405,
+        0.43993834,
+        0.43734595,
+        0.43501633,
+        0.4286555
+      ],
+      "route": "dense",
+      "trace_id": "f8fe3afa-99b2-4390-8310-629b823c0f73",
+      "used_chunk_ids": [
+        "114648d3-2fdd-57c6-97cb-99b391fb3cd8",
+        "65a2d2ab-ac53-5b3e-a5e3-6df9bead624e",
+        "5a2e5ee7-d318-5a2f-818d-4cedceea350b",
+        "c162f072-c9f5-5642-a179-f4248ee3c8e1",
+        "39c3200c-9569-567d-a1d7-bbdd889f9808",
+        "e1a3f6ad-0bac-5416-956d-bc12ecf9463e",
+        "a937d585-360d-5b0e-90a5-79bbc2a23302",
+        "fcab9161-86f0-59ad-a8d3-99e22e617f62",
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "5fc8a87c-ccc5-5b58-a409-3467f8ef026e"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 147.05212600529194,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.582393961958587,
+        "embedding_ms": 111.53159703826532,
+        "fusion_ms": null,
+        "generation_ms": 0.09115500142797828,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 139.7036460111849,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What occurs when a user chooses the \"Create New Model\" option in the Model dropdown menu?",
+      "question_id": "sqa-7622236114712036",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "retrieved_chunk_ids": [
+        "5a2e5ee7-d318-5a2f-818d-4cedceea350b",
+        "39c3200c-9569-567d-a1d7-bbdd889f9808",
+        "a01f2dc1-a257-5ef3-a24f-f4e550483171",
+        "38a2cd76-f55e-5d10-8bed-98f27d539a30",
+        "4b851f9e-8ef6-5d76-a373-713f804bb92c",
+        "126f69d2-e124-5c90-beb8-04a30ac9a38b",
+        "65a2d2ab-ac53-5b3e-a5e3-6df9bead624e",
+        "91c919ff-dd8c-5931-a37f-792dad76f85e",
+        "114648d3-2fdd-57c6-97cb-99b391fb3cd8",
+        "a937d585-360d-5b0e-90a5-79bbc2a23302"
+      ],
+      "retrieved_scores": [
+        0.54095685,
+        0.5384427,
+        0.4940146,
+        0.48379093,
+        0.46986106,
+        0.4606703,
+        0.42944938,
+        0.41345078,
+        0.41084278,
+        0.4095428
+      ],
+      "route": "dense",
+      "trace_id": "a75a38cc-7a35-4d92-b6c7-f669b0584424",
+      "used_chunk_ids": [
+        "5a2e5ee7-d318-5a2f-818d-4cedceea350b",
+        "39c3200c-9569-567d-a1d7-bbdd889f9808",
+        "a01f2dc1-a257-5ef3-a24f-f4e550483171",
+        "38a2cd76-f55e-5d10-8bed-98f27d539a30",
+        "4b851f9e-8ef6-5d76-a373-713f804bb92c",
+        "126f69d2-e124-5c90-beb8-04a30ac9a38b",
+        "65a2d2ab-ac53-5b3e-a5e3-6df9bead624e",
+        "91c919ff-dd8c-5931-a37f-792dad76f85e",
+        "114648d3-2fdd-57c6-97cb-99b391fb3cd8",
+        "a937d585-360d-5b0e-90a5-79bbc2a23302"
+      ]
+    },
+    {
+      "citation_count": 9,
+      "client_latency_ms": 143.67610303452238,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.065433961339295,
+        "embedding_ms": 106.41983401728794,
+        "fusion_ms": null,
+        "generation_ms": 0.10033103171736002,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 135.54648298304528,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.43067655807339306,
+        "3": 0.0,
+        "5": 0.43067655807339306
+      },
+      "question": "Which parameter in a Qdrant query allows retrieving a vector using a point ID located in a different collection?",
+      "question_id": "sqa-6055940f3e30c975",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.25,
+      "relevant_chunk_ids": [
+        "d37849c9-2d35-550a-88af-f84edd4d3191"
+      ],
+      "retrieved_chunk_ids": [
+        "0a2a7a0b-32f9-53e5-96a6-c6c8b50e9c2b",
+        "bea9dfe0-522b-5e5c-b05d-0a2dd6997e9a",
+        "feaaeea1-ead3-5b63-a0f4-919d2e66c160",
+        "d37849c9-2d35-550a-88af-f84edd4d3191",
+        "0d11a14b-2d86-5f26-873e-c9b7afa61c15",
+        "da11e5df-f0bb-5569-9909-00390b78e7a6",
+        "6adbebfa-d775-5ffe-94ad-64fc238e5d1f",
+        "2bd77a3d-042a-5c3f-98fc-07b844efa1bc",
+        "b7e355ec-63bc-5e07-986c-75af755a556b",
+        "7338db96-cb34-510f-9a68-922714af0f55"
+      ],
+      "retrieved_scores": [
+        0.7531009,
+        0.6963973,
+        0.6834866,
+        0.68096346,
+        0.67128706,
+        0.670876,
+        0.66724086,
+        0.66221756,
+        0.66042125,
+        0.6571585
+      ],
+      "route": "dense",
+      "trace_id": "33f76b0a-eaf8-438d-aae7-2f53c5e3fa4c",
+      "used_chunk_ids": [
+        "0a2a7a0b-32f9-53e5-96a6-c6c8b50e9c2b",
+        "bea9dfe0-522b-5e5c-b05d-0a2dd6997e9a",
+        "feaaeea1-ead3-5b63-a0f4-919d2e66c160",
+        "d37849c9-2d35-550a-88af-f84edd4d3191",
+        "0d11a14b-2d86-5f26-873e-c9b7afa61c15",
+        "da11e5df-f0bb-5569-9909-00390b78e7a6",
+        "6adbebfa-d775-5ffe-94ad-64fc238e5d1f",
+        "2bd77a3d-042a-5c3f-98fc-07b844efa1bc",
+        "b7e355ec-63bc-5e07-986c-75af755a556b",
+        "7338db96-cb34-510f-9a68-922714af0f55"
+      ]
+    },
+    {
+      "citation_count": 8,
+      "client_latency_ms": 182.6077540172264,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.782046995591372,
+        "embedding_ms": 144.52838205033913,
+        "fusion_ms": null,
+        "generation_ms": 0.08567300392314792,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 174.00932195596397,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.31546487678572877,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What two primary properties are required inside the lookup_from configuration when referencing a point in another collection?",
+      "question_id": "sqa-d20c9187fa7725e6",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.125,
+      "relevant_chunk_ids": [
+        "d37849c9-2d35-550a-88af-f84edd4d3191"
+      ],
+      "retrieved_chunk_ids": [
+        "b43787fa-33c2-5349-8d13-0216fcd0752a",
+        "76e49ae0-ce54-58ea-8307-a80941ffa028",
+        "265dd45b-cc94-5a68-85c7-9209bdb11466",
+        "177bc238-8fea-511f-978e-fded83b99d3d",
+        "eb584cbf-de09-505a-a974-3b8d66102835",
+        "2ed8bdf4-0e16-51d7-8437-136cb81185d2",
+        "7036baf4-9ce4-5cbb-bc29-a86da3352064",
+        "d37849c9-2d35-550a-88af-f84edd4d3191",
+        "e64caacb-2591-5365-aee0-c69f8644b851",
+        "400d6369-9247-5c76-8235-8b982d4821a2"
+      ],
+      "retrieved_scores": [
+        0.51448697,
+        0.4866417,
+        0.45984036,
+        0.45984036,
+        0.4465679,
+        0.41789085,
+        0.41643137,
+        0.41057178,
+        0.41016567,
+        0.39807475
+      ],
+      "route": "dense",
+      "trace_id": "0dd01bff-ce11-4b29-9bfc-2e305f28126c",
+      "used_chunk_ids": [
+        "b43787fa-33c2-5349-8d13-0216fcd0752a",
+        "76e49ae0-ce54-58ea-8307-a80941ffa028",
+        "265dd45b-cc94-5a68-85c7-9209bdb11466",
+        "177bc238-8fea-511f-978e-fded83b99d3d",
+        "eb584cbf-de09-505a-a974-3b8d66102835",
+        "2ed8bdf4-0e16-51d7-8437-136cb81185d2",
+        "7036baf4-9ce4-5cbb-bc29-a86da3352064",
+        "d37849c9-2d35-550a-88af-f84edd4d3191",
+        "e64caacb-2591-5365-aee0-c69f8644b851",
+        "400d6369-9247-5c76-8235-8b982d4821a2"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 104.20406801858917,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 6.8340140278451145,
+        "embedding_ms": 66.53901399113238,
+        "fusion_ms": null,
+        "generation_ms": 0.10547501733526587,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/tutorial/cookie-param-models.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 96.49111196631566,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.2890648263178879,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "How can extra cookies be forbidden in a FastAPI cookie parameter model?",
+      "question_id": "sqa-8397e93659723d06",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.1,
+      "relevant_chunk_ids": [
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+      ],
+      "retrieved_chunk_ids": [
+        "58ac3b23-a727-5051-9229-399cb201be40",
+        "8e795ac3-b7d7-5fee-bc21-fa265ac04b54",
+        "dd2fd4c8-4f74-5c4e-a77d-cabb319078dd",
+        "5eb7f761-c4a4-5652-925f-c29367c6c525",
+        "9cde6bd7-f662-5cbc-97e5-ae309ecd2404",
+        "7dcdcca3-6466-5700-97da-0c34fed16509",
+        "0bc9232d-3b2c-5be7-9687-2e9cee497d79",
+        "6b634f76-13ef-5d4e-b188-32c432716720",
+        "838d35e3-e315-59b1-ba89-39bb63a6be15",
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+      ],
+      "retrieved_scores": [
+        0.734375,
+        0.7077321,
+        0.6676008,
+        0.66744554,
+        0.6569611,
+        0.6519303,
+        0.626863,
+        0.62300885,
+        0.6173112,
+        0.6117251
+      ],
+      "route": "dense",
+      "trace_id": "086885b6-23be-4f1b-ac0d-51422b7dcc4b",
+      "used_chunk_ids": [
+        "58ac3b23-a727-5051-9229-399cb201be40",
+        "8e795ac3-b7d7-5fee-bc21-fa265ac04b54",
+        "dd2fd4c8-4f74-5c4e-a77d-cabb319078dd",
+        "5eb7f761-c4a4-5652-925f-c29367c6c525",
+        "9cde6bd7-f662-5cbc-97e5-ae309ecd2404",
+        "7dcdcca3-6466-5700-97da-0c34fed16509",
+        "0bc9232d-3b2c-5be7-9687-2e9cee497d79",
+        "6b634f76-13ef-5d4e-b188-32c432716720",
+        "838d35e3-e315-59b1-ba89-39bb63a6be15",
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 176.77205195650458,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.757447972428054,
+        "embedding_ms": 140.62395604560152,
+        "fusion_ms": null,
+        "generation_ms": 0.09362702257931232,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "mlflow/docs/docs/self-hosting/security/role-based-access-control.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 168.92420302610844,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.31546487678572877,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What is the main difference between the legacy permission model and the role-based permission model in MLflow?",
+      "question_id": "sqa-a6c95a648b8cccd8",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.125,
+      "relevant_chunk_ids": [
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add"
+      ],
+      "retrieved_chunk_ids": [
+        "f5c87c94-cae4-599a-b3e0-693356ce7611",
+        "1ee47c25-6aac-58ba-b6db-bd5759bdfc6b",
+        "1e527474-b18f-5f11-904f-78728fbdb284",
+        "4e6171cf-add8-5ffe-b5e4-e8a3925b3355",
+        "8adfe213-3dd2-5114-8d44-d8aec4a935ac",
+        "ba588e81-7f3a-5665-a375-1cd722f17b81",
+        "5d6c79b5-5e8c-5251-affd-62bd2d80a4ed",
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add",
+        "1c9b409c-1f13-598d-833b-c158c753656b",
+        "94362e8d-60ba-5136-af0f-7e70d5e5c72a"
+      ],
+      "retrieved_scores": [
+        0.64857435,
+        0.6415033,
+        0.63693786,
+        0.623839,
+        0.588827,
+        0.57481,
+        0.5588484,
+        0.55406976,
+        0.54454756,
+        0.5371823
+      ],
+      "route": "dense",
+      "trace_id": "90ff3062-a9b1-44d8-9864-c9d79ebec0c3",
+      "used_chunk_ids": [
+        "f5c87c94-cae4-599a-b3e0-693356ce7611",
+        "1ee47c25-6aac-58ba-b6db-bd5759bdfc6b",
+        "1e527474-b18f-5f11-904f-78728fbdb284",
+        "4e6171cf-add8-5ffe-b5e4-e8a3925b3355",
+        "8adfe213-3dd2-5114-8d44-d8aec4a935ac",
+        "ba588e81-7f3a-5665-a375-1cd722f17b81",
+        "5d6c79b5-5e8c-5251-affd-62bd2d80a4ed",
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add",
+        "1c9b409c-1f13-598d-833b-c158c753656b",
+        "94362e8d-60ba-5136-af0f-7e70d5e5c72a"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 161.5604380494915,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.7801680522970855,
+        "embedding_ms": 97.03941101906821,
+        "fusion_ms": null,
+        "generation_ms": 0.10198098607361317,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 125.65072003053501,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What trade-off occurs when opting for a lower number of vector chunks?",
+      "question_id": "sqa-bd90972847373159",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "04a39629-05c7-5448-84c3-5b0bab79636d"
+      ],
+      "retrieved_chunk_ids": [
+        "04a39629-05c7-5448-84c3-5b0bab79636d",
+        "14d2e195-d9e3-5c46-885b-7481085e5173",
+        "78a788b6-2635-53c6-a16f-a7235b023374",
+        "efcd0056-2acf-5cb6-9be9-7a60be5b79d2",
+        "2b36465b-14d8-50f5-897f-e4b3d52411dd",
+        "44d00c9c-1bab-5ac0-8ee0-3a3701708baa",
+        "e522475e-ecf6-5d3e-8eff-01420bbcff64",
+        "3f43dab3-7918-5c09-9e23-91f48974759a",
+        "51942adb-7c2c-5053-a107-86b6fc80b278",
+        "512b3487-1ba0-56bc-92df-dfd20e7f6243"
+      ],
+      "retrieved_scores": [
+        0.6814282,
+        0.5979011,
+        0.5634912,
+        0.55082226,
+        0.54506123,
+        0.5424746,
+        0.5378707,
+        0.53463936,
+        0.5269575,
+        0.5269575
+      ],
+      "route": "dense",
+      "trace_id": "385ed48f-20fb-46e8-ab9d-c901f46e2118",
+      "used_chunk_ids": [
+        "04a39629-05c7-5448-84c3-5b0bab79636d",
+        "14d2e195-d9e3-5c46-885b-7481085e5173",
+        "78a788b6-2635-53c6-a16f-a7235b023374",
+        "efcd0056-2acf-5cb6-9be9-7a60be5b79d2",
+        "2b36465b-14d8-50f5-897f-e4b3d52411dd",
+        "44d00c9c-1bab-5ac0-8ee0-3a3701708baa",
+        "e522475e-ecf6-5d3e-8eff-01420bbcff64",
+        "3f43dab3-7918-5c09-9e23-91f48974759a",
+        "51942adb-7c2c-5053-a107-86b6fc80b278",
+        "512b3487-1ba0-56bc-92df-dfd20e7f6243"
+      ]
+    },
+    {
+      "citation_count": 10,
+      "client_latency_ms": 251.94786302745342,
+      "component_latencies": {
+        "bm25_ms": null,
+        "dense_ms": 5.838877987116575,
+        "embedding_ms": 143.27532798051834,
+        "fusion_ms": null,
+        "generation_ms": 0.09657000191509724,
+        "reranker_ms": null
+      },
+      "config": "dense_baseline",
+      "config_version": "1.0.0",
+      "cost": {
+        "amount_usd": 0.0,
+        "currency": "USD",
+        "input_tokens": null,
+        "output_tokens": null,
+        "status": "zero_cost",
+        "total_tokens": null
+      },
+      "expected_source": "fastapi/docs/how-to/separate-openapi-schemas.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 243.73702600132674,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "How does OpenAPI represent an output response field that is always present even if its value is null?",
+      "question_id": "sqa-9663384ed9b2a6ce",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666"
+      ],
+      "retrieved_chunk_ids": [
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666",
+        "2cef0c3c-87a8-577a-8444-55dfd88c3088",
+        "95d8867e-0e02-5ce9-8bf9-a237fc44df15",
+        "f1d725d6-80e2-5e4e-bce0-4589da13dafe",
+        "7cfd33a4-b447-5348-8059-afa15d96ebbc",
+        "2fbb3afa-5f7b-582c-ab28-5c14c8859d4e",
+        "db937859-df5c-5da8-8d18-e7a759b61282",
+        "f1ea4c74-93ec-5219-b47e-e7d2f7786602",
+        "3a54d3d2-4139-50ec-8d73-0349fcc85977",
+        "d5d9456b-40e2-5174-ab10-1cf0ec6ec78d"
+      ],
+      "retrieved_scores": [
+        0.684148,
+        0.5994984,
+        0.56732094,
+        0.5566932,
+        0.55546415,
+        0.5502265,
+        0.537351,
+        0.5372377,
+        0.52734506,
+        0.5146005
+      ],
+      "route": "dense",
+      "trace_id": "3386c836-d8ae-400c-af39-4126e68ee2fc",
+      "used_chunk_ids": [
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666",
+        "2cef0c3c-87a8-577a-8444-55dfd88c3088",
+        "95d8867e-0e02-5ce9-8bf9-a237fc44df15",
+        "f1d725d6-80e2-5e4e-bce0-4589da13dafe",
+        "7cfd33a4-b447-5348-8059-afa15d96ebbc",
+        "2fbb3afa-5f7b-582c-ab28-5c14c8859d4e",
+        "db937859-df5c-5da8-8d18-e7a759b61282",
+        "f1ea4c74-93ec-5219-b47e-e7d2f7786602",
+        "3a54d3d2-4139-50ec-8d73-0349fcc85977",
+        "d5d9456b-40e2-5174-ab10-1cf0ec6ec78d"
+      ]
+    }
+  ],
+  "reference_comparison": {
+    "exact_ranking_match_count": 45,
+    "metrics_match": true,
+    "mismatches": [],
+    "question_count": 45,
+    "ranking_mismatch_count": 0,
+    "reference_report_path": "/Users/hej/Ragops-Control-Plane/reports/evaluations/dense_baseline.json",
+    "reference_run_name": "dense_baseline"
+  },
+  "run_name": "dense_baseline_api",
+  "run_source": "live_api_evaluation",
+  "schema_version": 1,
+  "trace_verification": {
+    "counts_after": {
+      "feedback": 0,
+      "retrieved_chunks": 450,
+      "traces": 45
+    },
+    "counts_before": {
+      "feedback": 0,
+      "retrieved_chunks": 0,
+      "traces": 0
+    },
+    "database_path": "/private/tmp/ragops-day35-api.sqlite3",
+    "enabled": true,
+    "verified_trace_count": 45
+  },
+  "tracking_verification": {
+    "experiment_name": "ragops-retrieval",
+    "runs": [
+      {
+        "artifact_digest": "10c621599f9702991072b671d9c8f08efab210662305cb6d605f4d27d9259c27",
+        "pipeline": "dense",
+        "run_id": "59c71a5926124ca59ef91c38ef9b69ae",
+        "run_name": "dense_baseline",
+        "status": "FINISHED"
+      },
+      {
+        "artifact_digest": "fe8f0466beacac42a896a424e21dc4f8cb2cdd4245a92429c53281110a63673f",
+        "pipeline": "bm25",
+        "run_id": "4b94ac6c0bee4cfa8ba83f106aa7de37",
+        "run_name": "bm25_baseline",
+        "status": "FINISHED"
+      },
+      {
+        "artifact_digest": "fd0d637bd9a94703e3631328c3e3d7e98c868def64e98d5f5c6e8bead9348d9f",
+        "pipeline": "hybrid",
+        "run_id": "731c0e3766e64ed9a8d5fb239e98633a",
+        "run_name": "hybrid_rrf",
+        "status": "FINISHED"
+      },
+      {
+        "artifact_digest": "486fdf2d0e3bf7da2bc656155c0a23eaf281ef9a55bb8b403940e96d388bb227",
+        "pipeline": "reranked",
+        "run_id": "a61923a5159d4042a36f2971fed00006",
+        "run_name": "hybrid_rrf_cross_encoder",
+        "status": "FINISHED"
+      }
+    ],
+    "tracking_uri": "http://127.0.0.1:5000",
+    "verified_run_count": 4
+  }
+}

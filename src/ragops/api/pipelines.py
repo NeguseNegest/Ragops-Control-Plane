@@ -24,6 +24,14 @@ DEFAULT_PIPELINE_CONFIG_PATHS = {
 }
 
 
+def configured_project_root(project_root=None):
+    """Resolve an explicit root, the deployment override, or the process directory."""
+    if project_root is None:
+        environment_root = os.getenv("RAGOPS_PROJECT_ROOT")
+        project_root = environment_root.strip() if environment_root and environment_root.strip() else Path.cwd()
+    return Path(project_root).resolve()
+
+
 class PipelineResourceError(RuntimeError):
     """A selected pipeline could not initialize one of its runtime resources."""
 
@@ -125,7 +133,7 @@ class PipelineRuntime:
         retriever_factory=build_retriever,
         query_embedder=None,
     ):
-        self.project_root = Path(project_root or Path(__file__).resolve().parents[3]).resolve()
+        self.project_root = configured_project_root(project_root)
         configured_paths = dict(DEFAULT_PIPELINE_CONFIG_PATHS if config_paths is None else config_paths)
         if set(configured_paths) != set(DEFAULT_PIPELINE_CONFIG_PATHS):
             raise ValueError("Query runtime must configure dense_baseline, hybrid_rrf, and hybrid_rrf_cross_encoder exactly once.")

@@ -141,3 +141,9 @@ The integration cases verify:
 - an accepted whitespace-only query returns the documented traced HTTP 400 response.
 
 Run the GitHub Actions-equivalent target locally with `make test-api-ci PYTHON=.venv/bin/python`. The complete CI design and its intentional exclusions are documented in [`ci.md`](ci.md).
+
+## Live Evaluation Through HTTP
+
+Day 35 adds `scripts/evaluate_api.py` for full-corpus service verification. Unlike the Day 34 in-memory fixture, it calls a running `/query` endpoint backed by the real Qdrant corpus. For every label it validates config/route/version, ranks and scores, citations and used chunks, debug metadata, cost shape, and response/header trace parity before computing retrieval metrics.
+
+When the evaluator can read the API's SQLite path, it verifies the corresponding trace and ordered evidence immediately after each response. It also requires exact top-10 ranking parity with the offline dense report and verifies all four configured MLflow runs unless those checks are explicitly skipped. The default Make target is `make evaluate-api`; `API_URL` and `API_TRACE_DB_PATH` must identify the running service and its database.

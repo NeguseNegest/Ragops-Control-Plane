@@ -36,7 +36,7 @@ The end-to-end fixture asserts HTTP payloads and their durable effects:
 - FastAPI 422 behavior for missing fields, invalid `top_k`, unknown configs, and incorrect types; and
 - traced handler-level HTTP 400 behavior for a whitespace query.
 
-The focused target also runs the existing API, pipeline-runtime, generation/cost/provider, trace-context/store, and dense-retrieval regression tests. This preserves failure-path and selectable-pipeline coverage that does not need to be duplicated in the small-corpus file.
+The focused target also runs the API-evaluator, existing API, pipeline-runtime, generation/cost/provider, trace-context/store, and dense-retrieval regression tests. This preserves failure-path, live-report validation logic, and selectable-pipeline coverage that does not need to be duplicated in the small-corpus file.
 
 ## GitHub Actions Job
 

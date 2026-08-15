@@ -7,7 +7,27 @@ The implemented evaluation stack has two distinct layers:
 1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, Day 29 tracking, and the Day 30 registry) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; records the runs in MLflow; and binds those evidence bundles to versioned pipeline identities.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, and Day 30 registers their versions and promotion roles without changing their measurements.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, and Day 35 proves the dense results survive the complete online HTTP and tracing composition.
+
+## Day 35 API-path evaluation
+
+`scripts/evaluate_api.py` is a live integration evaluator, not a second in-process dense runner. It probes `/health`, submits every verified label to `POST /query` with debug enabled, validates the full Day 33 response contract, computes retrieval metrics from returned chunks, and writes `dense_baseline_api.json` plus `dense_baseline_api.csv`.
+
+By default it also enforces three external invariants:
+
+1. all 45 complete top-10 chunk rankings and aggregate metrics exactly match `reports/evaluations/dense_baseline.json`;
+2. every response UUID exists in the configured SQLite store with matching pipeline identity, answer, total/component timings, ordered chunks, and generation-use flags; and
+3. the four current evidence digests in `configs/mlflow.yaml` each resolve to a complete FINISHED MLflow run with exact parameters, metrics, tags, and artifacts.
+
+Run it while a host API is using the same trace database:
+
+```bash
+make evaluate-api
+```
+
+The recorded acceptance run matched 45/45 rankings, reproduced MRR 0.3359 and Recall@5 0.4444, verified 45 traces with 450 child chunk rows, and verified all four MLflow runs. Warm service latency averaged 134.75 ms over the final 44 requests; the first request's 22.7-second model initialization remains honestly included in the full-run average. See `reports/week5_integration_review.md` for the exact service, latency, container, trace, and run-ID evidence.
+
+This controlled check uses dense retrieval because it has a directly comparable full-depth offline report and is the default production selection. It does not score template-answer quality or repeat the slower hybrid/reranked benchmark through HTTP.
 
 ## Day 28 retrieval construction
 

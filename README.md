@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, and an offline API integration suite through Day 34.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, and a full Week 5 integration review through Day 35.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 34 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, an online SQLite trace store, request-scoped component timings, a production `/query` contract, and a self-contained API CI gate. The current baseline includes:
+Implementation is complete through Day 35 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, an online SQLite trace store, request-scoped component timings, a production `/query` contract, a self-contained API CI gate, and a live API/evaluation/tracking/tracing integration check. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -66,6 +66,8 @@ Implementation is complete through Day 34 of the project plan, including a measu
 - a feedback table linked to traces, schema/version validation, a migration path, and a persistent Docker volume
 - a checked-in four-document vector fixture, deterministic query embeddings, in-memory Qdrant, temporary SQLite, and end-to-end `/health`, `/retrieve`, `/query`, and invalid-request integration tests
 - a lightweight GitHub Actions API job that lints the repository and runs the production request path without Docker, model downloads, external APIs, or the full ML dependency stack
+- a live HTTP evaluation runner that checks all 45 dense top-10 rankings against the offline baseline, verifies every returned SQLite trace, and revalidates the exact four-run MLflow evidence suite
+- a CPU-only API image with deployment-safe project-root resolution, an internal health check, a configurable host port, a persistent Hugging Face cache, and separate API/tracking/dashboard dependency boundaries
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
@@ -77,6 +79,7 @@ Current limitations:
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
 - Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query cost is returned but not persisted or aggregated; MLflow currently tracks retrieval evaluations only, and routing, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
+- The Day 35 API evaluation is a dense retrieval parity check using the deterministic template generator. It does not repeat external-provider generation judging or the expensive 45-question reranker benchmark through HTTP.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
 ## Dense vs BM25 vs Hybrid vs Reranker Benchmark
@@ -573,6 +576,25 @@ make test-api-ci PYTHON=.venv/bin/python
 
 The same target runs in `.github/workflows/ci.yml` with the deliberately small dependency set in `requirements-ci.txt`. Offline environment flags make an accidental model download fail instead of hiding a test dependency. See [`docs/ci.md`](docs/ci.md) for the fixture contract, coverage boundary, and workflow design.
 
+### Run the Week 5 integration review
+
+Start Qdrant and MLflow, then run FastAPI with the trace database that the evaluator will inspect:
+
+```bash
+make services-up
+make serve
+```
+
+In another terminal:
+
+```bash
+make evaluate-api
+```
+
+The command sends all 45 verified questions through `POST /query`, requires exact top-10 ranking and metric parity with the recorded dense report, verifies each response/header/database trace identity and stored evidence, and verifies the four immutable MLflow runs. Existing artifacts require the command's deliberate `--overwrite`, which the Make target supplies. Use `API_URL` and `API_TRACE_DB_PATH` when the service is not using the defaults.
+
+For a container smoke test, `RAGOPS_API_PORT=8002 docker compose up -d --build api` publishes the API on an alternate host port without changing its internal port. The complete measured review is in [`reports/week5_integration_review.md`](reports/week5_integration_review.md).
+
 ## Main Components
 
 ```text
@@ -597,16 +619,16 @@ query -> BM25 top 25 ---+
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
 - `src/ragops/generation`: citations, grounded prompts, provider selection, template/OpenAI/Gemini clients, provider usage normalization, and cost estimation
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker evaluation and comparison, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker and live-API evaluation, comparisons, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
 - `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
+- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, offline/API evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
 - `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 35: run the full local service integration review across the API, retrieval evaluation, MLflow evidence, and SQLite traces.
+Proceed to Day 36: document the FAST, STANDARD, CAREFUL, and NO_ANSWER router design, features, thresholds, and configuration contract.

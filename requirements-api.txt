@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+google-genai>=2.13.0,<3.0
+numpy>=1.26,<2.0
+openai>=2.47.0,<3.0
+pydantic>=2.8.0
+PyYAML>=6.0,<7.0
+qdrant-client>=1.10.0
+rank-bm25>=0.2.2
+sentence-transformers>=3.0.0
+transformers>=4.41,<5.0
+uvicorn[standard]>=0.30.0

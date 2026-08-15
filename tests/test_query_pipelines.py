@@ -7,6 +7,7 @@ from ragops.api.pipelines import (
     PipelineExecutionError,
     PipelineResourceError,
     PipelineRuntime,
+    configured_project_root,
 )
 
 
@@ -107,6 +108,13 @@ def test_runtime_loads_exact_validated_query_catalog(monkeypatch):
 
     with pytest.raises(ValueError, match="must configure"):
         PipelineRuntime(project_root=Path.cwd(), config_paths={})
+
+
+def test_runtime_project_root_uses_deployment_override(monkeypatch, tmp_path):
+    monkeypatch.setenv("RAGOPS_PROJECT_ROOT", str(tmp_path))
+
+    assert configured_project_root() == tmp_path.resolve()
+    assert configured_project_root(Path.cwd()) == Path.cwd().resolve()
 
 
 def test_dense_execution_only_builds_request_scoped_qdrant(monkeypatch):

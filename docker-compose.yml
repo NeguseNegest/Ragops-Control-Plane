@@ -2,9 +2,11 @@ services:
   api:
     build: .
     ports:
-      - "8000:8000"
+      - "${RAGOPS_API_PORT:-8000}:8000"
     environment:
       PYTHONUNBUFFERED: "1"
+      RAGOPS_PROJECT_ROOT: "/app"
+      HF_HOME: "/app/data/model_cache"
       QDRANT_URL: "http://qdrant:6333"
       RAGOPS_LLM_PROVIDER: "${RAGOPS_LLM_PROVIDER:-template}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
@@ -18,9 +20,20 @@ services:
       RAGOPS_PIPELINE_VERSION: "${RAGOPS_PIPELINE_VERSION:-1.0.0}"
     volumes:
       - ./data/processed:/app/data/processed:ro
+      - ragops_model_cache:/app/data/model_cache
       - ragops_trace_data:/app/data/traces
     depends_on:
       - qdrant
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -60,4 +73,5 @@ services:
 volumes:
   qdrant_storage:
   mlflow_data:
+  ragops_model_cache:
   ragops_trace_data:
