@@ -18,12 +18,14 @@ probe:
 thresholds:
   no_answer:
     on_empty_results: true
-    # Deliberately below the minimum top score in the 45 supported questions.
-    top_score_below: 0.25
+    # Day 39: ceiling(max of five calibration unsupported scores + 0.0005)
+    # at three decimal places. This safety-first draft also falsely refuses
+    # 9/45 supported examples and must not be treated as production-ready.
+    top_score_below: 0.531
 
   careful:
     # CAREFUL matches when any condition is true.
-    top_score_below: 0.50
+    top_score_below: 0.56
     on_missing_score_gap: true
     score_gap_below: 0.01
     token_count_above: 20
@@ -73,6 +75,5 @@ calibration:
   source_report: reports/evaluations/dense_baseline.json
   source_run_name: dense_baseline
   question_count: 45
-  # The current labels contain supported questions only. Day 39 must add and
-  # calibrate unsupported examples before the refusal policy can be approved.
-  unsupported_question_count: 0
+  unsupported_source: data/eval/no_answer_queries.jsonl
+  unsupported_question_count: 12

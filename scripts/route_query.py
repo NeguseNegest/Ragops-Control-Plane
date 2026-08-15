@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from ragops.api.pipelines import PipelineRuntime
+from ragops.generation.no_answer import generate_no_answer
 
 
 def parse_args():
@@ -23,6 +24,7 @@ def parse_args():
 def route_report(result):
     """Return a JSON-safe decision report without exposing document text."""
     decision = result.decision.model_dump(mode="json")
+    refusal = generate_no_answer(result.probe.query, result.decision) if result.decision.route == "NO_ANSWER" else None
     return {
         "query": result.probe.query,
         "router_policy": {
@@ -41,6 +43,7 @@ def route_report(result):
             "generate_answer": decision["generate_answer"],
             "response_mode": decision["response_mode"],
         },
+        "refusal": refusal.model_dump(mode="json") if refusal else None,
         "features": result.probe.features.model_dump(mode="json"),
         "probe": {
             "chunk_ids": [chunk.chunk_id for chunk in result.probe.chunks],

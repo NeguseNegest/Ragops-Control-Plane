@@ -18,12 +18,14 @@ from ragops.api.schemas import (
     RetrieveRequest,
     RetrieveResponse,
     RouteProbeChunkResponse,
+    RouteRefusalResponse,
     RouteRequest,
     RouteResponse,
 )
 from ragops.generation.client import generate_answer
 from ragops.generation.cost import configured_generation_pricing, estimate_generation_cost, generation_model, generation_provider
 from ragops.generation.factory import create_generation_client
+from ragops.generation.no_answer import generate_no_answer
 from ragops.indexing.qdrant import DEFAULT_QDRANT_URL, create_qdrant_client
 from ragops.retrieval.dense import retrieve_dense
 from ragops.tracing.context import TraceContext
@@ -266,6 +268,7 @@ def create_app(
         except Exception as error:
             raise HTTPException(status_code=503, detail="Unable to route query.") from error
 
+        refusal = generate_no_answer(result.probe.query, result.decision) if result.decision.route == "NO_ANSWER" else None
         return RouteResponse(
             query=result.probe.query,
             decision=result.decision,
@@ -275,6 +278,7 @@ def create_app(
                 for chunk in result.probe.chunks
             ],
             probe_timings=result.probe.timings,
+            refusal=RouteRefusalResponse(**refusal.model_dump(exclude={"citations", "used_chunk_ids"})) if refusal else None,
         )
 
     @app.post("/query", response_model=QueryResponse)

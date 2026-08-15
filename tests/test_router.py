@@ -240,7 +240,8 @@ def test_checked_in_router_config_defines_all_routes_features_and_threshold_band
     assert config.decision_order == EXPECTED_DECISION_ORDER
     assert config.probe.pipeline_config == "dense_baseline"
     assert config.probe.top_k == 2
-    assert config.thresholds.no_answer.top_score_below == 0.25
+    assert config.thresholds.no_answer.top_score_below == 0.531
+    assert config.thresholds.careful.top_score_below == 0.56
     assert config.thresholds.careful.on_missing_score_gap
     assert config.thresholds.careful.score_gap_below == 0.01
     assert config.thresholds.fast.top_score_at_least == 0.72
@@ -251,7 +252,8 @@ def test_checked_in_router_config_defines_all_routes_features_and_threshold_band
     assert not config.routes.no_answer.generate_answer
     assert config.routes.no_answer.response_mode == "refusal"
     assert config.calibration.question_count == 45
-    assert config.calibration.unsupported_question_count == 0
+    assert config.calibration.unsupported_source == Path("data/eval/no_answer_queries.jsonl")
+    assert config.calibration.unsupported_question_count == 12
 
 
 def test_router_config_matches_registry_lifecycle_and_calibration_evidence():
@@ -265,7 +267,8 @@ def test_router_config_matches_registry_lifecycle_and_calibration_evidence():
     }
     calibration = validate_router_calibration(config, project_root=Path.cwd())
     assert calibration["question_count"] == 45
-    assert calibration["unsupported_question_count"] == 0
+    assert calibration["unsupported_question_count"] == 12
+    assert calibration["unsupported_source"].endswith("data/eval/no_answer_queries.jsonl")
     assert calibration["top_score"] == {
         "minimum": 0.3018593,
         "median": 0.6597541,
@@ -349,7 +352,7 @@ def test_router_selects_fast_with_stable_reason_and_probe_reuse_intent():
 def test_router_selects_standard_at_non_careful_boundaries_when_fast_is_not_fully_satisfied():
     router = RuleBasedRouter(load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd()))
 
-    decision = router.select(make_features(top_score=0.5, score_gap=0.01, token_count=13, long_token_ratio=0.3))
+    decision = router.select(make_features(top_score=0.56, score_gap=0.01, token_count=13, long_token_ratio=0.3))
 
     assert decision.route == "STANDARD"
     assert decision.reason_code == "standard_fallback"
@@ -362,7 +365,7 @@ def test_router_selects_standard_at_non_careful_boundaries_when_fast_is_not_full
     ("feature_overrides", "reason_code"),
     [
         ({"result_count": 1, "top_score": 0.6, "score_gap": None}, "missing_score_gap"),
-        ({"top_score": 0.499}, "top_score_below_careful_threshold"),
+        ({"top_score": 0.559}, "top_score_below_careful_threshold"),
         ({"score_gap": 0.009}, "score_gap_below_careful_threshold"),
         ({"token_count": 21}, "token_count_above_careful_threshold"),
         ({"complexity_marker_count": 1}, "complexity_marker_count_at_least_careful_threshold"),
@@ -387,7 +390,7 @@ def test_each_careful_condition_is_active_with_documented_inequality(feature_ove
 def test_careful_returns_all_matches_in_stable_priority_order():
     router = RuleBasedRouter(load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd()))
     features = make_features(
-        top_score=0.49,
+        top_score=0.55,
         score_gap=0.005,
         token_count=21,
         complexity_marker_count=2,
@@ -414,7 +417,7 @@ def test_careful_returns_all_matches_in_stable_priority_order():
     ("features", "reason_code"),
     [
         (make_features(result_count=0, top_score=None, score_gap=None), "empty_probe"),
-        (make_features(top_score=0.249), "top_score_below_no_answer_threshold"),
+        (make_features(top_score=0.53), "top_score_below_no_answer_threshold"),
     ],
 )
 def test_no_answer_precedes_other_routes_and_has_no_execution_pipeline(features, reason_code):
@@ -434,7 +437,7 @@ def test_no_answer_precedes_other_routes_and_has_no_execution_pipeline(features,
 def test_no_answer_score_floor_is_strict_and_does_not_capture_equal_score():
     router = RuleBasedRouter(load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd()))
 
-    decision = router.select(make_features(top_score=0.25, score_gap=0.02))
+    decision = router.select(make_features(top_score=0.531, score_gap=0.02))
 
     assert decision.route == "CAREFUL"
     assert decision.reason_code == "top_score_below_careful_threshold"
@@ -443,7 +446,7 @@ def test_no_answer_score_floor_is_strict_and_does_not_capture_equal_score():
 def test_no_answer_precedence_over_careful_complexity():
     router = RuleBasedRouter(load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd()))
 
-    decision = router.select(make_features(top_score=0.2, complexity_marker_count=1))
+    decision = router.select(make_features(top_score=0.53, complexity_marker_count=1))
 
     assert decision.route == "NO_ANSWER"
     assert decision.matched_reason_codes == ("top_score_below_no_answer_threshold",)

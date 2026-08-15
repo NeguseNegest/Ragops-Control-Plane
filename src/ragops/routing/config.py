@@ -144,11 +144,14 @@ class RouterCalibrationConfig(StrictRouterModel):
     source_report: Path
     source_run_name: Literal["dense_baseline"] = "dense_baseline"
     question_count: int = Field(gt=0)
+    unsupported_source: Path | None = None
     unsupported_question_count: int = Field(ge=0)
 
-    @field_validator("source_report", mode="before")
+    @field_validator("source_report", "unsupported_source", mode="before")
     @classmethod
     def require_non_empty_path(cls, value):
+        if value is None:
+            return None
         if isinstance(value, str) and not value.strip():
             raise ValueError("Router calibration report path must not be empty.")
         return value
@@ -157,6 +160,10 @@ class RouterCalibrationConfig(StrictRouterModel):
     def require_valid_coverage_counts(self):
         if self.unsupported_question_count > self.question_count:
             raise ValueError("Unsupported calibration count cannot exceed the total question count.")
+        if self.unsupported_question_count and self.unsupported_source is None:
+            raise ValueError("Unsupported calibration examples require unsupported_source provenance.")
+        if not self.unsupported_question_count and self.unsupported_source is not None:
+            raise ValueError("unsupported_source must be absent when unsupported_question_count is zero.")
         return self
 
 
@@ -278,8 +285,36 @@ def validate_router_calibration(config, project_root=None):
         top_scores.append(top_score)
         score_gaps.append(top_score - second_score)
 
+    unsupported_path = None
+    if config.calibration.unsupported_source is not None:
+        unsupported_path = resolve_router_path(config.calibration.unsupported_source, project_root)
+        if not unsupported_path.is_file():
+            raise FileNotFoundError(f"Router unsupported calibration source does not exist: {unsupported_path}")
+        unsupported_rows = []
+        with unsupported_path.open(encoding="utf-8") as input_file:
+            for line_number, line in enumerate(input_file, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise ValueError(f"Invalid unsupported calibration JSON on line {line_number}: {error}") from error
+                if not isinstance(row, dict) or row.get("expected_behavior") != "refusal":
+                    raise ValueError("Every unsupported calibration row must be a refusal example.")
+                unsupported_rows.append(row)
+        if len(unsupported_rows) != config.calibration.unsupported_question_count:
+            raise ValueError(
+                f"Router unsupported calibration source contains {len(unsupported_rows)} rows; expected {config.calibration.unsupported_question_count}."
+            )
+        unsupported_ids = [row.get("id") for row in unsupported_rows]
+        if any(not isinstance(identifier, str) or not identifier.strip() for identifier in unsupported_ids):
+            raise ValueError("Every unsupported calibration row must have a non-empty ID.")
+        if len(unsupported_ids) != len(set(unsupported_ids)):
+            raise ValueError("Router unsupported calibration IDs must be unique.")
+
     return {
         "report_path": str(report_path),
+        "unsupported_source": str(unsupported_path) if unsupported_path else None,
         "question_count": len(questions),
         "unsupported_question_count": config.calibration.unsupported_question_count,
         "top_score": {"minimum": min(top_scores), "median": median(top_scores), "maximum": max(top_scores)},

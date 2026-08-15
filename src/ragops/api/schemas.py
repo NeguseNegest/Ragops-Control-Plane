@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ragops.api.pipelines import QueryConfigName, QueryRoute
+from ragops.generation.no_answer import NO_ANSWER_PROMPT_VERSION, NO_ANSWER_RESPONSE
 from ragops.pipeline_registry import PipelineStatus, PipelineVersion
 from ragops.routing.probe import InitialRetrievalFeatures, ProbeTimings
 from ragops.routing.router import RouterDecision
@@ -54,6 +55,15 @@ class RouteProbeChunkResponse(StrictResponseModel):
     rank: int = Field(gt=0)
 
 
+class RouteRefusalResponse(StrictResponseModel):
+    """Deterministic Day 39 response for a NO_ANSWER decision."""
+
+    answer: Literal[NO_ANSWER_RESPONSE]
+    prompt_version: Literal[NO_ANSWER_PROMPT_VERSION]
+    prompt_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    generated_by: Literal["deterministic_policy"]
+
+
 class RouteResponse(StrictResponseModel):
     """Deterministic route decision plus the exact feature evidence used."""
 
@@ -62,6 +72,15 @@ class RouteResponse(StrictResponseModel):
     features: InitialRetrievalFeatures
     probe_chunks: list[RouteProbeChunkResponse]
     probe_timings: ProbeTimings
+    refusal: RouteRefusalResponse | None = None
+
+    @model_validator(mode="after")
+    def require_refusal_for_no_answer_only(self):
+        if self.decision.route == "NO_ANSWER" and self.refusal is None:
+            raise ValueError("NO_ANSWER route responses must contain a deterministic refusal.")
+        if self.decision.route != "NO_ANSWER" and self.refusal is not None:
+            raise ValueError("Only NO_ANSWER route responses may contain a refusal.")
+        return self
 
 
 class QueryRequest(BaseModel):

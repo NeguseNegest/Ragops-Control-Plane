@@ -1,0 +1,33 @@
+schema_version: 1
+name: no_answer
+version: 0.1.0
+status: draft
+
+router_config: configs/routed.yaml
+
+dataset:
+  unsupported_path: data/eval/no_answer_queries.jsonl
+  golden_path: data/eval/golden_qa.jsonl
+  supported_report_path: reports/evaluations/dense_baseline.json
+  minimum_calibration_unsupported: 5
+  minimum_evaluation_unsupported: 7
+  expected_supported_questions: 45
+
+threshold_selection:
+  method: calibration_max_plus_margin_ceiling
+  score_margin: 0.0005
+  decimal_places: 3
+
+acceptance:
+  minimum_unsupported_refusal_accuracy: 1.0
+  minimum_evaluation_refusal_accuracy: 1.0
+  minimum_supported_answer_rate: 0.80
+  minimum_refusal_precision: 0.55
+
+refusal:
+  prompt_version: no_answer_v1
+  answer: I do not know based on the available FastAPI, MLflow, and Qdrant documentation.
+
+output:
+  json_path: reports/evaluations/no_answer.json
+  csv_path: reports/evaluations/no_answer.csv

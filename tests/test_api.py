@@ -166,9 +166,30 @@ def test_route_returns_decision_reason_features_and_probe_evidence_without_a_tra
     assert body["features"]["retrieval_confidence"]["result_count"] == 1
     assert body["probe_chunks"] == [{"chunk_id": "chunk-1", "score": 0.91, "rank": 1}]
     assert body["probe_timings"]["total_ms"] == 0.0
+    assert body["refusal"] is None
     assert pipeline_runtime.route_calls == ["What is FastAPI?"]
     assert trace_store.calls == []
     assert "text" not in body["probe_chunks"][0]
+
+
+def test_route_returns_deterministic_refusal_for_no_answer_without_calling_generation_or_tracing():
+    trace_store = RecordingTraceStore()
+    chunk = RetrievedChunk(chunk_id="low-score", document_id="doc-1", text="Unrelated text.", score=0.5, rank=1, metadata={})
+    pipeline_runtime = RecordingPipelineRuntime(chunks=[chunk])
+    client = make_client(trace_store, pipeline_runtime=pipeline_runtime, generation_client=object())
+
+    response = client.post("/route", json={"query": "How do I configure Pinecone?"})
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["decision"]["route"] == "NO_ANSWER"
+    assert body["decision"]["reason_code"] == "top_score_below_no_answer_threshold"
+    assert body["decision"]["generate_answer"] is False
+    assert body["refusal"]["answer"] == "I do not know based on the available FastAPI, MLflow, and Qdrant documentation."
+    assert body["refusal"]["prompt_version"] == "no_answer_v1"
+    assert body["refusal"]["generated_by"] == "deterministic_policy"
+    assert len(body["refusal"]["prompt_sha256"]) == 64
+    assert trace_store.calls == []
 
 
 @pytest.mark.parametrize(
