@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, and a full Week 5 integration review through Day 35.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 37 initial routing probe.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 35 of the project plan, including a measured hybrid-plus-cross-encoder benchmark, a common retrieval interface, evidence-backed MLflow runs, versioned baseline/candidate/production aliases, an online SQLite trace store, request-scoped component timings, a production `/query` contract, a self-contained API CI gate, and a live API/evaluation/tracking/tracing integration check. The current baseline includes:
+Implemented milestones include Days 1–35 plus the Day 37 initial routing probe. Day 36's route-policy design was skipped and remains an explicit prerequisite for Day 38. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -68,12 +68,13 @@ Implementation is complete through Day 35 of the project plan, including a measu
 - a lightweight GitHub Actions API job that lints the repository and runs the production request path without Docker, model downloads, external APIs, or the full ML dependency stack
 - a live HTTP evaluation runner that checks all 45 dense top-10 rankings against the offline baseline, verifies every returned SQLite trace, and revalidates the exact four-run MLflow evidence suite
 - a CPU-only API image with deployment-safe project-root resolution, an internal health check, a configurable host port, a persistent Hugging Face cache, and separate API/tracking/dashboard dependency boundaries
+- a dense top-two initial routing probe with validated top score, score gap, query length, deterministic lexical-complexity features, reusable evidence, and separate probe timings
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
 Current limitations:
 
-- `POST /query` exposes dense, RRF hybrid, and hybrid-plus-reranker retrieval by explicit config selection; `POST /retrieve` and the Streamlit form still use dense retrieval only. Rule-based automatic routing is a later milestone.
+- `POST /query` exposes dense, RRF hybrid, and hybrid-plus-reranker retrieval by explicit config selection; `POST /retrieve` and the Streamlit form still use dense retrieval only. Day 37 produces structured router input, but no API request is automatically routed yet.
 - Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; version `hybrid_rrf@1.0.0` is therefore `rejected` and has no registry alias.
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
@@ -595,6 +596,16 @@ The command sends all 45 verified questions through `POST /query`, requires exac
 
 For a container smoke test, `RAGOPS_API_PORT=8002 docker compose up -d --build api` publishes the API on an alternate host port without changing its internal port. The complete measured review is in [`reports/week5_integration_review.md`](reports/week5_integration_review.md).
 
+### Run the initial routing probe
+
+Day 37 runs a dense top-two retrieval before any route decision and extracts schema-versioned confidence, query-length, and lexical-complexity features:
+
+```bash
+make probe-query ROUTER_QUERY="What is FastAPI?"
+```
+
+The result intentionally contains `route: null`: route rules and thresholds are not guessed by the probe. See [`docs/routing.md`](docs/routing.md) for exact field semantics, score-gap edge cases, validation, and the remaining Day 36/38 boundary.
+
 ## Main Components
 
 ```text
@@ -603,6 +614,9 @@ data/raw -> cleaning -> chunking -> chunks.jsonl -> embeddings -> Qdrant
                                           +-> BM25 tokens -> persisted BM25 index
 
 query -> configured Retriever -> citations -> generation -> FastAPI response
+
+query -> dense top 2 -> top score + score gap --+
+query -> length + lexical complexity ----------+-> structured router features
 
 query -> dense top 20 --+
                          +-> RRF -> hybrid top 10 -> CLI
@@ -617,6 +631,7 @@ query -> BM25 top 25 ---+
 - `src/ragops/indexing`: Qdrant collection creation and indexing
 - `src/ragops/retrieval`: common retriever contract and factory, dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
+- `src/ragops/routing`: dense initial-probe orchestration and the strict schema-v1 query/confidence feature contract; route selection is not implemented yet
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
 - `src/ragops/generation`: citations, grounded prompts, provider selection, template/OpenAI/Gemini clients, provider usage normalization, and cost estimation
 - `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker and live-API evaluation, comparisons, and LLM-as-judge orchestration
@@ -625,10 +640,10 @@ query -> BM25 top 25 ---+
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, dataset-review, labeling, offline/API evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
-- `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
+- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, initial routing probe, dataset-review, labeling, offline/API evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
+- `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 36: document the FAST, STANDARD, CAREFUL, and NO_ANSWER router design, features, thresholds, and configuration contract.
+Complete the skipped Day 36 policy/config design, then proceed to Day 38: implement deterministic `FAST`, `STANDARD`, `CAREFUL`, and `NO_ANSWER` routing over the Day 37 feature contract.

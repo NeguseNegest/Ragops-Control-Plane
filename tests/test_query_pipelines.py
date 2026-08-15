@@ -9,6 +9,7 @@ from ragops.api.pipelines import (
     PipelineRuntime,
     configured_project_root,
 )
+from ragops.retrieval.dense import RetrievedChunk
 
 
 class FakeQdrantClient:
@@ -131,6 +132,52 @@ def test_dense_execution_only_builds_request_scoped_qdrant(monkeypatch):
     assert evidence["loaded_indexes"] == []
     assert evidence["loaded_rerankers"] == []
     assert evidence["built_retrievers"][0][2:] == (None, None)
+
+
+def test_initial_probe_uses_only_dense_top_two_and_closes_its_client(monkeypatch):
+    runtime, evidence = make_runtime(monkeypatch)
+    probe_chunks = [
+        RetrievedChunk(
+            chunk_id="chunk-1",
+            document_id="document-1",
+            text="First result",
+            score=0.9,
+            rank=1,
+            metadata={},
+        ),
+        RetrievedChunk(
+            chunk_id="chunk-2",
+            document_id="document-1",
+            text="Second result",
+            score=0.75,
+            rank=2,
+            metadata={},
+        ),
+    ]
+    evidence["built_retrievers"].clear()
+
+    class ProbeRetriever(FakeRetriever):
+        def retrieve(self, query, top_k, timings):
+            self.calls.append((self.config_name, query, top_k, timings))
+            timings.update({"embedding_ms": 2.0, "dense_ms": 1.0})
+            return probe_chunks
+
+    def retriever_factory(config, client, index, reranker):
+        evidence["built_retrievers"].append((config.name, client, index, reranker))
+        return ProbeRetriever(config.name, evidence["retrieval_calls"])
+
+    runtime.retriever_factory = retriever_factory
+    clock_values = iter([1.0, 1.01])
+
+    result = runtime.initial_probe("How does retrieval work?", clock=lambda: next(clock_values))
+
+    assert result.features.retrieval_confidence.top_score == 0.9
+    assert result.features.retrieval_confidence.score_gap == pytest.approx(0.15)
+    assert evidence["retrieval_calls"][0][0:3] == ("dense_baseline", "How does retrieval work?", 2)
+    assert evidence["built_retrievers"][0][2:] == (None, None)
+    assert evidence["loaded_indexes"] == []
+    assert evidence["loaded_rerankers"] == []
+    assert evidence["clients"][0].closed
 
 
 def test_hybrid_reuses_validated_bm25_index_but_not_qdrant_client(monkeypatch):

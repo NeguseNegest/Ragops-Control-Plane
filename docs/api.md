@@ -147,3 +147,9 @@ Run the GitHub Actions-equivalent target locally with `make test-api-ci PYTHON=.
 Day 35 adds `scripts/evaluate_api.py` for full-corpus service verification. Unlike the Day 34 in-memory fixture, it calls a running `/query` endpoint backed by the real Qdrant corpus. For every label it validates config/route/version, ranks and scores, citations and used chunks, debug metadata, cost shape, and response/header trace parity before computing retrieval metrics.
 
 When the evaluator can read the API's SQLite path, it verifies the corresponding trace and ordered evidence immediately after each response. It also requires exact top-10 ranking parity with the offline dense report and verifies all four configured MLflow runs unless those checks are explicitly skipped. The default Make target is `make evaluate-api`; `API_URL` and `API_TRACE_DB_PATH` must identify the running service and its database.
+
+## Day 37 Routing-Probe Boundary
+
+Day 37 adds a dense top-two probe and structured router features in `ragops.routing`, but does not change the public request or response schema. `POST /query` still requires explicit config selection (or defaults to `dense_baseline`), and its returned `route` still describes the executed retrieval pipeline rather than an automatic routing decision.
+
+Use `make probe-query ROUTER_QUERY="What is FastAPI?"` to inspect the feature contract outside the API. Automatic route selection, route reasons, trace persistence of routing features, and no-answer behavior remain later milestones. See [`routing.md`](routing.md) for the full boundary.

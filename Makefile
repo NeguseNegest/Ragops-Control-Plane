@@ -4,13 +4,14 @@ BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
 HYBRID_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 RERANK_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
+ROUTER_QUERY ?= What is FastAPI?
 MLFLOW_CONFIG ?= configs/mlflow.yaml
 PIPELINE_REGISTRY_CONFIG ?= configs/pipeline_registry.yaml
 TRACE_DB_PATH ?= data/traces/ragops_traces.sqlite3
 API_URL ?= http://127.0.0.1:8000
 API_TRACE_DB_PATH ?= $(TRACE_DB_PATH)
 
-.PHONY: setup lint test test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-routing-probe test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api probe-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -36,10 +37,13 @@ test-query-endpoint:
 	$(BIN)/python -m pytest tests/test_query_pipelines.py tests/test_generation_cost.py tests/test_generation.py tests/test_generation_providers.py tests/test_api.py tests/test_tracing.py
 
 test-api-ci:
-	PYTHONPATH=src $(PYTHON) -m pytest tests/test_api_integration.py tests/test_api_evaluation.py tests/test_api.py tests/test_query_pipelines.py tests/test_generation_cost.py tests/test_generation.py tests/test_generation_providers.py tests/test_trace_context.py tests/test_tracing.py tests/test_retrieval.py
+	PYTHONPATH=src $(PYTHON) -m pytest tests/test_api_integration.py tests/test_api_evaluation.py tests/test_api.py tests/test_query_pipelines.py tests/test_router.py tests/test_generation_cost.py tests/test_generation.py tests/test_generation_providers.py tests/test_trace_context.py tests/test_tracing.py tests/test_retrieval.py
 
 test-api-evaluation:
 	$(BIN)/python -m pytest tests/test_api_evaluation.py tests/test_api_integration.py tests/test_query_pipelines.py tests/test_tracing.py
+
+test-routing-probe:
+	$(BIN)/python -m pytest tests/test_router.py tests/test_query_pipelines.py
 
 test-retrieval-interface:
 	$(BIN)/python -m pytest tests/test_retriever_interface.py tests/test_hybrid.py tests/test_reranking.py
@@ -97,6 +101,9 @@ evaluate-dense:
 
 evaluate-api:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate_api.py --api-url $(API_URL) --trace-db-path $(API_TRACE_DB_PATH) --mlflow-config $(MLFLOW_CONFIG) --overwrite
+
+probe-query:
+	PYTHONPATH=src $(BIN)/python scripts/probe_query.py --query "$(ROUTER_QUERY)"
 
 validate-generation-judge:
 	PYTHONPATH=src $(BIN)/python scripts/judge_answers.py --config configs/generation_judge.yaml --validate-only

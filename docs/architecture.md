@@ -13,8 +13,9 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
 - An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
 - A live integration-review workflow that evaluates all verified dense questions through HTTP, requires offline/API ranking parity, cross-checks response traces in SQLite, and verifies the complete retrieval evidence suite in MLflow.
+- A route-agnostic initial-probe workflow that performs dense top-two retrieval and emits schema-versioned confidence, query-length, and lexical-complexity features for the future deterministic router.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, and the Day 35 full integration review are implemented. Automatic routing, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, and the Day 37 initial retrieval probe are implemented. Day 36's policy/config design was skipped; route decisions, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
 
 ## System Diagram
 
@@ -47,6 +48,15 @@ flowchart LR
         Generator --> API
         API -->|"atomic trace + component timings"| TraceDB[(SQLite trace store)]
         API -->|"JSON + trace / route / cost / timings"| Streamlit
+    end
+
+    subgraph RoutingProbe[Day 37 route feature path]
+        ProbeQuery[Query] --> Lexical[Length + lexical features]
+        ProbeQuery --> ProbeDense[Dense top 2]
+        ProbeDense --> Confidence[Top score + score gap]
+        Lexical --> RouterFeatures[InitialRetrievalFeatures v1]
+        Confidence --> RouterFeatures
+        RouterFeatures --> FutureRouter[Future rule-based router]
     end
 
     subgraph Hybrid[Offline hybrid CLI]
@@ -410,7 +420,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 ## Current Limitations
 
-- `/query` selection is explicit rather than rule-based. The rejected `hybrid_rrf` config remains executable for controlled comparison and exposes that status in debug mode; selection is not promotion.
+- `/query` selection is explicit rather than rule-based. Day 37 exposes structured probe features through Python/CLI only; it does not choose or expose an automatic API route. The rejected `hybrid_rrf` config remains executable for controlled comparison and exposes that status in debug mode; selection is not promotion.
 - The `production` registry alias documents the selected online version but does not dynamically configure or deploy the API; deployment integration is intentionally not claimed by Day 30.
 - The cross-encoder has the highest measured MRR@5 on the current labels, but its warmed stage averages about 4.27 seconds per query. It is available only through explicit config selection and should remain non-default until latency is reduced or routing limits its use.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
@@ -423,7 +433,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
 - The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
-- Feedback endpoints, automatic routing, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Day 34 supplies API CI coverage; it does not yet enforce retrieval or generation benchmark thresholds.
+- Feedback endpoints, route decisions, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Day 37 supplies route inputs only, and Day 34 supplies API CI coverage; neither enforces retrieval or generation benchmark thresholds.
 
 ## Planned Placeholders
 
@@ -431,5 +441,5 @@ The repository contains empty files reserved for later project-plan milestones. 
 
 - configurations: `routed.yaml` and `cached_routed.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
-- tests: `test_cache.py`, `test_eval_gate.py`, and `test_router.py`
-- topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, `routing.md`, and `semantic_cache.md`
+- tests: `test_cache.py` and `test_eval_gate.py`
+- topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, and `semantic_cache.md`

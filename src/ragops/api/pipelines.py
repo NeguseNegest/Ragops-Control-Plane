@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
@@ -11,6 +12,7 @@ from ragops.retrieval.bm25 import load_bm25_index, validate_bm25_index
 from ragops.retrieval.dense import validate_query
 from ragops.retrieval.factory import build_retriever
 from ragops.retrieval.hybrid import configured_qdrant_url, load_hybrid_config
+from ragops.routing.probe import run_initial_retrieval_probe
 from ragops.tracing.store import PipelineIdentity
 
 QueryConfigName = Literal["dense_baseline", "hybrid_rrf", "hybrid_rrf_cross_encoder"]
@@ -164,6 +166,15 @@ class PipelineRuntime:
         except KeyError as error:
             supported = ", ".join(self.available_configs)
             raise ValueError(f"Unsupported query config '{name}'. Choose one of: {supported}.") from error
+
+    def initial_probe(self, query, clock=time.perf_counter):
+        """Run the Day 37 dense top-two probe without selecting a final route."""
+        definition = self.select(DEFAULT_QUERY_CONFIG)
+
+        def retrieve(*, query, top_k, timings):
+            return self.retrieve(definition, query, top_k, timings=timings).chunks
+
+        return run_initial_retrieval_probe(query, retrieve, clock=clock)
 
     def _qdrant_url(self, definition):
         if definition.route == "dense":
