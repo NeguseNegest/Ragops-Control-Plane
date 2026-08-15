@@ -2,7 +2,7 @@
 
 ## Day 34 Goal
 
-The Day 34 gate makes the API request path reproducible in a fresh GitHub Actions runner. It covers `GET /health`, `POST /retrieve`, `POST /query`, and invalid request handling using real production composition while replacing only resources that would otherwise require a network, Docker, or a large model download.
+The API gate makes the request path reproducible in a fresh GitHub Actions runner. Its original Day 34 contract covers `GET /health`, `POST /retrieve`, `POST /query`, and invalid request handling; Day 38 adds `POST /route`. It uses real production composition while replacing only resources that would otherwise require a network, Docker, or a large model download.
 
 ## Test Topology
 
@@ -32,11 +32,12 @@ The end-to-end fixture asserts HTTP payloads and their durable effects:
 
 - health response and trace absence;
 - dense retrieval rank/order, component timing shape, and persisted evidence;
+- routing through the real dense probe, exact FAST decision/reason/execution intent, minimal evidence, timings, and trace absence because no final query is executed;
 - query route/config/version, trace ID header parity, citations, generation-use flags, debug metadata, and template zero-cost semantics;
 - FastAPI 422 behavior for missing fields, invalid `top_k`, unknown configs, and incorrect types; and
 - traced handler-level HTTP 400 behavior for a whitespace query.
 
-The focused target also runs the API-evaluator, existing API, pipeline-runtime, Day 37 routing-probe, generation/cost/provider, trace-context/store, and dense-retrieval regression tests. This preserves failure-path, live-report validation logic, probe-feature validation, and selectable-pipeline coverage that does not need to be duplicated in the small-corpus file.
+The focused target also runs the API-evaluator, existing API, pipeline-runtime, Day 36 router-config/policy validation, Day 37 routing-probe, Day 38 route/reason boundary tests, generation/cost/provider, trace-context/store, and dense-retrieval regression tests. This preserves failure-path, live-report validation logic, threshold/registry/calibration guards, exact inequality/precedence behavior, probe-feature validation, and selectable-pipeline coverage that does not need to be duplicated in the small-corpus file.
 
 ## GitHub Actions Job
 

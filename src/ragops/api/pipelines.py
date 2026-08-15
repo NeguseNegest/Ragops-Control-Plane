@@ -12,7 +12,9 @@ from ragops.retrieval.bm25 import load_bm25_index, validate_bm25_index
 from ragops.retrieval.dense import validate_query
 from ragops.retrieval.factory import build_retriever
 from ragops.retrieval.hybrid import configured_qdrant_url, load_hybrid_config
+from ragops.routing.config import DEFAULT_ROUTER_CONFIG_PATH, RouterConfig, load_router_config
 from ragops.routing.probe import run_initial_retrieval_probe
+from ragops.routing.router import RuleBasedRouter
 from ragops.tracing.store import PipelineIdentity
 
 QueryConfigName = Literal["dense_baseline", "hybrid_rrf", "hybrid_rrf_cross_encoder"]
@@ -134,6 +136,8 @@ class PipelineRuntime:
         reranker_factory=build_cross_encoder_reranker,
         retriever_factory=build_retriever,
         query_embedder=None,
+        router_config=None,
+        router_config_path=DEFAULT_ROUTER_CONFIG_PATH,
     ):
         self.project_root = configured_project_root(project_root)
         configured_paths = dict(DEFAULT_PIPELINE_CONFIG_PATHS if config_paths is None else config_paths)
@@ -143,6 +147,10 @@ class PipelineRuntime:
             name: _load_pipeline_definition(name, configured_paths[name], self.project_root)
             for name in DEFAULT_PIPELINE_CONFIG_PATHS
         }
+        if router_config is None:
+            router_config = load_router_config(_project_path(router_config_path, self.project_root), project_root=self.project_root)
+        self.router_config = router_config if isinstance(router_config, RouterConfig) else RouterConfig.model_validate(router_config)
+        self.router = RuleBasedRouter(self.router_config)
         self.client_factory = client_factory
         self.index_loader = index_loader
         self.index_validator = index_validator
@@ -168,13 +176,17 @@ class PipelineRuntime:
             raise ValueError(f"Unsupported query config '{name}'. Choose one of: {supported}.") from error
 
     def initial_probe(self, query, clock=time.perf_counter):
-        """Run the Day 37 dense top-two probe without selecting a final route."""
-        definition = self.select(DEFAULT_QUERY_CONFIG)
+        """Run the Day 37 configured dense probe without selecting a final route."""
+        definition = self.select(self.router_config.probe.pipeline_config)
 
         def retrieve(*, query, top_k, timings):
             return self.retrieve(definition, query, top_k, timings=timings).chunks
 
-        return run_initial_retrieval_probe(query, retrieve, clock=clock)
+        return run_initial_retrieval_probe(query, retrieve, top_k=self.router_config.probe.top_k, clock=clock)
+
+    def route_query(self, query, clock=time.perf_counter):
+        """Run the configured initial probe and return the Day 38 route decision."""
+        return self.router.select_probe(self.initial_probe(query, clock=clock))
 
     def _qdrant_url(self, definition):
         if definition.route == "dense":

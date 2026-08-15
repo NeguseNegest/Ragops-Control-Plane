@@ -1,0 +1,78 @@
+schema_version: 1
+name: rule_router
+version: 0.1.0
+status: draft
+feature_schema_version: 1
+
+# Conditions are evaluated in this exact order. STANDARD is the fallback.
+decision_order:
+  - NO_ANSWER
+  - CAREFUL
+  - FAST
+  - STANDARD
+
+probe:
+  pipeline_config: dense_baseline
+  top_k: 2
+
+thresholds:
+  no_answer:
+    on_empty_results: true
+    # Deliberately below the minimum top score in the 45 supported questions.
+    top_score_below: 0.25
+
+  careful:
+    # CAREFUL matches when any condition is true.
+    top_score_below: 0.50
+    on_missing_score_gap: true
+    score_gap_below: 0.01
+    token_count_above: 20
+    complexity_marker_count_at_least: 1
+    clause_marker_count_at_least: 3
+    long_token_ratio_at_least: 0.40
+
+  fast:
+    # FAST matches only when every condition is true.
+    top_score_at_least: 0.72
+    score_gap_at_least: 0.05
+    token_count_at_most: 12
+    complexity_marker_count_at_most: 0
+    clause_marker_count_at_most: 1
+    long_token_ratio_at_most: 0.30
+
+routes:
+  fast:
+    pipeline_config: dense_baseline
+    allowed_pipeline_statuses: [approved]
+    maximum_top_k: 2
+    reuse_probe: true
+    generate_answer: true
+
+  standard:
+    pipeline_config: dense_baseline
+    allowed_pipeline_statuses: [approved]
+    maximum_top_k: 10
+    reuse_probe: false
+    generate_answer: true
+
+  careful:
+    pipeline_config: hybrid_rrf_cross_encoder
+    allowed_pipeline_statuses: [evaluated, approved]
+    maximum_top_k: 5
+    reuse_probe: false
+    generate_answer: true
+
+  no_answer:
+    pipeline_config: null
+    maximum_top_k: 0
+    reuse_probe: false
+    generate_answer: false
+    response_mode: refusal
+
+calibration:
+  source_report: reports/evaluations/dense_baseline.json
+  source_run_name: dense_baseline
+  question_count: 45
+  # The current labels contain supported questions only. Day 39 must add and
+  # calibrate unsupported examples before the refusal policy can be approved.
+  unsupported_question_count: 0

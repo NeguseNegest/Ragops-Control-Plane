@@ -13,9 +13,10 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
 - An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
 - A live integration-review workflow that evaluates all verified dense questions through HTTP, requires offline/API ranking parity, cross-checks response traces in SQLite, and verifies the complete retrieval evidence suite in MLflow.
-- A route-agnostic initial-probe workflow that performs dense top-two retrieval and emits schema-versioned confidence, query-length, and lexical-complexity features for the future deterministic router.
+- A validated draft router-design workflow that binds ordered FAST/STANDARD/CAREFUL/NO_ANSWER thresholds to versioned feature inputs, calibration evidence, execution intent, and eligible pipeline lifecycle states.
+- A routing workflow that performs the configured dense probe (currently top two), emits schema-versioned confidence/query features, deterministically selects FAST/STANDARD/CAREFUL/NO_ANSWER with stable reasons, and exposes a decision-only `/route` endpoint.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, and the Day 37 initial retrieval probe are implemented. Day 36's policy/config design was skipped; route decisions, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, and the Day 38 deterministic selector are implemented. Automatically executing decisions, refusal behavior, caching, canary gates, failure mining, monitoring, evaluation gates, and persisted cost accounting remain planned.
 
 ## System Diagram
 
@@ -50,13 +51,17 @@ flowchart LR
         API -->|"JSON + trace / route / cost / timings"| Streamlit
     end
 
-    subgraph RoutingProbe[Day 37 route feature path]
+    subgraph RoutingProbe[Day 36-38 decision path]
+        RouterConfig["routed.yaml\nDay 36 draft policy"] --> ProbeDense
         ProbeQuery[Query] --> Lexical[Length + lexical features]
         ProbeQuery --> ProbeDense[Dense top 2]
         ProbeDense --> Confidence[Top score + score gap]
         Lexical --> RouterFeatures[InitialRetrievalFeatures v1]
         Confidence --> RouterFeatures
-        RouterFeatures --> FutureRouter[Future rule-based router]
+        RouterConfig --> Router[Deterministic rule evaluator]
+        RouterFeatures --> Router
+        Router --> RouteDecision[Route + reasons + execution intent]
+        RouteDecision -->|"POST /route; no dispatch"| API
     end
 
     subgraph Hybrid[Offline hybrid CLI]
@@ -136,10 +141,11 @@ flowchart LR
 | Trace store | `src/ragops/tracing/store.py`, `scripts/init_trace_store.py` | Validate and migrate SQLite schema state; atomically persist requests with ordered evidence; and store feedback against existing trace IDs. |
 | Trace context | `src/ragops/tracing/context.py` | Measure request stages with a monotonic clock, retain failed-stage latency, validate finite values, and produce the stable API/storage timing shape. |
 | Query pipeline runtime | `src/ragops/api/pipelines.py` | Validate the three online configs, select exact route identity, lazily cache BM25/cross-encoder resources, create request-scoped Qdrant clients, and translate initialization/execution failures. |
+| Routing policy, probe, and selector | `src/ragops/routing` | Validate the versioned policy and probe evidence, emit schema-v1 confidence/query features, and deterministically return a route, stable reasons, and execution intent. |
 | Generation cost | `src/ragops/generation/cost.py` | Preserve explicit zero, configured token estimate, and unavailable cost states without hard-coding volatile provider prices. |
 | LLM judge | `src/ragops/evaluation/llm_judge.py`, `scripts/judge_answers.py` | Select a deterministic query-type mix, retrieve and generate answers, apply strict faithfulness/relevance/refusal rubrics, and persist evidence-rich judgments. |
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
-| API | `src/ragops/app.py` | Expose health, retrieval, and production query endpoints; select configs; translate stage-aware errors; return trace/route/debug/cost/timing data; and persist matching success/error traces before returning. |
+| API | `src/ragops/app.py` | Expose health, retrieval, decision-only routing, and production query endpoints; select configs; translate stage-aware errors; return trace/route/debug/cost/timing data; and persist matching `/retrieve` and `/query` traces before returning. |
 | API integration suite | `tests/test_api_integration.py`, `configs/ci_small.yaml` | Seed in-memory Qdrant from a checked-in corpus, inject deterministic query embeddings, use isolated SQLite state, and verify complete HTTP/storage behavior without external services. |
 | API CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt` | Lint and run the focused offline API suite on Python 3.12 with only the dependencies needed by that path. |
 | Live API evaluator | `src/ragops/evaluation/api_runner.py`, `scripts/evaluate_api.py` | Evaluate verified labels through HTTP, validate the complete response contract, compare exact rankings with offline evidence, cross-check SQLite rows, and verify live MLflow evidence. |
@@ -382,7 +388,7 @@ Raw documents and processed embedding JSONL are intentionally ignored by Git. Th
 | Qdrant gRPC | `127.0.0.1:6334` | Exposed but not used by the current Python path. |
 | MLflow | `http://127.0.0.1:5000` | Stores retrieval evaluation runs and version/status tags; it is not used by the online request path. |
 | SQLite traces | `data/traces/ragops_traces.sqlite3` | Stores accepted `/retrieve` and `/query` attempts plus ranked evidence and feedback; Compose persists it in `ragops_trace_data`. |
-| FastAPI | `http://127.0.0.1:8000` | Provides `/health`, `/retrieve`, `/query`, and `/docs`. |
+| FastAPI | `http://127.0.0.1:8000` | Provides `/health`, `/retrieve`, `/route`, `/query`, and `/docs`. |
 | Streamlit | `http://localhost:8501` | Calls FastAPI using `RAGOPS_API_URL`. |
 
 When FastAPI runs on the host, leave `QDRANT_URL` unset or set it to `http://127.0.0.1:6333`. Docker Compose overrides it with `http://qdrant:6333` for the API container. Host-run evaluation commands use `http://127.0.0.1:5000` for MLflow; another Compose service would use `http://mlflow:5000`. Streamlit defaults to `http://127.0.0.1:8000`; override `RAGOPS_API_URL` when the API is elsewhere.
@@ -415,12 +421,13 @@ Both provider credentials may be configured simultaneously, but the online API u
 - A selected pipeline that fails while retrieving returns HTTP 503 with `Unable to retrieve chunks with the selected pipeline.`
 - Generation failures return HTTP 503 with `Unable to generate answer.`
 - Trace persistence failures return HTTP 503, including when the underlying retrieval/generation work succeeded.
+- `/route` returns HTTP 400 for query validation and stable HTTP 503 details for probe resource/execution failures; it does not create a `/query` trace.
 - Streamlit converts connection failures and API error details into readable page messages.
 - Qdrant clients are closed after both successful and failed retrieval calls.
 
 ## Current Limitations
 
-- `/query` selection is explicit rather than rule-based. Day 37 exposes structured probe features through Python/CLI only; it does not choose or expose an automatic API route. The rejected `hybrid_rrf` config remains executable for controlled comparison and exposes that status in debug mode; selection is not promotion.
+- `/route` returns a deterministic rule-based decision, but `/query` selection is still explicit and does not dispatch from that decision. The rejected `hybrid_rrf` config remains executable for controlled comparison and exposes that status in debug mode; selection is not promotion.
 - The `production` registry alias documents the selected online version but does not dynamically configure or deploy the API; deployment integration is intentionally not claimed by Day 30.
 - The cross-encoder has the highest measured MRR@5 on the current labels, but its warmed stage averages about 4.27 seconds per query. It is available only through explicit config selection and should remain non-default until latency is reduced or routing limits its use.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
@@ -433,13 +440,13 @@ Both provider credentials may be configured simultaneously, but the online API u
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
 - The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
-- Feedback endpoints, route decisions, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Day 37 supplies route inputs only, and Day 34 supplies API CI coverage; neither enforces retrieval or generation benchmark thresholds.
+- Feedback endpoints, automatic route execution, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Days 36–38 supply a draft policy, route inputs, and decision output, and Day 34 supplies API CI coverage; none yet enforce retrieval or generation benchmark thresholds online.
 
 ## Planned Placeholders
 
 The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
 
-- configurations: `routed.yaml` and `cached_routed.yaml`
+- configurations: `cached_routed.yaml`
 - scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
 - tests: `test_cache.py` and `test_eval_gate.py`
 - topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, and `semantic_cache.md`

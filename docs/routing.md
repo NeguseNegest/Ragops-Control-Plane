@@ -1,70 +1,223 @@
 # Query Routing
 
-## Day 37 Status
+## Current Status
 
-Day 37 implements the initial retrieval probe that will supply the rule-based router with corpus-aware confidence and deterministic query features. It does **not** select `FAST`, `STANDARD`, `CAREFUL`, or `NO_ANSWER`; route thresholds and reasons belong to the router-policy milestones.
+Day 36 defines the versioned routing policy, feature inputs, threshold semantics, route execution intent, precedence, calibration provenance, and registry lifecycle guards. Day 37 implements the initial dense probe that creates those inputs. Day 38 now implements the deterministic evaluator that converts them into one route, one primary reason, all matching reason codes, and the configured execution intent.
 
-The boundary is deliberate:
+`POST /route` exposes that decision without executing it. `POST /query` still uses explicit config selection, so Day 38 does not silently change production retrieval/generation behavior. The separate Day 37 diagnostic probe also continues to print `route: null`; use `route-query` or `/route` when a decision is wanted.
 
 ```text
-clean query
-    |
-    +-> lexical/query-length extraction (no model call)
-    |
-    +-> dense top 2 (one embedding + one Qdrant search)
-             |
-             +-> top score
-             +-> top-1 minus top-2 score gap
-             +-> reusable top-two chunks
-                         |
-                         +-> InitialRetrievalFeatures schema v1
-                                      |
-                                      +-> future deterministic router
+query
+  |
+  +-> deterministic lexical and length features
+  |
+  +-> configured dense probe (currently top 2)
+          |
+          +-> result count
+          +-> top score
+          +-> top-1 minus top-2 gap
+          +-> reusable ranked chunks
+                     |
+                     v
+          InitialRetrievalFeatures v1
+                     |
+                     v
+          Day 36 policy in routed.yaml
+                     |
+                     v
+          deterministic RuleBasedRouter
+                     |
+                     v
+          route + reason + execution intent
 ```
 
-`PipelineRuntime.initial_probe()` always uses `dense_baseline`. It requests exactly two results—the minimum depth that can produce both a top score and a score gap—and does not load the BM25 index, run RRF, load the cross-encoder, or call a generation provider. Its request-scoped Qdrant client is closed on both success and failure through the existing runtime lifecycle.
+## Route Definitions
 
-## Structured Feature Contract
+The checked-in policy is `rule_router@0.1.0` with lifecycle status `draft`. It defines four uppercase decision values:
 
-`InitialRetrievalFeatures` is a frozen Pydantic object with `extra="forbid"` and `schema_version: 1`. The future router receives three nested groups:
+| Route | Intended use | Pipeline intent | Output ceiling | Probe reuse | Current lifecycle guard |
+| --- | --- | --- | ---: | --- | --- |
+| `FAST` | Simple query with strong, separated dense evidence | `dense_baseline` | 2 | Yes | `approved` only |
+| `STANDARD` | Normal query in the middle confidence/complexity band | `dense_baseline` | 10 | No | `approved` only |
+| `CAREFUL` | Complex, ambiguous, or low-confidence query | `hybrid_rrf_cross_encoder` | 5 | No | `evaluated` or `approved` |
+| `NO_ANSWER` | No usable evidence or score below the conservative refusal-candidate floor | No retrieval pipeline and no ordinary generation | 0 | No | Refusal mode |
 
-| Group | Field | Meaning |
+`FAST` and `STANDARD` deliberately use the approved dense pipeline. The reranked pipeline has the best measured top-five quality and is the intended `CAREFUL` path, but it is only `evaluated` and has a costly warmed reranker stage. The whole routing policy therefore remains `draft`; defining CAREFUL intent is not the same as promoting or deploying it.
+
+`NO_ANSWER` defines execution intent only. Day 39 still needs the refusal response/prompt, unsupported examples, and correctness measurement.
+
+## Decision Precedence and Thresholds
+
+`configs/routed.yaml` fixes the only allowed schema-v1 decision order:
+
+1. `NO_ANSWER`
+2. `CAREFUL`
+3. `FAST`
+4. `STANDARD` fallback
+
+This order matters. A short query with a low score remains CAREFUL or NO_ANSWER; simplicity cannot override missing corpus evidence.
+
+### NO_ANSWER
+
+The selector chooses `NO_ANSWER` when either condition is true:
+
+- the dense probe returns zero results; or
+- `top_score < 0.25`.
+
+The inequality is strict. A score of exactly `0.25` continues to later rules.
+
+The current 45-question calibration set contains only supported questions, and its minimum top score is `0.3018593`. Setting the draft floor below that observed range prevents the design from knowingly refusing a labeled supported question. It does **not** prove that `0.25` detects unsupported questions; Day 39 must replace or confirm this provisional value using labeled unsupported examples.
+
+### CAREFUL
+
+After NO_ANSWER, `CAREFUL` matches when **any** condition is true:
+
+- only one result was returned, so the score gap is unavailable;
+- `top_score < 0.50`;
+- `score_gap < 0.01`;
+- `token_count > 20`;
+- `complexity_marker_count >= 1`;
+- `clause_marker_count >= 3`; or
+- `long_token_ratio >= 0.40`.
+
+The OR rule treats either weak retrieval evidence or linguistic complexity as enough reason to use the higher-quality path. Missing gap data is explicitly CAREFUL rather than silently ordinary.
+
+### FAST
+
+After NO_ANSWER and CAREFUL, `FAST` matches only when **every** condition is true:
+
+- `top_score >= 0.72`;
+- `score_gap >= 0.05`;
+- `token_count <= 12`;
+- `complexity_marker_count <= 0`;
+- `clause_marker_count <= 1`; and
+- `long_token_ratio <= 0.30`.
+
+The AND rule makes FAST intentionally narrow. `maximum_top_k=2` is no greater than the configured probe depth, and FAST uses the same dense pipeline, so the existing probe chunks can be reused without another retrieval.
+
+### STANDARD
+
+`STANDARD` is the fallback when no earlier rule matches. The schema validators require gaps between the FAST and CAREFUL thresholds—for example, 13–20 tokens occupy a normal band unless another CAREFUL condition matches. This prevents overlapping configuration from making precedence do hidden policy work.
+
+## Deterministic Decision Contract
+
+`RuleBasedRouter.select()` accepts only `InitialRetrievalFeatures` schema version 1 (or data that strictly validates as that schema). It has no network access, model call, clock input, mutable counters, or randomness. Re-evaluating identical features under identical config produces an equal frozen `RouterDecision`.
+
+Every decision contains:
+
+- `router_id` and `router_status`, currently `rule_router@0.1.0` and `draft`;
+- `feature_schema_version` and uppercase `route`;
+- `reason_code`, stable human-readable `reason`, and ordered `matched_reason_codes`;
+- `pipeline_config`, `maximum_top_k`, `reuse_probe`, and `generate_answer`; and
+- `response_mode: refusal` only for `NO_ANSWER`.
+
+The first matching route wins. Within CAREFUL, every matching condition is retained in a stable order, and the first becomes the primary `reason_code`. This gives operators the complete explanation without allowing the explanation order to change the selected route.
+
+| Reason code | Route | Meaning |
 | --- | --- | --- |
-| `query_length` | `character_count` | Length of the stripped query, including internal spaces and punctuation. |
-| `query_length` | `token_count` | Number of normalized Unicode word/number tokens. |
-| `lexical_complexity` | `unique_token_count` | Number of distinct case-folded tokens. |
-| `lexical_complexity` | `unique_token_ratio` | Distinct tokens divided by all tokens. |
-| `lexical_complexity` | `average_token_length` | Mean token length in characters. |
-| `lexical_complexity` | `maximum_token_length` | Longest token length. |
-| `lexical_complexity` | `long_token_count` | Tokens containing at least eight characters. |
-| `lexical_complexity` | `long_token_ratio` | Long tokens divided by all tokens. |
-| `lexical_complexity` | `clause_marker_count` | Count of a checked-in closed set such as `and`, `because`, `if`, and `whereas`. |
-| `lexical_complexity` | `complexity_marker_count` | Count of a checked-in closed set such as `compare`, `explain`, `trade-off`, and `why`. |
-| `retrieval_confidence` | `requested_top_k` | Fixed at two for feature-schema stability. |
-| `retrieval_confidence` | `result_count` | Number of dense results returned, from zero to two. |
-| `retrieval_confidence` | `top_score` | Raw score of rank one, or `null` when the corpus returned no result. |
-| `retrieval_confidence` | `score_gap` | Rank-one score minus rank-two score, or `null` with fewer than two results. |
+| `empty_probe` | `NO_ANSWER` | Dense retrieval returned no evidence |
+| `top_score_below_no_answer_threshold` | `NO_ANSWER` | Rank-one score is below the refusal-candidate floor |
+| `missing_score_gap` | `CAREFUL` | Only one dense result exists |
+| `top_score_below_careful_threshold` | `CAREFUL` | Rank-one score is in the low-confidence band |
+| `score_gap_below_careful_threshold` | `CAREFUL` | Top two results are insufficiently separated |
+| `token_count_above_careful_threshold` | `CAREFUL` | Query is over the configured token threshold |
+| `complexity_marker_count_at_least_careful_threshold` | `CAREFUL` | Query contains a configured complexity marker |
+| `clause_marker_count_at_least_careful_threshold` | `CAREFUL` | Query contains at least the configured clause count |
+| `long_token_ratio_at_least_careful_threshold` | `CAREFUL` | Long-token ratio reaches the configured floor |
+| `fast_conditions_satisfied` | `FAST` | Every FAST confidence and simplicity rule matches |
+| `standard_fallback` | `STANDARD` | No earlier route matches and at least one FAST rule fails |
 
-Scores remain raw dense cosine-search outputs. Day 37 does not convert them to probabilities or label a score as “high confidence.” Threshold calibration must use observed corpus scores rather than inventing a universal interpretation.
+`RouterDecision` rejects mismatched reason text, duplicate/misordered reason codes, a retrieval pipeline attached to `NO_ANSWER`, a refusal response attached to a retrieval route, or a retrieval route without positive output depth and generation intent. These checks prevent downstream code from receiving a route label whose execution fields say something else.
 
-`InitialProbeResult` also retains the two normalized chunks. This allows a future `FAST` path to reuse the probe evidence instead of immediately repeating the same dense search. Probe timings (`total_ms`, `embedding_ms`, and `dense_ms`) are diagnostic fields kept outside the router feature object, so latency cannot accidentally influence route selection without an explicit schema change.
+## Feature Contract
 
-## Validation and Edge Cases
+`InitialRetrievalFeatures` is a frozen Pydantic object with `extra="forbid"` and `schema_version: 1`.
 
-The probe validates its evidence before handing it to routing logic:
+| Group | Field | Meaning | Decision-active in v0.1.0 |
+| --- | --- | --- | --- |
+| `query_length` | `character_count` | Stripped query length including internal whitespace and punctuation | No; retained for analysis |
+| `query_length` | `token_count` | Normalized Unicode word/number token count | Yes |
+| `lexical_complexity` | `unique_token_count` | Distinct case-folded tokens | No; retained for analysis |
+| `lexical_complexity` | `unique_token_ratio` | Distinct tokens divided by total tokens | No; retained for analysis |
+| `lexical_complexity` | `average_token_length` | Mean token length | No; retained for analysis |
+| `lexical_complexity` | `maximum_token_length` | Longest token length | No; retained for analysis |
+| `lexical_complexity` | `long_token_count` | Tokens with at least eight characters | No; ratio is used |
+| `lexical_complexity` | `long_token_ratio` | Long tokens divided by total tokens | Yes |
+| `lexical_complexity` | `clause_marker_count` | Checked-in terms such as `and`, `because`, `if`, and `whereas` | Yes |
+| `lexical_complexity` | `complexity_marker_count` | Checked-in terms such as `compare`, `explain`, `trade-off`, and `why` | Yes |
+| `retrieval_confidence` | `requested_top_k` | Probe depth loaded from router config | Contract/provenance |
+| `retrieval_confidence` | `result_count` | Dense results returned | Yes for empty/missing-gap behavior |
+| `retrieval_confidence` | `top_score` | Raw rank-one dense score | Yes |
+| `retrieval_confidence` | `score_gap` | Rank-one score minus rank-two score | Yes |
 
-- the query is stripped and must contain at least one Unicode word or number token;
-- no more than two results may be returned;
-- ranks must be exactly one-based and contiguous;
-- chunk IDs must be unique;
-- scores must be finite and ordered from highest to lowest;
-- zero results produce `top_score: null` and `score_gap: null`;
-- one result produces a top score but no fabricated gap; and
-- two results require both a top score and a non-negative gap.
+Unused schema-v1 fields remain available for analysis without affecting decisions. Turning one into a threshold requires an explicit config/version change.
 
-Negative top scores are valid because a low-similarity corpus match can still be the highest result. They are preserved for later `NO_ANSWER` threshold design.
+Scores remain raw cosine-search outputs, not probabilities. Negative finite top scores are valid. The score gap is always computed from ranks one and two even when a configured probe depth greater than two returns additional evidence.
 
-## Run the Probe
+## Initial Probe Configuration and Validation
+
+Day 37 no longer owns a hard-coded depth. `PipelineRuntime` loads `configs/routed.yaml` during initialization, validates it, selects `probe.pipeline_config`, and passes `probe.top_k` into `run_initial_retrieval_probe`. Schema version 1 allows a depth from two through five; the current policy uses exactly two because that is the minimum that yields a gap.
+
+The probe remains cheap relative to the other routes:
+
+- one query embedding;
+- one dense Qdrant search;
+- no BM25 index load;
+- no RRF;
+- no cross-encoder; and
+- no generation call.
+
+It validates that returned evidence does not exceed configured depth, ranks are one-based and contiguous, IDs are unique, and scores are finite and descending. Zero results have no score or gap. One result has a top score but no gap. Two or more results require both values.
+
+`InitialProbeResult` retains the normalized chunks for possible FAST reuse. Diagnostic `total_ms`, `embedding_ms`, and `dense_ms` values are kept outside the router feature object so latency cannot accidentally affect decisions.
+
+## Calibration Evidence and Limitations
+
+The draft thresholds reference `reports/evaluations/dense_baseline.json` and the validated 45-question set. `make validate-router-config` recomputes the recorded confidence range and checks route pipeline references/statuses against `reports/pipeline_registry.json`:
+
+| Statistic | Minimum | Median | Maximum |
+| --- | ---: | ---: | ---: |
+| Dense top score | 0.3018593 | 0.6597541 | 0.8521882 |
+| Top-two score gap | 0.0003204 | 0.0299468 | 0.1451546 |
+
+Applying the documented conditions to those 45 supported questions as a design preview yields:
+
+| Draft route | Questions | Dense Hit@1 | Dense Hit@5 | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `NO_ANSWER` | 0 | 0 | 0 | Expected because unsupported examples are absent and the floor is below the supported range |
+| `CAREFUL` | 22 | 5 | 9 | Hard/ambiguous cohort; these dense outcomes do not predict reranker outcomes |
+| `FAST` | 2 | 2 | 2 | Narrow 2/2 observation, far too small to claim general precision |
+| `STANDARD` | 21 | 5 | 9 | Middle band retained on the approved production dense pipeline |
+
+These counts are descriptive, not a route-quality benchmark. The 45 labels are source-derived, contain no unsupported examples, and dense score/gap distributions overlap heavily between hits and misses. No universal semantic-confidence claim is made.
+
+The thresholds must remain `draft` until later work adds route-level latency/quality measurement, unsupported-query calibration, regression examples near every boundary, and review of the expensive CAREFUL traffic share.
+
+## Configuration Safety
+
+`ragops.routing.config` rejects:
+
+- missing, empty, malformed, or non-mapping YAML;
+- unknown keys;
+- unsupported schema or feature-schema versions;
+- invalid semantic versions or router names;
+- a decision order other than NO_ANSWER → CAREFUL → FAST → STANDARD;
+- overlapping score, gap, length, marker, or long-token bands;
+- FAST probe reuse with a different pipeline or output depth above the probe depth;
+- STANDARD/CAREFUL probe reuse in schema version 1;
+- duplicate or unsafe lifecycle-status lists;
+- route references missing from the pipeline registry;
+- a current pipeline status not allowed by its route; and
+- FAST/STANDARD references that diverge from the registry production alias or a CAREFUL reference that diverges from the candidate alias;
+- missing/stale calibration report identity, question count, or score shape.
+
+Validate all checked-in relationships with:
+
+```bash
+make validate-router-config
+```
+
+## Run and Test Routing
 
 With Qdrant running and the embedding model available locally:
 
@@ -72,24 +225,36 @@ With Qdrant running and the embedding model available locally:
 make probe-query ROUTER_QUERY="What is FastAPI?"
 ```
 
-The command prints the feature object, chunk IDs/scores, and timings. It deliberately prints `route: null` and `route_reason: null`, preventing a Day 37 diagnostic from being mistaken for an implemented router decision.
+The adjusted Day 37 live verification loaded probe depth two from `routed.yaml` and returned the same two corpus chunks as the original run: top score `0.66855043`, second score `0.65163970`, and gap `0.01691073`. A fresh host process measured about 26.92 seconds in model initialization/embedding and 18.28 ms in dense search. Cold initialization varies and is not a routing threshold or steady-state benchmark.
 
-The recorded Day 37 smoke query returned two real corpus chunks with `top_score=0.66855043` and `score_gap=0.01691073`. The new host process spent about 39.63 seconds initializing the cached embedding model, while the Qdrant dense-search stage took about 19.59 ms. These are smoke-test observations, not routing thresholds or a latency benchmark.
+The probe command deliberately returns `route: null` and `route_reason: null` because it is the Day 37 feature diagnostic. Run the Day 38 decision command with:
 
-Run focused tests with:
+```bash
+make route-query ROUTER_QUERY="What is FastAPI?"
+```
+
+The route report omits document text and returns the policy identity, route, primary and matching reasons, execution intent, exact features, probe chunk IDs/scores, and probe timings.
+
+The Day 38 live CLI smoke check used the same local Qdrant corpus and offline model cache as Day 37. `What is FastAPI?` returned the same two chunks/scores and selected `STANDARD` with `standard_fallback`: its `0.66855043` top score was safely above CAREFUL's `0.50` floor, its `0.01691073` gap was above CAREFUL's `0.01` floor, and its simple three-token query had no complexity match, but the top score was below FAST's `0.72` requirement. The cold process measured `17619.20 ms` total, including `17337.97 ms` embedding/model initialization and `25.64 ms` dense search; this is smoke evidence, not steady-state performance.
+
+The equivalent HTTP diagnostic is:
+
+```bash
+curl -X POST http://127.0.0.1:8000/route \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"What is FastAPI?"}'
+```
+
+`POST /route` runs the real configured dense probe and returns `decision`, `features`, minimal `probe_chunks` (`chunk_id`, `score`, `rank`), and `probe_timings`. It deliberately does not generate an answer, execute the selected final pipeline, return document text, or create a Day 31 query trace. The trace schema currently represents completed `/retrieve` and `/query` attempts; routing-decision trace persistence remains later execution/observability work.
+
+Invalid queries return HTTP 400. Probe resource failures, retrieval failures, and unexpected routing failures return stable HTTP 503 details without leaking internal exception text. Request bodies rejected before the handler return FastAPI HTTP 422.
+
+Run focused validation with:
 
 ```bash
 make test-routing-probe
 ```
 
-## Remaining Routing Work
+## Remaining Work
 
-Day 37 supplies features only. The following remain unimplemented:
-
-- the `FAST`, `STANDARD`, `CAREFUL`, and `NO_ANSWER` decision policy;
-- calibrated score, gap, length, and complexity thresholds;
-- the non-empty `configs/routed.yaml` contract;
-- automatic routing in `POST /query` and response/trace route reasons; and
-- unsupported-query refusal evaluation.
-
-Because Day 36 was skipped in the execution sequence, its documented policy/config acceptance criterion still needs to be completed before the Day 38 rule-based router can be implemented soundly.
+Day 39 must implement actual refusal behavior and recalibrate NO_ANSWER using labeled unsupported examples. Later routing execution work must connect decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. Until then, `/route` is a decision-only surface and `/query` remains explicitly selected; the API is not yet automatically routed or refusal-capable.

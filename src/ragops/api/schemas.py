@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ragops.api.pipelines import QueryConfigName, QueryRoute
 from ragops.pipeline_registry import PipelineStatus, PipelineVersion
+from ragops.routing.probe import InitialRetrievalFeatures, ProbeTimings
+from ragops.routing.router import RouterDecision
 from ragops.tracing.context import ComponentLatencies
 
 
@@ -36,6 +38,30 @@ class RetrieveResponse(BaseModel):
     chunks: list[RetrievedChunkResponse]
     latency_ms: float
     component_latencies: ComponentLatencies
+
+
+class RouteRequest(BaseModel):
+    """Request body for the Day 38 decision-only routing endpoint."""
+
+    query: str = Field(..., description="The user query to probe and classify without executing the selected route.")
+
+
+class RouteProbeChunkResponse(StrictResponseModel):
+    """Minimal dense evidence provenance returned with a route decision."""
+
+    chunk_id: str
+    score: float
+    rank: int = Field(gt=0)
+
+
+class RouteResponse(StrictResponseModel):
+    """Deterministic route decision plus the exact feature evidence used."""
+
+    query: str
+    decision: RouterDecision
+    features: InitialRetrievalFeatures
+    probe_chunks: list[RouteProbeChunkResponse]
+    probe_timings: ProbeTimings
 
 
 class QueryRequest(BaseModel):

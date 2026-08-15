@@ -7,11 +7,12 @@ RERANK_QUERY ?= What operation is used to quantify the similarity between the qu
 ROUTER_QUERY ?= What is FastAPI?
 MLFLOW_CONFIG ?= configs/mlflow.yaml
 PIPELINE_REGISTRY_CONFIG ?= configs/pipeline_registry.yaml
+ROUTER_CONFIG ?= configs/routed.yaml
 TRACE_DB_PATH ?= data/traces/ragops_traces.sqlite3
 API_URL ?= http://127.0.0.1:8000
 API_TRACE_DB_PATH ?= $(TRACE_DB_PATH)
 
-.PHONY: setup lint test test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-routing-probe test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api probe-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-routing-probe test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry validate-router-config init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api probe-query route-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -87,6 +88,9 @@ validate-pipeline-registry:
 build-pipeline-registry:
 	PYTHONPATH=src $(BIN)/python scripts/build_pipeline_registry.py --config $(PIPELINE_REGISTRY_CONFIG) --overwrite
 
+validate-router-config:
+	PYTHONPATH=src $(BIN)/python scripts/validate_router_config.py --config $(ROUTER_CONFIG) --registry reports/pipeline_registry.json
+
 init-trace-store:
 	PYTHONPATH=src $(BIN)/python scripts/init_trace_store.py --db-path $(TRACE_DB_PATH)
 
@@ -104,6 +108,9 @@ evaluate-api:
 
 probe-query:
 	PYTHONPATH=src $(BIN)/python scripts/probe_query.py --query "$(ROUTER_QUERY)"
+
+route-query:
+	PYTHONPATH=src $(BIN)/python scripts/route_query.py --query "$(ROUTER_QUERY)"
 
 validate-generation-judge:
 	PYTHONPATH=src $(BIN)/python scripts/judge_answers.py --config configs/generation_judge.yaml --validate-only

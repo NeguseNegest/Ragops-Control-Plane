@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from ragops.retrieval.dense import RetrievedChunk, validate_query
 
 INITIAL_PROBE_TOP_K = 2
+MAX_INITIAL_PROBE_TOP_K = 5
 LONG_TOKEN_MIN_CHARACTERS = 8
 FEATURE_SCHEMA_VERSION = 1
 
@@ -87,10 +88,10 @@ class LexicalComplexityFeatures(StrictFeatureModel):
 
 
 class RetrievalConfidenceFeatures(StrictFeatureModel):
-    """Confidence signals extracted from the ordered dense top-two results."""
+    """Confidence signals extracted from the ordered dense probe results."""
 
-    requested_top_k: Literal[2] = INITIAL_PROBE_TOP_K
-    result_count: int = Field(ge=0, le=INITIAL_PROBE_TOP_K)
+    requested_top_k: int = Field(default=INITIAL_PROBE_TOP_K, ge=2, le=MAX_INITIAL_PROBE_TOP_K)
+    result_count: int = Field(ge=0, le=MAX_INITIAL_PROBE_TOP_K)
     top_score: float | None = None
     score_gap: float | None = Field(default=None, ge=0)
 
@@ -103,6 +104,8 @@ class RetrievalConfidenceFeatures(StrictFeatureModel):
 
     @model_validator(mode="after")
     def require_score_shape_for_result_count(self):
+        if self.result_count > self.requested_top_k:
+            raise ValueError("Probe result count cannot exceed requested_top_k.")
         if self.result_count == 0 and (self.top_score is not None or self.score_gap is not None):
             raise ValueError("An empty probe cannot contain a top score or score gap.")
         if self.result_count == 1 and (self.top_score is None or self.score_gap is not None):
@@ -172,10 +175,18 @@ def extract_lexical_complexity(query):
     )
 
 
-def _validated_probe_chunks(chunks):
+def validate_probe_top_k(top_k):
+    """Require a cheap depth that can still produce a top-two score gap."""
+    if isinstance(top_k, bool) or not isinstance(top_k, int) or not 2 <= top_k <= MAX_INITIAL_PROBE_TOP_K:
+        raise ValueError(f"Initial probe top_k must be an integer from 2 to {MAX_INITIAL_PROBE_TOP_K}.")
+    return top_k
+
+
+def _validated_probe_chunks(chunks, top_k=INITIAL_PROBE_TOP_K):
+    top_k = validate_probe_top_k(top_k)
     chunks = tuple(chunk if isinstance(chunk, RetrievedChunk) else RetrievedChunk.model_validate(chunk) for chunk in chunks)
-    if len(chunks) > INITIAL_PROBE_TOP_K:
-        raise ValueError(f"Initial dense probe returned {len(chunks)} results; expected at most {INITIAL_PROBE_TOP_K}.")
+    if len(chunks) > top_k:
+        raise ValueError(f"Initial dense probe returned {len(chunks)} results; expected at most {top_k}.")
 
     expected_ranks = list(range(1, len(chunks) + 1))
     ranks = [chunk.rank for chunk in chunks]
@@ -194,11 +205,12 @@ def _validated_probe_chunks(chunks):
     return chunks
 
 
-def build_initial_retrieval_features(query, chunks):
+def build_initial_retrieval_features(query, chunks, requested_top_k=INITIAL_PROBE_TOP_K):
     """Build the router feature contract from a cleaned query and dense evidence."""
     query = validate_query(query)
+    requested_top_k = validate_probe_top_k(requested_top_k)
     tokens = tokenize_query(query)
-    chunks = _validated_probe_chunks(chunks)
+    chunks = _validated_probe_chunks(chunks, requested_top_k)
     scores = [chunk.score for chunk in chunks]
     top_score = scores[0] if scores else None
     score_gap = scores[0] - scores[1] if len(scores) >= 2 else None
@@ -206,6 +218,7 @@ def build_initial_retrieval_features(query, chunks):
         query_length=QueryLengthFeatures(character_count=len(query), token_count=len(tokens)),
         lexical_complexity=extract_lexical_complexity(query),
         retrieval_confidence=RetrievalConfidenceFeatures(
+            requested_top_k=requested_top_k,
             result_count=len(chunks),
             top_score=top_score,
             score_gap=score_gap,
@@ -228,10 +241,12 @@ def run_initial_retrieval_probe(
     query: str,
     retrieve: Callable[..., Sequence[RetrievedChunk]],
     *,
+    top_k: int = INITIAL_PROBE_TOP_K,
     clock: Callable[[], float] = time.perf_counter,
 ):
-    """Run dense top-two retrieval once and return validated reusable router input."""
+    """Run one cheap dense retrieval and return validated reusable router input."""
     query = validate_query(query)
+    top_k = validate_probe_top_k(top_k)
     if not callable(retrieve):
         raise ValueError("retrieve must be callable.")
     if not callable(clock):
@@ -239,12 +254,13 @@ def run_initial_retrieval_probe(
 
     timings = {}
     started_at = clock()
-    chunks = retrieve(query=query, top_k=INITIAL_PROBE_TOP_K, timings=timings)
+    chunks = retrieve(query=query, top_k=top_k, timings=timings)
+    chunks = _validated_probe_chunks(chunks, top_k)
+    features = build_initial_retrieval_features(query, chunks, requested_top_k=top_k)
     total_ms = max(0.0, (clock() - started_at) * 1000)
-    chunks = _validated_probe_chunks(chunks)
     return InitialProbeResult(
         query=query,
-        features=build_initial_retrieval_features(query, chunks),
+        features=features,
         chunks=chunks,
         timings=ProbeTimings(
             total_ms=total_ms,

@@ -6,6 +6,9 @@ from ragops import __version__
 from ragops.api.pipelines import PipelineExecutionError, PipelineResourceError
 from ragops.generation.client import GenerationResult
 from ragops.retrieval.dense import RetrievedChunk
+from ragops.routing.config import load_router_config
+from ragops.routing.probe import run_initial_retrieval_probe
+from ragops.routing.router import RuleBasedRouter
 from ragops.tracing.store import PipelineIdentity
 
 
@@ -68,6 +71,7 @@ class RecordingPipelineRuntime:
         self.chunks = list(chunks if chunks is not None else [make_chunk()])
         self.error = error
         self.calls = []
+        self.route_calls = []
 
     def select(self, name):
         return FakeDefinition(name, self.routes[name])
@@ -88,6 +92,17 @@ class RecordingPipelineRuntime:
         if definition.route == "reranked":
             cache_hits["reranker_model"] = True
         return FakeExecution(definition, self.chunks, cache_hits)
+
+    def route_query(self, query):
+        self.route_calls.append(query)
+        if self.error is not None:
+            raise self.error
+
+        def retrieve(**kwargs):
+            return self.chunks[:2]
+
+        probe = run_initial_retrieval_probe(query, retrieve, clock=lambda: 1.0)
+        return RuleBasedRouter(load_router_config("configs/routed.yaml")).select_probe(probe)
 
 
 def make_chunk():
@@ -132,6 +147,48 @@ def test_docs_are_available():
 
     assert response.status_code == 200
     assert "Swagger UI" in response.text
+
+
+def test_route_returns_decision_reason_features_and_probe_evidence_without_a_trace():
+    trace_store = RecordingTraceStore()
+    pipeline_runtime = RecordingPipelineRuntime()
+    client = make_client(trace_store, pipeline_runtime=pipeline_runtime)
+
+    response = client.post("/route", json={"query": "What is FastAPI?"})
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["query"] == "What is FastAPI?"
+    assert body["decision"]["route"] == "CAREFUL"
+    assert body["decision"]["reason_code"] == "missing_score_gap"
+    assert body["decision"]["reason"]
+    assert body["decision"]["pipeline_config"] == "hybrid_rrf_cross_encoder"
+    assert body["features"]["retrieval_confidence"]["result_count"] == 1
+    assert body["probe_chunks"] == [{"chunk_id": "chunk-1", "score": 0.91, "rank": 1}]
+    assert body["probe_timings"]["total_ms"] == 0.0
+    assert pipeline_runtime.route_calls == ["What is FastAPI?"]
+    assert trace_store.calls == []
+    assert "text" not in body["probe_chunks"][0]
+
+
+@pytest.mark.parametrize(
+    ("error", "status_code", "detail"),
+    [
+        (ValueError("query must not be empty"), 400, "query must not be empty"),
+        (PipelineResourceError("qdrant unavailable"), 503, "Routing probe is unavailable."),
+        (PipelineExecutionError("search failed"), 503, "Unable to run the routing probe."),
+        (RuntimeError("unexpected"), 503, "Unable to route query."),
+    ],
+)
+def test_route_maps_probe_failures_without_creating_query_traces(error, status_code, detail):
+    trace_store = RecordingTraceStore()
+    client = make_client(trace_store, pipeline_runtime=RecordingPipelineRuntime(error=error))
+
+    response = client.post("/route", json={"query": "What is FastAPI?"})
+
+    assert response.status_code == status_code
+    assert response.json() == {"detail": detail}
+    assert trace_store.calls == []
 
 
 def test_create_app_uses_injected_generation_client():

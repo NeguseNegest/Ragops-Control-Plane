@@ -148,8 +148,67 @@ Day 35 adds `scripts/evaluate_api.py` for full-corpus service verification. Unli
 
 When the evaluator can read the API's SQLite path, it verifies the corresponding trace and ordered evidence immediately after each response. It also requires exact top-10 ranking parity with the offline dense report and verifies all four configured MLflow runs unless those checks are explicitly skipped. The default Make target is `make evaluate-api`; `API_URL` and `API_TRACE_DB_PATH` must identify the running service and its database.
 
-## Day 37 Routing-Probe Boundary
+## Day 36–38 Routing Decision API
 
-Day 37 adds a dense top-two probe and structured router features in `ragops.routing`, but does not change the public request or response schema. `POST /query` still requires explicit config selection (or defaults to `dense_baseline`), and its returned `route` still describes the executed retrieval pipeline rather than an automatic routing decision.
+Day 36 defines and validates the draft FAST/STANDARD/CAREFUL/NO_ANSWER policy in `configs/routed.yaml`. Day 37 loads its configured dense probe and emits structured router features. Day 38 deterministically evaluates those inputs and exposes the result through `POST /route`:
 
-Use `make probe-query ROUTER_QUERY="What is FastAPI?"` to inspect the feature contract outside the API. Automatic route selection, route reasons, trace persistence of routing features, and no-answer behavior remain later milestones. See [`routing.md`](routing.md) for the full boundary.
+```json
+{
+  "query": "What is FastAPI?"
+}
+```
+
+The response contains the normalized query, the complete `decision`, the exact `features` used, minimal probe evidence, and probe timing:
+
+```json
+{
+  "query": "What is FastAPI?",
+  "decision": {
+    "router_id": "rule_router@0.1.0",
+    "router_status": "draft",
+    "feature_schema_version": 1,
+    "route": "STANDARD",
+    "reason_code": "standard_fallback",
+    "reason": "The query matches neither the earlier NO_ANSWER/CAREFUL rules nor every FAST condition.",
+    "matched_reason_codes": ["standard_fallback"],
+    "pipeline_config": "dense_baseline",
+    "maximum_top_k": 10,
+    "reuse_probe": false,
+    "generate_answer": true,
+    "response_mode": null
+  },
+  "features": {
+    "schema_version": 1,
+    "query_length": {"character_count": 16, "token_count": 3},
+    "lexical_complexity": {
+      "unique_token_count": 3,
+      "unique_token_ratio": 1.0,
+      "average_token_length": 4.333333333333333,
+      "maximum_token_length": 7,
+      "long_token_count": 0,
+      "long_token_ratio": 0.0,
+      "clause_marker_count": 0,
+      "complexity_marker_count": 0
+    },
+    "retrieval_confidence": {
+      "requested_top_k": 2,
+      "result_count": 2,
+      "top_score": 0.66855043,
+      "score_gap": 0.01691073
+    }
+  },
+  "probe_chunks": [
+    {"chunk_id": "45fca43c-6f25-56b7-a4ce-cf43ce7718a7", "score": 0.66855043, "rank": 1},
+    {"chunk_id": "18b16f8c-b010-5d65-911b-5529df8a4b5d", "score": 0.6516397, "rank": 2}
+  ],
+  "probe_timings": {"total_ms": 17619.19936002232, "embedding_ms": 17337.966794962995, "dense_ms": 25.63913504127413}
+}
+```
+
+The values above come from the recorded Day 38 live CLI smoke query. They demonstrate the contract; cold process/model initialization dominates this one observation and is not a service-level latency claim.
+
+`POST /route` is decision-only: it does not execute the selected final pipeline, generate/refuse an answer, or expose document text. It also does not create a Day 31 query trace because the current trace schema records completed `/retrieve` and `/query` attempts. Invalid queries return HTTP 400; unavailable probe resources or failed probe execution return HTTP 503; malformed request bodies return HTTP 422 before entering the handler.
+
+`POST /query` remains explicitly config-selected (or defaults to `dense_baseline`), and its lower-case `route` still describes the pipeline actually executed. Day 38 therefore exposes automatic classification without silently enabling automatic dispatch. Day 39 still owns actual refusal behavior and unsupported-query calibration.
+
+Use `make validate-router-config`, `make probe-query ROUTER_QUERY="What is FastAPI?"`, and `make route-query ROUTER_QUERY="What is FastAPI?"` to inspect each boundary outside the API. See [`routing.md`](routing.md) for exact precedence, reason codes, threshold semantics, and remaining limitations.

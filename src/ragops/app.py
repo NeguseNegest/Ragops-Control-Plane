@@ -17,6 +17,9 @@ from ragops.api.schemas import (
     RetrievedChunkResponse,
     RetrieveRequest,
     RetrieveResponse,
+    RouteProbeChunkResponse,
+    RouteRequest,
+    RouteResponse,
 )
 from ragops.generation.client import generate_answer
 from ragops.generation.cost import configured_generation_pricing, estimate_generation_cost, generation_model, generation_provider
@@ -247,6 +250,31 @@ def create_app(
             chunks=response_chunks,
             latency_ms=latency_ms,
             component_latencies=component_latencies,
+        )
+
+    @app.post("/route", response_model=RouteResponse)
+    def route(request: RouteRequest):
+        """Probe and classify a query without executing the selected route."""
+        try:
+            result = app.state.pipeline_runtime.route_query(request.query)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        except PipelineResourceError as error:
+            raise HTTPException(status_code=503, detail="Routing probe is unavailable.") from error
+        except PipelineExecutionError as error:
+            raise HTTPException(status_code=503, detail="Unable to run the routing probe.") from error
+        except Exception as error:
+            raise HTTPException(status_code=503, detail="Unable to route query.") from error
+
+        return RouteResponse(
+            query=result.probe.query,
+            decision=result.decision,
+            features=result.probe.features,
+            probe_chunks=[
+                RouteProbeChunkResponse(chunk_id=chunk.chunk_id, score=chunk.score, rank=chunk.rank)
+                for chunk in result.probe.chunks
+            ],
+            probe_timings=result.probe.timings,
         )
 
     @app.post("/query", response_model=QueryResponse)

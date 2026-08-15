@@ -175,6 +175,30 @@ def test_ci_retrieve_uses_real_dense_path_and_persists_ranked_evidence(api_harne
     assert not any(chunk.used_for_generation for chunk in stored_chunks)
 
 
+def test_ci_route_uses_real_probe_and_returns_fast_decision_without_executing_or_tracing_it(api_harness):
+    client, trace_store, config = api_harness
+    query = configured_query(config, "fastapi_validation")
+
+    response = client.post("/route", json={"query": query.query})
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["query"] == query.query
+    assert body["decision"]["router_id"] == "rule_router@0.1.0"
+    assert body["decision"]["router_status"] == "draft"
+    assert body["decision"]["route"] == "FAST"
+    assert body["decision"]["reason_code"] == "fast_conditions_satisfied"
+    assert body["decision"]["pipeline_config"] == "dense_baseline"
+    assert body["decision"]["maximum_top_k"] == 2
+    assert body["decision"]["reuse_probe"] is True
+    assert body["probe_chunks"][0]["chunk_id"] == query.expected_chunk_id
+    assert [chunk["rank"] for chunk in body["probe_chunks"]] == [1, 2]
+    assert body["features"]["retrieval_confidence"]["top_score"] == pytest.approx(1.0)
+    assert body["probe_timings"]["embedding_ms"] is not None
+    assert body["probe_timings"]["dense_ms"] is not None
+    assert trace_store.counts() == {"traces": 0, "retrieved_chunks": 0, "feedback": 0}
+
+
 def test_ci_query_returns_complete_contract_and_matching_trace(api_harness):
     client, trace_store, config = api_harness
     query = configured_query(config, "qdrant_storage")

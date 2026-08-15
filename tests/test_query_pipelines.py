@@ -134,7 +134,7 @@ def test_dense_execution_only_builds_request_scoped_qdrant(monkeypatch):
     assert evidence["built_retrievers"][0][2:] == (None, None)
 
 
-def test_initial_probe_uses_only_dense_top_two_and_closes_its_client(monkeypatch):
+def test_initial_probe_uses_configured_dense_depth_only_and_closes_its_client(monkeypatch):
     runtime, evidence = make_runtime(monkeypatch)
     probe_chunks = [
         RetrievedChunk(
@@ -153,6 +153,14 @@ def test_initial_probe_uses_only_dense_top_two_and_closes_its_client(monkeypatch
             rank=2,
             metadata={},
         ),
+        RetrievedChunk(
+            chunk_id="chunk-3",
+            document_id="document-1",
+            text="Third result",
+            score=0.7,
+            rank=3,
+            metadata={},
+        ),
     ]
     evidence["built_retrievers"].clear()
 
@@ -167,14 +175,49 @@ def test_initial_probe_uses_only_dense_top_two_and_closes_its_client(monkeypatch
         return ProbeRetriever(config.name, evidence["retrieval_calls"])
 
     runtime.retriever_factory = retriever_factory
+    runtime.router_config = runtime.router_config.model_copy(
+        update={"probe": runtime.router_config.probe.model_copy(update={"top_k": 3})}
+    )
     clock_values = iter([1.0, 1.01])
 
     result = runtime.initial_probe("How does retrieval work?", clock=lambda: next(clock_values))
 
     assert result.features.retrieval_confidence.top_score == 0.9
     assert result.features.retrieval_confidence.score_gap == pytest.approx(0.15)
-    assert evidence["retrieval_calls"][0][0:3] == ("dense_baseline", "How does retrieval work?", 2)
+    assert result.features.retrieval_confidence.requested_top_k == 3
+    assert result.features.retrieval_confidence.result_count == 3
+    assert evidence["retrieval_calls"][0][0:3] == ("dense_baseline", "How does retrieval work?", 3)
     assert evidence["built_retrievers"][0][2:] == (None, None)
+    assert evidence["loaded_indexes"] == []
+    assert evidence["loaded_rerankers"] == []
+    assert evidence["clients"][0].closed
+
+
+def test_runtime_route_query_runs_one_probe_and_returns_the_deterministic_decision(monkeypatch):
+    runtime, evidence = make_runtime(monkeypatch)
+    probe_chunks = [
+        RetrievedChunk(chunk_id="chunk-1", document_id="document-1", text="First result", score=0.9, rank=1, metadata={}),
+        RetrievedChunk(chunk_id="chunk-2", document_id="document-1", text="Second result", score=0.8, rank=2, metadata={}),
+    ]
+
+    class ProbeRetriever(FakeRetriever):
+        def retrieve(self, query, top_k, timings):
+            self.calls.append((self.config_name, query, top_k, timings))
+            timings.update({"embedding_ms": 2.0, "dense_ms": 1.0})
+            return probe_chunks
+
+    runtime.retriever_factory = lambda config, client, index, reranker: ProbeRetriever(config.name, evidence["retrieval_calls"])
+
+    result = runtime.route_query("FastAPI basics", clock=lambda: 1.0)
+
+    assert result.probe.chunks == tuple(probe_chunks)
+    assert result.decision.route == "FAST"
+    assert result.decision.reason_code == "fast_conditions_satisfied"
+    assert result.decision.pipeline_config == "dense_baseline"
+    assert result.decision.reuse_probe
+    assert [(name, query, top_k) for name, query, top_k, _ in evidence["retrieval_calls"]] == [
+        ("dense_baseline", "FastAPI basics", 2)
+    ]
     assert evidence["loaded_indexes"] == []
     assert evidence["loaded_rerankers"] == []
     assert evidence["clients"][0].closed

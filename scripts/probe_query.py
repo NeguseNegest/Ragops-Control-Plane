@@ -20,10 +20,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def probe_report(result):
+def probe_report(result, router_config):
     """Return non-document probe evidence suitable for CLI inspection."""
     return {
         "query": result.query,
+        "router_policy": {
+            "router_id": f"{router_config.name}@{router_config.version}",
+            "status": router_config.status,
+            "probe": router_config.probe.model_dump(mode="json"),
+        },
         "features": result.features.model_dump(mode="json"),
         "probe": {
             "chunk_ids": [chunk.chunk_id for chunk in result.chunks],
@@ -39,7 +44,7 @@ def main():
     args = parse_args()
     runtime = PipelineRuntime(project_root=args.project_root)
     result = runtime.initial_probe(args.query)
-    print(json.dumps(probe_report(result), indent=2, sort_keys=True))
+    print(json.dumps(probe_report(result, runtime.router_config), indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
