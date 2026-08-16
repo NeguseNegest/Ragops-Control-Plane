@@ -1,0 +1,38 @@
+schema_version: 1
+name: router_comparison
+version: 0.1.0
+status: evaluated
+mode: artifact_replay
+
+router_config: configs/routed.yaml
+
+inputs:
+  labels_path: data/eval/retrieval_labels.jsonl
+  golden_path: data/eval/golden_qa.jsonl
+  chunks_path: data/processed/chunks.jsonl
+  dense_report_path: reports/evaluations/dense_baseline.json
+  careful_report_path: reports/evaluations/hybrid_rrf_cross_encoder.json
+  no_answer_config_path: configs/no_answer.yaml
+  no_answer_report_path: reports/evaluations/no_answer.json
+  expected_supported_questions: 45
+  expected_unsupported_questions: 12
+
+quality:
+  retrieval_cutoff: 5
+  combined_proxy_definition: supported_hit_or_correct_unsupported_refusal
+
+latency:
+  method: measured_artifact_serial_replay
+  include_cold_start: true
+  probe_proxy: dense_top_10_measurement
+
+cost_projection:
+  provider: openai
+  model: gpt-5-nano
+  model_cost_config: configs/model_costs.yaml
+  token_basis: exact_prompt_plus_verified_reference_answer
+
+output:
+  json_path: reports/evaluations/router_comparison.json
+  csv_path: reports/evaluations/router_comparison.csv
+  markdown_path: reports/week6_router_comparison.md

@@ -16,9 +16,10 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A validated draft router-design workflow that binds ordered FAST/STANDARD/CAREFUL/NO_ANSWER thresholds to versioned feature inputs, calibration evidence, execution intent, and eligible pipeline lifecycle states.
 - A routing workflow that performs the configured dense probe (currently top two), emits schema-versioned confidence/query features, deterministically selects FAST/STANDARD/CAREFUL/NO_ANSWER with stable reasons, and exposes `/route`; NO_ANSWER returns a deterministic corpus-scoped refusal while the other routes remain decision-only.
 - A no-answer evaluation workflow that calibrates a strict score threshold from five unsupported questions, checks it on seven held-out unsupported questions, replays 45 supported-question scores for false-refusal measurement, and writes complete JSON/CSV evidence.
+- A paired router-evaluation workflow that validates and replays fixed FAST, fixed CAREFUL, and routed evidence across supported quality, refusal correctness, measured-artifact latency, and controlled generation-cost projections.
 - A generation-cost workflow that prefers provider usage, deterministically estimates missing prompt/answer tokens, selects exact model rates from a versioned table or explicit override, and returns/persists one provenance-complete cost record.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, and Day 40 per-request generation-cost accounting are implemented. Automatic FAST/STANDARD/CAREFUL execution, caching, canary gates, failure mining, monitoring, evaluation gates, and cost aggregation/budgets remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, and the Day 41 routed-versus-fixed tradeoff evaluation are implemented. Automatic FAST/STANDARD/CAREFUL execution, caching, canary gates, failure mining, monitoring, evaluation gates, and production cost aggregation/budgets remain planned.
 
 ## System Diagram
 
@@ -147,6 +148,7 @@ flowchart LR
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
 | Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | No-answer evaluator | `src/ragops/evaluation/no_answer.py`, `scripts/evaluate_no_answer.py` | Validate reviewed unsupported provenance, derive the score threshold from calibration only, run held-out probes, replay supported evidence, compute refusal/false-refusal metrics, enforce acceptance thresholds, and atomically write JSON/CSV evidence. |
+| Router evaluator | `src/ragops/evaluation/router_comparison.py`, `scripts/evaluate_router.py` | Strictly pair dense/reranked/refusal evidence, recompute current route decisions, build exact controlled prompts, aggregate quality/latency/cost tradeoffs, and atomically write JSON/CSV/Markdown artifacts. |
 | Experiment tracker | `src/ragops/tracking/mlflow.py`, `scripts/log_retrieval_runs.py` | Validate retrieval evidence, flatten configs and metrics, log or import idempotent MLflow runs, upload CSV/JSON/YAML/Markdown artifacts, and verify the four-run acceptance state. |
 | Pipeline registry | `src/ragops/pipeline_registry.py`, `scripts/build_pipeline_registry.py` | Validate semantic versions and lifecycle status, bind configs to common-depth evidence and MLflow identity, compute checksums, enforce alias policy, and atomically generate the registry snapshot. |
 | Trace store | `src/ragops/tracing/store.py`, `scripts/init_trace_store.py` | Validate and migrate SQLite schema state; atomically persist requests with ordered evidence; and store feedback against existing trace IDs. |
@@ -378,6 +380,35 @@ The recorded Day 20 acceptance run completed all 10 questions with mean faithful
 
 Raw documents and processed embedding JSONL are intentionally ignored by Git. Their source URLs, selected paths, snapshot commits, and destination paths are recorded in `data/manifests/source_manifest.json`. Reviewed evaluation JSONL is versioned with the project.
 
+## Day 41 Router Evaluation Flow
+
+Day 41 is an offline control-plane comparison, not a new serving endpoint:
+
+```text
+verified labels + dense top-10 report + reranked top-5 report
+                            |
+Day 39 refusal evidence + current router config
+                            |
+              strict identity/decision pairing
+                            |
+        +-------------------+-------------------+
+        |                   |                   |
+  always FAST         always CAREFUL          routed
+  dense top 2         reranked top 5       selected depth/refusal
+        |                   |                   |
+        +-------------------+-------------------+
+                            |
+     retrieval quality + refusal policy quality
+     + serial measured-artifact latency replay
+     + exact-prompt/reference-answer cost projection
+                            |
+          JSON + 135-row CSV + Markdown report
+```
+
+All three strategies use the same 45 supported questions. The 12 reviewed unsupported questions contribute refusal-policy quality but not fabricated fixed-pipeline retrieval, latency, or generation-cost rows. The latency calculation composes previously measured dense and reranked artifacts serially; the dense top-10 time is a conservative proxy for the top-2 probe. Cost reconstructs the real generation prompt from the selected processed chunks, uses the verified reference answer as a controlled output-length basis, and applies the Day 40 model table without calling a provider.
+
+The current report keeps `rule_router@0.1.0` in draft. Routed reaches 55.56% supported Hit@5, compared with 28.89% for always FAST and 84.44% for always CAREFUL. It cuts average replay latency 46.29% and projected total cost 9.75% versus always CAREFUL, but gives up 28.89 Hit@5 points and falsely refuses 9/45 supported questions. Day 42 owns threshold tuning and the dedicated distribution/hardening work.
+
 ## Online Request Flow
 
 1. A client sends `query`, `top_k`, optional `config`, and optional `debug` to `POST /query`; omitted config selects `dense_baseline`.
@@ -455,7 +486,7 @@ Both provider credentials may be configured simultaneously, but the online API u
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
 - The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
-- Feedback endpoints, automatic non-refusal route execution, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Days 36–40 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, and durable per-query cost, while Day 34 supplies API CI coverage; none yet enforce retrieval/generation benchmark or cost-budget thresholds online.
+- Feedback endpoints, automatic non-refusal route execution, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Days 36–41 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, and an offline fixed-versus-routed tradeoff report, while Day 34 supplies API CI coverage; none yet enforce retrieval/generation benchmark or cost-budget thresholds online.
 
 ## Planned Placeholders
 

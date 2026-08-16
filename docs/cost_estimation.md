@@ -112,4 +112,4 @@ make validate-trace-store
 - The heuristic can differ materially from provider tokenization, especially for non-English text, code, Unicode, and hidden reasoning. Provider-reported usage always takes precedence.
 - Standard text rates exclude caching, batch/flex/priority service classes, tools, search grounding, storage, media, taxes, credits, and negotiated pricing.
 - A response estimate is not an invoice. Reconcile production spend against provider billing exports.
-- Day 40 persists per-request cost but does not yet aggregate cost by route, pipeline, user, or time window. Day 41 can use the durable fields for router tradeoff evaluation.
+- Day 40 persists per-request cost but does not aggregate production cost by route, pipeline, user, or time window. Day 41 reuses the same estimator/table for a controlled offline router projection over exact selected-context prompts and verified reference-answer lengths; that comparison is not observed provider usage or an invoice.

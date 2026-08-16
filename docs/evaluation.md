@@ -2,13 +2,14 @@
 
 ## Scope
 
-The implemented evaluation stack has three distinct layers:
+The implemented evaluation stack has four distinct layers:
 
 1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, Day 29 tracking, and the Day 30 registry) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; records the runs in MLflow; and binds those evidence bundles to versioned pipeline identities.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 3. Refusal evaluation (Day 39) calibrates the NO_ANSWER score threshold from one unsupported split, measures it on a held-out unsupported split, replays supported-query scores to expose false refusals, and requires explicit accuracy/precision checks before writing its report.
+4. Router evaluation (Day 41) replays the same supported questions through always-FAST, always-CAREFUL, and routed strategies, combines that evidence with reviewed unsupported refusal outcomes, and compares quality, serially composed retrieval latency, and a controlled Day 40 generation-cost projection.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, Day 35 proves the dense results survive the complete online HTTP and tracing composition, and Day 39 adds measured no-answer behavior without claiming that a small authored sample is production calibration.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, Day 35 proves the dense results survive the complete online HTTP and tracing composition, Day 39 adds measured no-answer behavior without claiming that a small authored sample is production calibration, and Day 41 makes the router's actual tradeoff explicit without promoting the draft policy.
 
 ## Day 39 refusal evaluation
 
@@ -23,6 +24,32 @@ The recorded run refused 12/12 unsupported questions and 7/7 held-out questions.
 Day 40 does not add a quality benchmark. It makes each successful query's generation-cost evidence explicit and durable so later router comparisons can aggregate comparable records. The response and trace retain exact provider/model, token counts/source/estimator, rate source/table identity, rates, currency, status, and amount. Provider usage takes precedence over heuristic counts, environment rates take precedence over the checked-in exact-model table, and unavailable evidence never becomes zero.
 
 The live API evaluator now requires response/trace cost parity in addition to its earlier answer, timing, ranking, and chunk checks. The historical Day 35 artifact predates schema v4 and is not retroactively rewritten; new evaluations exercise the strengthened contract. See [`cost_estimation.md`](cost_estimation.md) for the formula and limits.
+
+## Day 41 router comparison
+
+`configs/router_evaluation.yaml` pins every input, comparison definition, latency composition rule, cost model, expected dataset count, and output path for `router_comparison@0.1.0`. The evaluator validates exact question/source/relevance parity across the 45 verified labels, dense top-10 report, reranked top-5 report, golden reference answers, and Day 39 refusal report. It recomputes every router decision from the current `rule_router@0.1.0` features and rejects stale route/reason evidence. It also requires all selected chunk IDs in the processed artifact and an exact provider/model match in the Day 40 table.
+
+The three strategies are paired per supported question:
+
+- always FAST uses the dense ranking at depth two;
+- always CAREFUL uses the hybrid-plus-cross-encoder ranking at depth five; and
+- routed uses dense top two for FAST, dense top ten for STANDARD, reranked top five for CAREFUL, and no ranking/provider generation for NO_ANSWER.
+
+Supported quality reports MRR, Recall@5, Hit@5, and binary nDCG@5. Policy quality uses all 57 questions: fixed strategies always answer, while routed uses the recorded/recomputed refusal. The explicitly named combined proxy counts a supported question only when a relevant chunk is available in the final ranking and an unsupported question only when it is correctly refused. It is not answer correctness or an LLM-judge score.
+
+Latency is `measured_artifact_serial_replay`: always FAST uses the recorded dense latency and always CAREFUL uses the recorded reranked latency. Every routed question pays the dense probe proxy; FAST reuses it, NO_ANSWER stops, STANDARD adds a second dense measurement, and CAREFUL adds the reranked measurement. The dense report measured top ten rather than top two, so it is a conservative probe proxy. Cold starts remain included and the result is not described as a simultaneous live benchmark.
+
+Cost uses `generation_model_costs@1.0.0` and the Day 40 `utf8_bytes_div4_ceiling_v1` estimator over the exact prompt built from each selected chunk plus that question's verified reference-answer text. This controls answer length across strategies without a paid provider call. Routed NO_ANSWER rows record deterministic zero provider cost. The projection is comparable within this report but is not observed usage or an invoice.
+
+| Strategy | Supported Hit@5 | MRR | Unsupported refusal | Combined proxy | Avg replay latency | Projected total cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Always FAST | 28.89% | 0.2778 | 0% | 22.81% | 679.9 ms | $0.00145935 |
+| Always CAREFUL | 84.44% | 0.6889 | 0% | 66.67% | 4681.6 ms | $0.00355245 |
+| Routed | 55.56% | 0.4469 | 100% | 64.91% | 2514.3 ms | $0.00320625 |
+
+Routed improves Hit@5 by 26.67 percentage points and the combined proxy by 42.11 points over always FAST, at 269.81% higher average replay latency and 119.70% higher projected cost. Against always CAREFUL, routed cuts average replay latency by 46.29% and projected cost by 9.75%, but loses 28.89 Hit@5 points and 1.75 combined-proxy points. Its supported distribution is 2 FAST, 18 STANDARD, 16 CAREFUL, and 9 NO_ANSWER. Because those nine are false refusals and supported retrieval quality remains far below always CAREFUL, the recorded decision is `keep_router_draft`.
+
+Run `make validate-router-evaluation` to recompute and compare the canonical JSON to all current sources, `make evaluate-router` to atomically regenerate JSON/CSV/Markdown, and `make test-router-evaluation` for focused schema/provenance/decision/cost/output coverage. The canonical human-readable result is [`../reports/week6_router_comparison.md`](../reports/week6_router_comparison.md).
 
 ## Day 35 API-path evaluation
 

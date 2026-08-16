@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–40 routing, refusal, and per-query generation-cost path.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–41 routing, refusal, per-query generation-cost, and routed-versus-fixed evaluation path.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 40. The current baseline includes:
+Implementation is complete through Day 41. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -73,6 +73,7 @@ Implementation is complete through Day 40. The current baseline includes:
 - deterministic FAST/STANDARD/CAREFUL/NO_ANSWER selection with stable primary/all-match reasons, validated execution intent, a decision CLI, and a decision-only `/route` API
 - a calibrated `top_score < 0.531` no-answer gate, deterministic corpus-scoped refusal with no LLM call/citations, 12 reviewed unsupported examples, and checked-in refusal-correctness JSON/CSV evidence
 - a reviewed `generation_model_costs@1.0.0` table, provider-usage-first token accounting, deterministic missing-usage estimation, explicit environment rate overrides, and exact response/trace cost parity
+- a strict paired Day 41 replay comparing always-FAST, always-CAREFUL, and routed strategies across supported retrieval quality, refusal correctness, serially composed measured latency, and controlled Day 40 generation-cost projections
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
@@ -83,7 +84,7 @@ Current limitations:
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Explicit `/query` generation still relies on grounding instructions, but the NO_ANSWER branch on `/route` is policy-enforced and never calls a generation provider. This does not yet protect callers that bypass routing and invoke `/query` directly.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted, but it is not aggregated, budget-enforced, invoice-reconciled, or logged to MLflow; automatic route execution, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted; Day 41 aggregates a controlled reference-answer projection for comparison, but production costs are not budget-enforced, invoice-reconciled, or logged to MLflow. Automatic route execution, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
 - The Day 35 API evaluation is a dense retrieval parity check using the deterministic template generator. It does not repeat external-provider generation judging or the expensive 45-question reranker benchmark through HTTP.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
@@ -646,6 +647,22 @@ make validate-model-costs
 
 `POST /query` now returns provider/model identity, token counts and their source, estimator version when used, rate source/table identity, exact rates, and the computed amount. SQLite schema v4 persists the same object on successful query traces; existing schema-v3 rows migrate with null cost rather than fabricated history. Run `make test-cost` for the focused cost/trace/API suite and see [`docs/cost_estimation.md`](docs/cost_estimation.md) for the formula and limits.
 
+### Evaluate Day 41 routed tradeoffs
+
+Day 41 validates and deterministically recomputes the paired comparison from the checked dense, reranked, refusal, label, golden-answer, processed-chunk, router, and model-cost artifacts:
+
+```bash
+make validate-router-evaluation
+```
+
+Regenerate the JSON, 135-row supported-question CSV, and Markdown report without Qdrant or a provider call:
+
+```bash
+make evaluate-router
+```
+
+On the current 45 supported and 12 unsupported questions, always FAST reaches 28.89% supported Hit@5 at 679.9 ms average replay latency and a projected `$0.00145935`; always CAREFUL reaches 84.44% at 4681.6 ms and `$0.00355245`; routed reaches 55.56% at 2514.3 ms and `$0.00320625`. Routed refuses 12/12 unsupported questions but also 9/45 supported questions. Its combined evidence/refusal proxy is 64.91%, versus 22.81% for always FAST and 66.67% for always CAREFUL. The router therefore remains `draft`; see [`reports/week6_router_comparison.md`](reports/week6_router_comparison.md).
+
 ## Main Components
 
 ```text
@@ -664,6 +681,10 @@ configs/routed.yaml -> draft thresholds ---------------+-> deterministic selecto
                                                                                          |
                                                                                          +-> NO_ANSWER -> deterministic refusal
 
+checked dense/reranked/refusal artifacts + exact prompts/reference answers
+                                      -> always FAST vs always CAREFUL vs routed
+                                      -> quality + replay latency + projected cost report
+
 query -> dense top 20 --+
                          +-> RRF -> hybrid top 10 -> CLI
 query -> BM25 top 20 ---+
@@ -680,7 +701,7 @@ query -> BM25 top 25 ---+
 - `src/ragops/routing`: strict router config/policy validation, supported/unsupported calibration provenance, dense initial-probe orchestration, the schema-v1 feature contract, and deterministic route/reason selection
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
 - `src/ragops/generation`: citations, grounded prompts, deterministic no-answer refusal, provider selection, template/OpenAI/Gemini clients, provider usage normalization, heuristic token estimation, strict model-cost loading, and auditable cost calculation
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration and refusal metrics, comparisons, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, comparisons, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
 - `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, generation-cost, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
@@ -692,4 +713,4 @@ query -> BM25 top 25 ---+
 
 ## Next Milestone
 
-Proceed to Day 41: evaluate routed RAG against fixed FAST and CAREFUL baselines using quality, latency, and the durable Day 40 cost contract.
+Proceed to Day 42: harden the draft router with focused tests, threshold tuning, a dedicated route-distribution report, and updated operational guidance.

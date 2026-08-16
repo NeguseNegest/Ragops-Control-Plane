@@ -189,7 +189,7 @@ Applying the Day 39 conditions to those 45 supported questions yields:
 | `FAST` | 2 | 2 | 2 | Narrow 2/2 observation, far too small to claim general precision |
 | `STANDARD` | 18 | — | — | Middle band retained on the approved production dense pipeline |
 
-These counts are descriptive, not a routed quality benchmark. The dedicated Day 39 evaluation adds 12 unsupported examples and records 12/12 refusals, 9/45 supported false refusals, and 57.14% refusal precision. Dense score/gap distributions still overlap, so no universal semantic-confidence claim is made.
+These counts were initially descriptive rather than a routed quality benchmark. The dedicated Day 39 evaluation adds 12 unsupported examples and records 12/12 refusals, 9/45 supported false refusals, and 57.14% refusal precision. Day 41 subsequently turns the same fixed evidence into a paired routed-versus-fixed tradeoff report described below. Dense score/gap distributions still overlap, so no universal semantic-confidence claim is made.
 
 The thresholds remain `draft` because the unsupported set is small and the supported false-refusal rate is material. Later work must add broader adversarial coverage, route-level latency/quality measurement, and threshold hardening.
 
@@ -257,6 +257,24 @@ make test-no-answer
 make validate-no-answer
 ```
 
+## Day 41 Router Evaluation
+
+`configs/router_evaluation.yaml` defines a deterministic `artifact_replay` comparison among always FAST, always CAREFUL, and the current router. It cross-checks the dense and reranked question records against all 45 labels, recomputes every supported and unsupported decision against `rule_router@0.1.0`, reconstructs exact generation prompts from selected processed chunks, and rejects stale routing, dataset, chunk, or pricing evidence.
+
+The recorded supported route mix is 2 FAST, 18 STANDARD, 16 CAREFUL, and 9 NO_ANSWER. Always FAST reaches 28.89% Hit@5; always CAREFUL reaches 84.44%; routed reaches 55.56%. Routed correctly refuses all 12 reviewed unsupported questions, but the nine supported NO_ANSWER decisions remain false refusals. The combined supported-evidence/unsupported-refusal proxy is 22.81% for always FAST, 66.67% for always CAREFUL, and 64.91% for routed.
+
+Measured-artifact serial replay estimates average retrieval latency at 679.9 ms for always FAST, 4681.6 ms for always CAREFUL, and 2514.3 ms for routed. Controlled `gpt-5-nano` prompt/reference-answer projections total `$0.00145935`, `$0.00355245`, and `$0.00320625`, respectively. These values include cold artifacts, use dense top-10 latency as a conservative top-2 probe proxy, and are neither a simultaneous live benchmark nor a provider invoice.
+
+The result is `keep_router_draft`: routed makes a useful latency/quality compromise against the two extremes, but supported retrieval remains 28.89 Hit@5 points below always CAREFUL and false refusal is still 20%. Run:
+
+```bash
+make validate-router-evaluation
+make evaluate-router
+make test-router-evaluation
+```
+
+The canonical explanation and limitations are in [`../reports/week6_router_comparison.md`](../reports/week6_router_comparison.md).
+
 ## Remaining Work
 
-Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.
+Day 42 must tune thresholds, expand router tests, and produce the dedicated distribution report before the policy can move beyond draft. Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.
