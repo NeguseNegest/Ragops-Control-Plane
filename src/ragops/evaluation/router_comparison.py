@@ -522,7 +522,7 @@ def _relative_delta(routed, baseline):
     return (routed - baseline) / baseline if baseline else None
 
 
-def run_router_evaluation(config, inputs=None):
+def run_router_evaluation(config, inputs=None, *, hash_sources=True):
     """Replay paired evidence for fixed FAST, fixed CAREFUL, and routed strategies."""
     config = config if isinstance(config, RouterEvaluationConfig) else RouterEvaluationConfig.model_validate(config)
     inputs = inputs or validate_router_evaluation_inputs(config)
@@ -581,7 +581,11 @@ def run_router_evaluation(config, inputs=None):
     policy_rows = []
     for question_id, recorded in inputs["no_answer_by_id"].items():
         query_type = recorded["query_type"]
-        routed_refused = recorded["route"] == "NO_ANSWER"
+        policy_features = _features_from_score_pair(
+            recorded["question"], recorded["top_score"], recorded["score_gap"], question_id
+        )
+        policy_decision = router.select(policy_features)
+        routed_refused = policy_decision.route == "NO_ANSWER"
         expected_refusal = query_type == "unsupported"
         policy_rows.append(
             {
@@ -593,8 +597,8 @@ def run_router_evaluation(config, inputs=None):
                     "always_fast": {"route": "FAST", "refused": False, "correct": not expected_refusal},
                     "always_careful": {"route": "CAREFUL", "refused": False, "correct": not expected_refusal},
                     "routed": {
-                        "route": recorded["route"],
-                        "reason_code": recorded["reason_code"],
+                        "route": policy_decision.route,
+                        "reason_code": policy_decision.reason_code,
                         "refused": routed_refused,
                         "correct": routed_refused == expected_refusal,
                     },
@@ -638,13 +642,17 @@ def run_router_evaluation(config, inputs=None):
         "no_answer_report": config.inputs.no_answer_report_path,
         "model_costs": config.cost_projection.model_cost_config,
     }
-    sources = {
-        name: {
-            "path": str(path.relative_to(root)) if path.is_relative_to(root) else str(path),
-            "sha256": _sha256(path),
+    sources = (
+        {
+            name: {
+                "path": str(path.relative_to(root)) if path.is_relative_to(root) else str(path),
+                "sha256": _sha256(path),
+            }
+            for name, path in source_paths.items()
         }
-        for name, path in source_paths.items()
-    }
+        if hash_sources
+        else {}
+    )
     return {
         "schema_version": ROUTER_EVALUATION_SCHEMA_VERSION,
         "run_name": config.name,
@@ -681,7 +689,7 @@ def run_router_evaluation(config, inputs=None):
         "decision": {
             "status": "keep_router_draft",
             "summary": "The routed policy improves the combined support/refusal proxy over always FAST and reduces latency/cost versus always CAREFUL, but loses substantial supported retrieval quality and retains a 20% supported false-refusal rate.",
-            "next_step": "Day 42 must tune thresholds and inspect route distribution before automatic routed execution is considered stable.",
+            "next_step": "Day 42 tuning is complete; keep the policy draft until broader offline and live evidence reduces the supported false-refusal risk.",
         },
         "limitations": [
             "This is a deterministic replay of prior measured artifacts, not a simultaneous live benchmark.",
@@ -700,8 +708,8 @@ def render_router_comparison_markdown(report):
     lines = [
         "# Week 6 Router Comparison",
         "",
-        f"Evaluation: `{report['evaluation_id']}` ({report['evaluation_status']})  ",
-        f"Router: `{report['router']['router_id']}` ({report['router']['status']})  ",
+        f"Evaluation: `{report['evaluation_id']}` ({report['evaluation_status']})",
+        f"Router: `{report['router']['router_id']}` ({report['router']['status']})",
         f"Mode: `{report['mode']}`",
         "",
         "## Result",

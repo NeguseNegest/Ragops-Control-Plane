@@ -10,6 +10,7 @@ from ragops.evaluation.no_answer import (
     calibrated_threshold,
     load_no_answer_config,
     load_supported_report,
+    replay_no_answer_evaluation,
     run_no_answer_evaluation,
     validate_no_answer_inputs,
     write_no_answer_artifacts,
@@ -177,6 +178,33 @@ def test_no_answer_evaluation_measures_refusal_and_false_refusal_tradeoff():
     assert all(row["refusal_answer"] == NO_ANSWER_RESPONSE and row["correct"] for row in unsupported)
     assert all(len(row["refusal_prompt_sha256"]) == 64 for row in unsupported)
     assert all(row["refusal_generated_by"] == "deterministic_policy" for row in unsupported)
+
+
+def test_no_answer_replay_recomputes_current_router_without_live_retrieval():
+    config = load_no_answer_config("configs/no_answer.yaml", project_root=Path.cwd())
+    source = json.loads(Path("reports/evaluations/no_answer.json").read_text(encoding="utf-8"))
+
+    report = replay_no_answer_evaluation(config, source)
+
+    assert report == source
+    assert report["router_id"] == "rule_router@0.2.0"
+    assert report["metrics"]["unsupported_refusal_accuracy"] == 1.0
+    assert report["metrics"]["supported_false_refusal_rate"] == 0.2
+
+
+def test_no_answer_replay_rejects_missing_or_changed_provenance():
+    config = load_no_answer_config("configs/no_answer.yaml", project_root=Path.cwd())
+    source = json.loads(Path("reports/evaluations/no_answer.json").read_text(encoding="utf-8"))
+    source["questions"][0]["question"] = "Changed question provenance"
+
+    with pytest.raises(ValueError, match="provenance differs"):
+        replay_no_answer_evaluation(config, source)
+
+    source = json.loads(Path("reports/evaluations/no_answer.json").read_text(encoding="utf-8"))
+    supported = next(row for row in source["questions"] if row["query_type"] == "supported")
+    supported["top_score"] += 0.01
+    with pytest.raises(ValueError, match="scores differ from current supported evidence"):
+        replay_no_answer_evaluation(config, source)
 
 
 def test_no_answer_artifacts_are_atomic_complete_and_refuse_overwrite(tmp_path):

@@ -168,14 +168,14 @@ def _evaluation_fixture(tmp_path):
             "top_score": 0.60,
             "score_gap": 0.02,
             "route": "CAREFUL",
-            "reason_code": "complexity_marker_count_at_least_careful_threshold",
+            "reason_code": "score_gap_below_careful_threshold",
             "refused": False,
         },
     ]
     no_answer_report = {
         "schema_version": 1,
         "run_name": "no_answer",
-        "router_id": "rule_router@0.1.0",
+        "router_id": "rule_router@0.2.0",
         "threshold": {"configured": 0.531},
         "questions": no_answer_questions,
     }

@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–41 routing, refusal, per-query generation-cost, and routed-versus-fixed evaluation path.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–42 routing, refusal, per-query generation-cost, routed-versus-fixed evaluation, and router-stabilization path.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 41. The current baseline includes:
+Implementation is complete through Day 42. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -68,12 +68,13 @@ Implementation is complete through Day 41. The current baseline includes:
 - a lightweight GitHub Actions API job that lints the repository and runs the production request path without Docker, model downloads, external APIs, or the full ML dependency stack
 - a live HTTP evaluation runner that checks all 45 dense top-10 rankings against the offline baseline, verifies every returned SQLite trace, and revalidates the exact four-run MLflow evidence suite
 - a CPU-only API image with deployment-safe project-root resolution, an internal health check, a configurable host port, a persistent Hugging Face cache, and separate API/tracking/dashboard dependency boundaries
-- a strict `rule_router@0.1.0` draft design with FAST/STANDARD/CAREFUL/NO_ANSWER definitions, ordered threshold bands, route execution intent, calibration provenance, and pipeline-registry lifecycle guards
+- a strict `rule_router@0.2.0` draft design with FAST/STANDARD/CAREFUL/NO_ANSWER definitions, ordered threshold bands, route execution intent, calibration provenance, and pipeline-registry lifecycle guards
 - a router-configured dense initial probe (currently top two) with validated top score, score gap, query length, deterministic lexical-complexity features, reusable evidence, and separate probe timings
 - deterministic FAST/STANDARD/CAREFUL/NO_ANSWER selection with stable primary/all-match reasons, validated execution intent, a decision CLI, and a decision-only `/route` API
 - a calibrated `top_score < 0.531` no-answer gate, deterministic corpus-scoped refusal with no LLM call/citations, 12 reviewed unsupported examples, and checked-in refusal-correctness JSON/CSV evidence
 - a reviewed `generation_model_costs@1.0.0` table, provider-usage-first token accounting, deterministic missing-usage estimation, explicit environment rate overrides, and exact response/trace cost parity
 - a strict paired Day 41 replay comparing always-FAST, always-CAREFUL, and routed strategies across supported retrieval quality, refusal correctness, serially composed measured latency, and controlled Day 40 generation-cost projections
+- a deterministic Day 42 threshold sweep with an archived v0.1.0 baseline, SHA256-ordered 30/15 tuning/validation split, predeclared safety/latency/cost constraints, focused router regressions, and a complete 57-question route-distribution report
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
@@ -661,7 +662,22 @@ Regenerate the JSON, 135-row supported-question CSV, and Markdown report without
 make evaluate-router
 ```
 
-On the current 45 supported and 12 unsupported questions, always FAST reaches 28.89% supported Hit@5 at 679.9 ms average replay latency and a projected `$0.00145935`; always CAREFUL reaches 84.44% at 4681.6 ms and `$0.00355245`; routed reaches 55.56% at 2514.3 ms and `$0.00320625`. Routed refuses 12/12 unsupported questions but also 9/45 supported questions. Its combined evidence/refusal proxy is 64.91%, versus 22.81% for always FAST and 66.67% for always CAREFUL. The router therefore remains `draft`; see [`reports/week6_router_comparison.md`](reports/week6_router_comparison.md).
+On the current 45 supported and 12 unsupported questions, always FAST reaches 28.89% supported Hit@5 at 679.9 ms average replay latency and a projected `$0.00145935`; always CAREFUL reaches 84.44% at 4681.6 ms and `$0.00355245`; the tuned routed policy reaches 64.44% at 3345.6 ms and `$0.00312740`. Routed refuses 12/12 unsupported questions but also 9/45 supported questions. Its combined evidence/refusal proxy is 71.93%, versus 22.81% for always FAST and 66.67% for always CAREFUL. The router therefore remains `draft`; see [`reports/week6_router_comparison.md`](reports/week6_router_comparison.md).
+
+### Stabilize the Day 42 router
+
+Day 42 archives `rule_router@0.1.0`, locks the NO_ANSWER and FAST rules, and sweeps only `thresholds.careful.score_gap_below` over a predeclared grid. Supported question IDs are ordered by SHA256 and divided into 30 tuning and 15 validation rows. Candidates must avoid validation Hit@5 regression, retain 100% unsupported refusal, stay within 75% of always-CAREFUL average replay latency, and not exceed always-CAREFUL projected cost.
+
+```bash
+make replay-no-answer
+make tune-router
+make validate-router-tuning
+make test-router-stabilization
+```
+
+The selected strict threshold is `score_gap < 0.03`. It raises supported Hit@5 from 55.56% to 64.44% and the combined proxy from 64.91% to 71.93%. Seven supported questions move from STANDARD to CAREFUL; the target supported mix is 2 FAST, 11 STANDARD, 23 CAREFUL, and 9 NO_ANSWER. All 12 unsupported questions remain NO_ANSWER. Average replay latency rises 33.07% relative to v0.1.0, while projected cost falls 2.46% because the moved CAREFUL prompts use five reranked chunks rather than ten dense chunks.
+
+The policy is deterministic, boundary-tested, provenance-checked, and explainable, satisfying the Day 42 stabilization acceptance criterion. It is not promoted beyond `draft`: the evidence family is small and previously inspected, only two supported rows select FAST, and the unchanged safety gate still falsely refuses 20% of supported questions. The complete sweep and distribution are in [`reports/week6_router_stabilization.md`](reports/week6_router_stabilization.md), with canonical JSON/CSV in `reports/evaluations/router_distribution.*`.
 
 ## Main Components
 
@@ -701,7 +717,7 @@ query -> BM25 top 25 ---+
 - `src/ragops/routing`: strict router config/policy validation, supported/unsupported calibration provenance, dense initial-probe orchestration, the schema-v1 feature contract, and deterministic route/reason selection
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
 - `src/ragops/generation`: citations, grounded prompts, deterministic no-answer refusal, provider selection, template/OpenAI/Gemini clients, provider usage normalization, heuristic token estimation, strict model-cost loading, and auditable cost calculation
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, comparisons, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, deterministic router tuning/distribution, comparisons, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
 - `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, generation-cost, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
@@ -713,4 +729,4 @@ query -> BM25 top 25 ---+
 
 ## Next Milestone
 
-Proceed to Day 42: harden the draft router with focused tests, threshold tuning, a dedicated route-distribution report, and updated operational guidance.
+Proceed to Day 43: document the semantic-cache architecture, including a separate `semantic_cache` Qdrant collection, payload schema, initial `0.94` similarity threshold, and manifest-hash invalidation strategy.

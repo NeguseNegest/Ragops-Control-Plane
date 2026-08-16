@@ -1,0 +1,1865 @@
+{
+  "baseline_router_id": "rule_router@0.1.0",
+  "candidates": [
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 2514.2511458705285,
+        "combined_quality_proxy": 0.6491228070175439,
+        "hit_rate_at_5": 0.5555555555555556,
+        "mrr": 0.4469135802469136,
+        "route_counts": {
+          "CAREFUL": 16,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 18
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.0032062500000000003,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 2985.011153043403,
+        "hit_rate_at_5": 0.5,
+        "mrr": 0.42203703703703704,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 11,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 10
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.0017990500000000002
+      },
+      "validation": {
+        "average_latency_ms": 1572.731131524779,
+        "hit_rate_at_5": 0.6666666666666666,
+        "mrr": 0.4966666666666667,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 5,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 8
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.0014072000000000002
+      },
+      "value": 0.01
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 2635.76668873688,
+        "combined_quality_proxy": 0.6666666666666666,
+        "hit_rate_at_5": 0.5777777777777777,
+        "mrr": 0.4666666666666667,
+        "route_counts": {
+          "CAREFUL": 17,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 17
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.0031902000000000002,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3167.2844673429304,
+        "hit_rate_at_5": 0.5333333333333333,
+        "mrr": 0.4516666666666667,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 12,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 9
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.001783
+      },
+      "validation": {
+        "average_latency_ms": 1572.731131524779,
+        "hit_rate_at_5": 0.6666666666666666,
+        "mrr": 0.4966666666666667,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 5,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 8
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.0014072000000000002
+      },
+      "value": 0.015
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 2980.5614724250822,
+        "combined_quality_proxy": 0.6842105263157895,
+        "hit_rate_at_5": 0.6,
+        "mrr": 0.4888888888888889,
+        "route_counts": {
+          "CAREFUL": 19,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 15
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.0032068,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3684.4766428752337,
+        "hit_rate_at_5": 0.5666666666666667,
+        "mrr": 0.48500000000000004,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 14,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 7
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.0017996000000000002
+      },
+      "validation": {
+        "average_latency_ms": 1572.731131524779,
+        "hit_rate_at_5": 0.6666666666666666,
+        "mrr": 0.4966666666666667,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 5,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 8
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.0014072000000000002
+      },
+      "value": 0.02
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 3149.115980759315,
+        "combined_quality_proxy": 0.6842105263157895,
+        "hit_rate_at_5": 0.6,
+        "mrr": 0.5066666666666667,
+        "route_counts": {
+          "CAREFUL": 20,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 14
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.00318205,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3684.4766428752337,
+        "hit_rate_at_5": 0.5666666666666667,
+        "mrr": 0.48500000000000004,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 14,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 7
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.0017996000000000002
+      },
+      "validation": {
+        "average_latency_ms": 2078.394656527477,
+        "hit_rate_at_5": 0.6666666666666666,
+        "mrr": 0.55,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 6,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 7
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.0013824500000000001
+      },
+      "value": 0.025
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 3345.612207536275,
+        "combined_quality_proxy": 0.7192982456140351,
+        "hit_rate_at_5": 0.6444444444444445,
+        "mrr": 0.5266666666666666,
+        "route_counts": {
+          "CAREFUL": 23,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 11
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.0031274000000000002,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3874.432940907233,
+        "hit_rate_at_5": 0.6,
+        "mrr": 0.4983333333333333,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 16,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 5
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.00175435
+      },
+      "validation": {
+        "average_latency_ms": 2287.9707407943592,
+        "hit_rate_at_5": 0.7333333333333333,
+        "mrr": 0.5833333333333334,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 7,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 6
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.00137305
+      },
+      "value": 0.03
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 3345.612207536275,
+        "combined_quality_proxy": 0.7192982456140351,
+        "hit_rate_at_5": 0.6444444444444445,
+        "mrr": 0.5266666666666666,
+        "route_counts": {
+          "CAREFUL": 23,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 11
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.0031274000000000002,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3874.432940907233,
+        "hit_rate_at_5": 0.6,
+        "mrr": 0.4983333333333333,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 16,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 5
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.00175435
+      },
+      "validation": {
+        "average_latency_ms": 2287.9707407943592,
+        "hit_rate_at_5": 0.7333333333333333,
+        "mrr": 0.5833333333333334,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 7,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 6
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.00137305
+      },
+      "value": 0.035
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": false,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": false,
+      "full": {
+        "average_latency_ms": 3530.9689254047244,
+        "combined_quality_proxy": 0.7192982456140351,
+        "hit_rate_at_5": 0.6444444444444445,
+        "mrr": 0.5444444444444444,
+        "route_counts": {
+          "CAREFUL": 25,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 9
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.00306045,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3987.381105008535,
+        "hit_rate_at_5": 0.6,
+        "mrr": 0.5083333333333333,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 17,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 4
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.00172825
+      },
+      "validation": {
+        "average_latency_ms": 2618.1445661971034,
+        "hit_rate_at_5": 0.7333333333333333,
+        "mrr": 0.6166666666666667,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 8,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 5
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.0013322
+      },
+      "value": 0.04
+    },
+    {
+      "constraint_checks": {
+        "average_latency_ceiling": false,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": false,
+      "full": {
+        "average_latency_ms": 3603.2081445601457,
+        "combined_quality_proxy": 0.7368421052631579,
+        "hit_rate_at_5": 0.6666666666666666,
+        "mrr": 0.5555555555555556,
+        "route_counts": {
+          "CAREFUL": 26,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 8
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.00300775,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 4095.739933741667,
+        "hit_rate_at_5": 0.6333333333333333,
+        "mrr": 0.525,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 18,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 3
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.00167555
+      },
+      "validation": {
+        "average_latency_ms": 2618.1445661971034,
+        "hit_rate_at_5": 0.7333333333333333,
+        "mrr": 0.6166666666666667,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 8,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 5
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.0013322
+      },
+      "value": 0.045
+    }
+  ],
+  "comparison": {
+    "average_latency_relative_delta": 0.33065951387998593,
+    "baseline": {
+      "combined_quality_proxy": {
+        "correct_unsupported_refusals": 12,
+        "definition": "supported_hit_at_5_or_correct_unsupported_refusal",
+        "success_rate": 0.6491228070175439,
+        "successful_supported": 25,
+        "total_questions": 57
+      },
+      "generation_cost_projection_supported": {
+        "amount_usd": {
+          "average": 7.125000000000001e-05,
+          "count": 45,
+          "maximum": 0.00021915000000000004,
+          "minimum": 0.0,
+          "p50": 7.755e-05,
+          "p95": 0.00016231999999999995,
+          "total": 0.0032062500000000003
+        },
+        "currency": "USD",
+        "input_tokens": 59309,
+        "output_tokens": 602,
+        "price_table_id": "generation_model_costs@1.0.0",
+        "status_counts": {
+          "estimated": 36,
+          "zero_cost": 9
+        },
+        "token_basis": "exact_prompt_plus_verified_reference_answer",
+        "total_tokens": 59911
+      },
+      "latency_ms_supported": {
+        "average": 2514.2511458705285,
+        "count": 45,
+        "maximum": 37720.06738599157,
+        "method": "measured_artifact_serial_replay",
+        "minimum": 39.548447995912284,
+        "p50": 286.62529995199293,
+        "p95": 6319.860685453749,
+        "total": 113141.30156417377
+      },
+      "refusal_quality": {
+        "overall_policy_accuracy": 0.8421052631578947,
+        "supported_answer_rate": 0.8,
+        "supported_false_refusal_rate": 0.2,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "retrieval_quality_supported": {
+        "hit_rate_at_5": 0.5555555555555556,
+        "mrr": 0.4469135802469136,
+        "ndcg_at_5": 0.4701950609978155,
+        "question_count": 45,
+        "recall_at_5": 0.5555555555555556
+      },
+      "route_counts_supported": {
+        "CAREFUL": 16,
+        "FAST": 2,
+        "NO_ANSWER": 9,
+        "STANDARD": 18
+      }
+    },
+    "hit_rate_at_5_delta": 0.0888888888888889,
+    "target": {
+      "combined_quality_proxy": {
+        "correct_unsupported_refusals": 12,
+        "definition": "supported_hit_at_5_or_correct_unsupported_refusal",
+        "success_rate": 0.7192982456140351,
+        "successful_supported": 29,
+        "total_questions": 57
+      },
+      "generation_cost_projection_supported": {
+        "amount_usd": {
+          "average": 6.949777777777779e-05,
+          "count": 45,
+          "maximum": 0.00021915000000000004,
+          "minimum": 0.0,
+          "p50": 7.110000000000001e-05,
+          "p95": 0.00016231999999999995,
+          "total": 0.0031274000000000002
+        },
+        "currency": "USD",
+        "input_tokens": 57732,
+        "output_tokens": 602,
+        "price_table_id": "generation_model_costs@1.0.0",
+        "status_counts": {
+          "estimated": 36,
+          "zero_cost": 9
+        },
+        "token_basis": "exact_prompt_plus_verified_reference_answer",
+        "total_tokens": 58334
+      },
+      "latency_ms_supported": {
+        "average": 3345.612207536275,
+        "count": 45,
+        "maximum": 37720.06738599157,
+        "method": "measured_artifact_serial_replay",
+        "minimum": 39.548447995912284,
+        "p50": 2836.01734804688,
+        "p95": 7915.487919817679,
+        "total": 150552.54933913238
+      },
+      "refusal_quality": {
+        "overall_policy_accuracy": 0.8421052631578947,
+        "supported_answer_rate": 0.8,
+        "supported_false_refusal_rate": 0.2,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "retrieval_quality_supported": {
+        "hit_rate_at_5": 0.6444444444444445,
+        "mrr": 0.5266666666666666,
+        "ndcg_at_5": 0.5563063209957794,
+        "question_count": 45,
+        "recall_at_5": 0.6444444444444445
+      },
+      "route_counts_supported": {
+        "CAREFUL": 23,
+        "FAST": 2,
+        "NO_ANSWER": 9,
+        "STANDARD": 11
+      }
+    },
+    "total_cost_relative_delta": -0.02459259259259261
+  },
+  "constraints": {
+    "maximum_full_average_latency_fraction_of_always_careful": 0.75,
+    "maximum_full_total_cost_fraction_of_always_careful": 1.0,
+    "minimum_unsupported_refusal_accuracy": 1.0,
+    "minimum_validation_hit_rate_delta": 0.0
+  },
+  "distribution": {
+    "all": {
+      "question_count": 57,
+      "reason_counts": {
+        "complexity_marker_count_at_least_careful_threshold": 2,
+        "fast_conditions_satisfied": 2,
+        "long_token_ratio_at_least_careful_threshold": 3,
+        "score_gap_below_careful_threshold": 15,
+        "standard_fallback": 11,
+        "top_score_below_careful_threshold": 3,
+        "top_score_below_no_answer_threshold": 21
+      },
+      "route_counts": {
+        "CAREFUL": 23,
+        "FAST": 2,
+        "NO_ANSWER": 21,
+        "STANDARD": 11
+      },
+      "route_rates": {
+        "CAREFUL": 0.40350877192982454,
+        "FAST": 0.03508771929824561,
+        "NO_ANSWER": 0.3684210526315789,
+        "STANDARD": 0.19298245614035087
+      }
+    },
+    "supported": {
+      "question_count": 45,
+      "reason_counts": {
+        "complexity_marker_count_at_least_careful_threshold": 2,
+        "fast_conditions_satisfied": 2,
+        "long_token_ratio_at_least_careful_threshold": 3,
+        "score_gap_below_careful_threshold": 15,
+        "standard_fallback": 11,
+        "top_score_below_careful_threshold": 3,
+        "top_score_below_no_answer_threshold": 9
+      },
+      "route_counts": {
+        "CAREFUL": 23,
+        "FAST": 2,
+        "NO_ANSWER": 9,
+        "STANDARD": 11
+      },
+      "route_rates": {
+        "CAREFUL": 0.5111111111111111,
+        "FAST": 0.044444444444444446,
+        "NO_ANSWER": 0.2,
+        "STANDARD": 0.24444444444444444
+      }
+    },
+    "unsupported": {
+      "question_count": 12,
+      "reason_counts": {
+        "top_score_below_no_answer_threshold": 12
+      },
+      "route_counts": {
+        "NO_ANSWER": 12
+      },
+      "route_rates": {
+        "NO_ANSWER": 1.0
+      }
+    }
+  },
+  "evaluation_id": "router_stabilization@0.1.0",
+  "evaluation_status": "evaluated",
+  "limitations": [
+    "The 30/15 supported split is deterministic but small; the same 45-question artifact family was already inspected during Day 41.",
+    "Only the CAREFUL score-gap threshold was tuned. NO_ANSWER remains locked to Day 39 calibration and FAST has only two observed supported examples.",
+    "Hit@5 measures evidence availability rather than answer correctness, and latency/cost retain the Day 41 replay/projection limitations.",
+    "The route distribution reflects 45 supported and 12 authored unsupported questions, not production traffic."
+  ],
+  "parameter": "thresholds.careful.score_gap_below",
+  "questions": [
+    {
+      "baseline_reason_code": "score_gap_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "In which section of the MLflow Run details page can a user find and select the model folder to register?",
+      "question_id": "sqa-0962a7db4ec6c78a",
+      "route_changed": false,
+      "score_gap": 0.008878399999999953,
+      "split": "supported_evidence",
+      "supported_cost_usd": 4.065e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 5066.286695946474,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.7408745
+    },
+    {
+      "baseline_reason_code": "top_score_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What does the API return in the response when a browser creates a user with a password using the same input/output model in this example?",
+      "question_id": "sqa-100e77a31882d05f",
+      "route_changed": false,
+      "score_gap": 0.025990499999999916,
+      "split": "supported_evidence",
+      "supported_cost_usd": 6.654999999999999e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 4164.554457995109,
+      "target_reason_code": "top_score_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.5413469
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What happens to the request_preview size and where is the full request stored?",
+      "question_id": "sqa-1333a2c4d6953cf4",
+      "route_changed": false,
+      "score_gap": 0.010857820000000018,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 100.67670501302928,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.48694414
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What Python object does UploadFile expose that can be passed to libraries expecting a file-like object?",
+      "question_id": "sqa-220fbcfa80439038",
+      "route_changed": false,
+      "score_gap": 0.038999960000000056,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.000101,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 204.52707796357572,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.71125466
+    },
+    {
+      "baseline_reason_code": "score_gap_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What does FastAPI read from the request body when you declare a Python type?",
+      "question_id": "sqa-22853a3ab950cd44",
+      "route_changed": false,
+      "score_gap": 0.0003641999999999257,
+      "split": "supported_evidence",
+      "supported_cost_usd": 6.085000000000001e-05,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 37720.06738599157,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.748176
+    },
+    {
+      "baseline_reason_code": "top_score_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "Name two advantages of using UploadFile over bytes.",
+      "question_id": "sqa-2312659ece1beeb0",
+      "route_changed": false,
+      "score_gap": 0.024522970000000033,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.16e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 5988.367447047494,
+      "target_reason_code": "top_score_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.5377034
+    },
+    {
+      "baseline_reason_code": "score_gap_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What is the exact MLflow command to serve a model located at runs:/<RUN_ID>/model?",
+      "question_id": "sqa-43e609692540e39f",
+      "route_changed": false,
+      "score_gap": 0.0008796500000000096,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.97e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 6402.733995055314,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.81895375
+    },
+    {
+      "baseline_reason_code": "complexity_marker_count_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "In what order does FastAPI evaluate incoming requests when serving static frontend files alongside API routes?",
+      "question_id": "sqa-4cb482f1f218af58",
+      "route_changed": false,
+      "score_gap": 0.025833949999999994,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.785000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 7425.5913439556025,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.64728475
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What occurs if an explicit signature parameter is provided when logging a PythonModel with type hints?",
+      "question_id": "sqa-4d1f9fc474b0154c",
+      "route_changed": true,
+      "score_gap": 0.028855900000000045,
+      "split": "supported_evidence",
+      "supported_cost_usd": 6.47e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3226.8947170232423,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.7379672
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What warning is given about handling a plain password in this section?",
+      "question_id": "sqa-50e37593177ea153",
+      "route_changed": false,
+      "score_gap": 0.0008868300000000051,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 44.4153169519268,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.46909943
+    },
+    {
+      "baseline_reason_code": "long_token_ratio_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "Which specific third-party packages are mentioned as easily usable with FastAPI for security handling?",
+      "question_id": "sqa-52abd01126658d4e",
+      "route_changed": false,
+      "score_gap": 0.04985379999999995,
+      "split": "supported_evidence",
+      "supported_cost_usd": 5.24e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3836.717016994953,
+      "target_reason_code": "long_token_ratio_at_least_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.7491087
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What HTTP endpoint is shown for scrolling points in a collection?",
+      "question_id": "sqa-54a24f6e54a73e24",
+      "route_changed": false,
+      "score_gap": 0.07409356,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0001659,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 1623.3730079839006,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.59412396
+    },
+    {
+      "baseline_reason_code": "fast_conditions_satisfied",
+      "baseline_route": "FAST",
+      "query_type": "supported",
+      "question": "What is the primary function of a reranker in document search?",
+      "question_id": "sqa-580f65fefad3cf3a",
+      "route_changed": false,
+      "score_gap": 0.07994177000000002,
+      "split": "supported_evidence",
+      "supported_cost_usd": 4.7799999999999996e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 41.81639204034582,
+      "target_reason_code": "fast_conditions_satisfied",
+      "target_route": "FAST",
+      "top_score": 0.7874368
+    },
+    {
+      "baseline_reason_code": "clause_marker_count_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "How does MLflow determine the input and output schema when logging a PythonModel that includes type hints?",
+      "question_id": "sqa-5c5e1373d68176f8",
+      "route_changed": false,
+      "score_gap": 0.02994679999999994,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.755e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3409.849373041652,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.8521882
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What operation is used to quantify the similarity between the query and document vectors?",
+      "question_id": "sqa-5c5e20dbf84c3f0b",
+      "route_changed": false,
+      "score_gap": 0.06887149999999997,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.000148,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 212.60635193903,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.7576176
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "Which parameter in a Qdrant query allows retrieving a vector using a point ID located in a different collection?",
+      "question_id": "sqa-6055940f3e30c975",
+      "route_changed": false,
+      "score_gap": 0.056703599999999965,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0001806,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 226.98796598706394,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.7531009
+    },
+    {
+      "baseline_reason_code": "score_gap_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What initial methods can be used to retrieve a subset of documents before applying a reranker?",
+      "question_id": "sqa-673de786b69493ab",
+      "route_changed": false,
+      "score_gap": 0.0061099000000000014,
+      "split": "supported_evidence",
+      "supported_cost_usd": 8.345000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3745.2273769886233,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.65982956
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What kind of interface does UploadFile expose?",
+      "question_id": "sqa-6de296cda91f5dc6",
+      "route_changed": false,
+      "score_gap": 0.03669524000000002,
+      "split": "supported_evidence",
+      "supported_cost_usd": 8.635000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 579.3246820103377,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.5802899
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What is one alternative to class-based decision making?",
+      "question_id": "sqa-7115fc46a1555f1a",
+      "route_changed": false,
+      "score_gap": 0.00032039999999999846,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 39.548447995912284,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.3018593
+    },
+    {
+      "baseline_reason_code": "top_score_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What occurs when a user chooses the \"Create New Model\" option in the Model dropdown menu?",
+      "question_id": "sqa-7622236114712036",
+      "route_changed": false,
+      "score_gap": 0.0025141499999999928,
+      "split": "supported_evidence",
+      "supported_cost_usd": 4.810000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 4390.077321033459,
+      "target_reason_code": "top_score_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.54095685
+    },
+    {
+      "baseline_reason_code": "complexity_marker_count_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What primary trade-off do rerankers make when evaluating document relevance?",
+      "question_id": "sqa-7d97ec3c52aa5853",
+      "route_changed": false,
+      "score_gap": 0.04397530000000005,
+      "split": "supported_evidence",
+      "supported_cost_usd": 9.504999999999999e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3354.0715359849855,
+      "target_reason_code": "complexity_marker_count_at_least_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.7351372
+    },
+    {
+      "baseline_reason_code": "long_token_ratio_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What intermediate representation is needed to implement similarity learning quickly?",
+      "question_id": "sqa-7f32d3b5b1a89fbf",
+      "route_changed": false,
+      "score_gap": 0.06757760000000002,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.00011960000000000001,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 2991.755439026747,
+      "target_reason_code": "long_token_ratio_at_least_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.6495507
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What file format does MLflow use for saving models from a variety of tools?",
+      "question_id": "sqa-7f4b9c901bcac8d2",
+      "route_changed": true,
+      "score_gap": 0.013218560000000101,
+      "split": "supported_evidence",
+      "supported_cost_usd": 8.235e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 5690.12482103426,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.76627666
+    },
+    {
+      "baseline_reason_code": "fast_conditions_satisfied",
+      "baseline_route": "FAST",
+      "query_type": "supported",
+      "question": "Which MLflow flavor can log scikit-learn models as artifacts for serving?",
+      "question_id": "sqa-806e7d79beff73b8",
+      "route_changed": false,
+      "score_gap": 0.06081546000000004,
+      "split": "supported_evidence",
+      "supported_cost_usd": 2.9950000000000003e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 136.19701901916414,
+      "target_reason_code": "fast_conditions_satisfied",
+      "target_route": "FAST",
+      "top_score": 0.761984
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "Which nested field key is used in the HTTP, Python, TypeScript, Rust, and Java examples to specify the sightseeing condition?",
+      "question_id": "sqa-8111f18ad4679ac4",
+      "route_changed": false,
+      "score_gap": 0.044438299999999986,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 185.77379803173244,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.46337634
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "How can extra cookies be forbidden in a FastAPI cookie parameter model?",
+      "question_id": "sqa-8397e93659723d06",
+      "route_changed": true,
+      "score_gap": 0.026642900000000025,
+      "split": "supported_evidence",
+      "supported_cost_usd": 6.885e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 2836.01734804688,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.734375
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What happens to a file once its in-memory size limit is exceeded when using UploadFile?",
+      "question_id": "sqa-8f550fc0f0c97fdf",
+      "route_changed": false,
+      "score_gap": 0.07563283999999998,
+      "split": "supported_evidence",
+      "supported_cost_usd": 8.245000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 373.70277603622526,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.5636903
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What happens if the submitted data is invalid?",
+      "question_id": "sqa-9214bfc1978670e0",
+      "route_changed": false,
+      "score_gap": 0.10610260000000005,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 97.71519299829379,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.4645424
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "How does OpenAPI represent an output response field that is always present even if its value is null?",
+      "question_id": "sqa-9663384ed9b2a6ce",
+      "route_changed": false,
+      "score_gap": 0.08464959999999999,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0001088,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 305.52871990948915,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.684148
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What mechanism is used to implement a fine-grained permission system in FastAPI?",
+      "question_id": "sqa-9bbefdf430f9c31f",
+      "route_changed": false,
+      "score_gap": 0.04264619999999997,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0001067,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 141.1993500078097,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.6665945
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What is the data type of request_time?",
+      "question_id": "sqa-9ec13a094bedbaf2",
+      "route_changed": false,
+      "score_gap": 0.11536226999999999,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.00021915000000000004,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 243.34811209701002,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.67349607
+    },
+    {
+      "baseline_reason_code": "score_gap_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What is the main difference between the legacy permission model and the role-based permission model in MLflow?",
+      "question_id": "sqa-a6c95a648b8cccd8",
+      "route_changed": false,
+      "score_gap": 0.007071049999999968,
+      "split": "supported_evidence",
+      "supported_cost_usd": 6.840000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 4183.738049992826,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.64857435
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What options are available in the Model dropdown menu on the model registration form?",
+      "question_id": "sqa-a8ee8614cd6dc87b",
+      "route_changed": false,
+      "score_gap": 0.058203700000000025,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 115.43433804763481,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.5263455
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "Which standards can be used to establish a secure authentication setup in FastAPI according to the tutorial recap?",
+      "question_id": "sqa-ade53f89f8629636",
+      "route_changed": true,
+      "score_gap": 0.022113229999999984,
+      "split": "supported_evidence",
+      "supported_cost_usd": 4.795e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 7871.5781749924645,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.66909003
+    },
+    {
+      "baseline_reason_code": "score_gap_below_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "Which methods can be used to serve static frontend applications in FastAPI?",
+      "question_id": "sqa-bd0d27f9ade799b8",
+      "route_changed": false,
+      "score_gap": 0.008377599999999985,
+      "split": "supported_evidence",
+      "supported_cost_usd": 4.3549999999999995e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 5494.586248009,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.6438581
+    },
+    {
+      "baseline_reason_code": "complexity_marker_count_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "What trade-off occurs when opting for a lower number of vector chunks?",
+      "question_id": "sqa-bd90972847373159",
+      "route_changed": false,
+      "score_gap": 0.08352710000000008,
+      "split": "supported_evidence",
+      "supported_cost_usd": 8.54e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3460.2807610062882,
+      "target_reason_code": "complexity_marker_count_at_least_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.6814282
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What schemas are generated for your model and where can you use them?",
+      "question_id": "sqa-bd90c5a97e0740e5",
+      "route_changed": true,
+      "score_gap": 0.027608069999999985,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.984999999999999e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 3432.4272960075177,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.5727953
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "Which file contains the information required to restore the model environment using virtualenv, and what three things does it specify?",
+      "question_id": "sqa-c00b9f531d2e5586",
+      "route_changed": false,
+      "score_gap": 0.14515459999999997,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.110000000000001e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 235.51378399133682,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.64422697
+    },
+    {
+      "baseline_reason_code": "long_token_ratio_at_least_careful_threshold",
+      "baseline_route": "CAREFUL",
+      "query_type": "supported",
+      "question": "Which distance measures are given as examples for calculating similarity between embeddings?",
+      "question_id": "sqa-c550d812bb5272e0",
+      "route_changed": false,
+      "score_gap": 0.032309800000000055,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0001221,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 4336.961287015583,
+      "target_reason_code": "long_token_ratio_at_least_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.6597541
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "Where must pydantic model type hints be defined to use pydantic objects as inputs for an MLflow PythonModel?",
+      "question_id": "sqa-ceaead1685abb224",
+      "route_changed": false,
+      "score_gap": 0.0564167000000001,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.00010155000000000002,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 261.79332192987204,
+      "target_reason_code": "standard_fallback",
+      "target_route": "STANDARD",
+      "top_score": 0.8175288
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What two primary properties are required inside the lookup_from configuration when referencing a point in another collection?",
+      "question_id": "sqa-d20c9187fa7725e6",
+      "route_changed": false,
+      "score_gap": 0.027845269999999978,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 150.29082499677315,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.51448697
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "Which library should be installed to use EmailStr according to the document?",
+      "question_id": "sqa-dc321a1b57e8d142",
+      "route_changed": false,
+      "score_gap": 0.06173274000000001,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 48.356071987655014,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.41744244
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "In the Go client initialization, what host and port are configured?",
+      "question_id": "sqa-e27ab4d10e8d4e5f",
+      "route_changed": true,
+      "score_gap": 0.01777709999999999,
+      "split": "supported_evidence",
+      "supported_cost_usd": 6.720000000000001e-05,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 7926.465356023982,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.5769328
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "supported",
+      "question": "What HTTP method and path are used to observe the cluster state after synchronization?",
+      "question_id": "sqa-ebcd24ac3da514b9",
+      "route_changed": false,
+      "score_gap": 0.004642959999999974,
+      "split": "supported_evidence",
+      "supported_cost_usd": 0.0,
+      "supported_hit_at_5": 0.0,
+      "supported_latency_ms": 116.76629801513627,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.5179317
+    },
+    {
+      "baseline_reason_code": "standard_fallback",
+      "baseline_route": "STANDARD",
+      "query_type": "supported",
+      "question": "What does an MLmodel file declare about each model to enable serving it as a Python function?",
+      "question_id": "sqa-fe6afefa50c92384",
+      "route_changed": true,
+      "score_gap": 0.019730350000000008,
+      "split": "supported_evidence",
+      "supported_cost_usd": 7.435e-05,
+      "supported_hit_at_5": 1.0,
+      "supported_latency_ms": 8113.280335965101,
+      "target_reason_code": "score_gap_below_careful_threshold",
+      "target_route": "CAREFUL",
+      "top_score": 0.68772745
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How do I configure blueprints and application factories in Flask?",
+      "question_id": "day39-001",
+      "route_changed": false,
+      "score_gap": 0.015753210000000017,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.50113547
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How do I define schema and multi-tenancy in Weaviate?",
+      "question_id": "day39-002",
+      "route_changed": false,
+      "score_gap": 0.039930969999999955,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.5156742
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How should I set partition keys and consistency in Apache Cassandra?",
+      "question_id": "day39-003",
+      "route_changed": false,
+      "score_gap": 0.025141000000000024,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.45859376
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How do I configure Redux Toolkit state persistence in React?",
+      "question_id": "day39-004",
+      "route_changed": false,
+      "score_gap": 0.01600050000000003,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.3132227
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "What Terraform resources create a private AWS VPC with NAT gateways?",
+      "question_id": "day39-005",
+      "route_changed": false,
+      "score_gap": 0.010373829999999973,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.41723347
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How do I configure Kafka consumer offsets and retention?",
+      "question_id": "day39-006",
+      "route_changed": false,
+      "score_gap": 0.014377709999999988,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.49200958
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "What acetaminophen dose is safe for a child with fever?",
+      "question_id": "day39-007",
+      "route_changed": false,
+      "score_gap": 0.020068800000000026,
+      "split": "evaluation",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.2304779
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How do I create and apply a migration with the Django ORM?",
+      "question_id": "gqa-031",
+      "route_changed": false,
+      "score_gap": 0.00018514999999996729,
+      "split": "calibration",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.4572904
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How should I configure namespaces and metadata filtering in Pinecone?",
+      "question_id": "gqa-032",
+      "route_changed": false,
+      "score_gap": 0.014818319999999996,
+      "split": "calibration",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.48581672
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "How do I define and launch a hyperparameter sweep in Weights & Biases?",
+      "question_id": "gqa-033",
+      "route_changed": false,
+      "score_gap": 0.02283365000000004,
+      "split": "calibration",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.5302763
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "Which Redis eviction policy should I choose for a write-heavy cache?",
+      "question_id": "gqa-034",
+      "route_changed": false,
+      "score_gap": 0.012108920000000023,
+      "split": "calibration",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.44578928
+    },
+    {
+      "baseline_reason_code": "top_score_below_no_answer_threshold",
+      "baseline_route": "NO_ANSWER",
+      "query_type": "unsupported",
+      "question": "What are the recommended adult dosages and side effects of ibuprofen?",
+      "question_id": "gqa-035",
+      "route_changed": false,
+      "score_gap": 0.14504233000000002,
+      "split": "calibration",
+      "supported_cost_usd": null,
+      "supported_hit_at_5": null,
+      "supported_latency_ms": null,
+      "target_reason_code": "top_score_below_no_answer_threshold",
+      "target_route": "NO_ANSWER",
+      "top_score": 0.37081277
+    }
+  ],
+  "run_name": "router_stabilization",
+  "schema_version": 1,
+  "selection": {
+    "objective": "maximize_tuning_hit_rate",
+    "selected_candidate": {
+      "constraint_checks": {
+        "average_latency_ceiling": true,
+        "total_cost_ceiling": true,
+        "unsupported_refusal_accuracy": true,
+        "validation_hit_rate_non_regression": true
+      },
+      "eligible": true,
+      "full": {
+        "average_latency_ms": 3345.612207536275,
+        "combined_quality_proxy": 0.7192982456140351,
+        "hit_rate_at_5": 0.6444444444444445,
+        "mrr": 0.5266666666666666,
+        "route_counts": {
+          "CAREFUL": 23,
+          "FAST": 2,
+          "NO_ANSWER": 9,
+          "STANDARD": 11
+        },
+        "supported_false_refusal_rate": 0.2,
+        "total_cost_usd": 0.0031274000000000002,
+        "unsupported_refusal_accuracy": 1.0
+      },
+      "tuning": {
+        "average_latency_ms": 3874.432940907233,
+        "hit_rate_at_5": 0.6,
+        "mrr": 0.4983333333333333,
+        "question_count": 30,
+        "route_counts": {
+          "CAREFUL": 16,
+          "FAST": 1,
+          "NO_ANSWER": 8,
+          "STANDARD": 5
+        },
+        "supported_false_refusals": 8,
+        "total_cost_usd": 0.00175435
+      },
+      "validation": {
+        "average_latency_ms": 2287.9707407943592,
+        "hit_rate_at_5": 0.7333333333333333,
+        "mrr": 0.5833333333333334,
+        "question_count": 15,
+        "route_counts": {
+          "CAREFUL": 7,
+          "FAST": 1,
+          "NO_ANSWER": 1,
+          "STANDARD": 6
+        },
+        "supported_false_refusals": 1,
+        "total_cost_usd": 0.00137305
+      },
+      "value": 0.03
+    },
+    "selected_value": 0.03,
+    "tie_breakers": [
+      "minimize_tuning_average_latency",
+      "minimize_threshold"
+    ]
+  },
+  "sources": {
+    "baseline_router": {
+      "path": "configs/routed_v0.1.0.yaml",
+      "sha256": "a49998ae73dab33ef4f017c8bcce802d1339045fa8842da1f59e91f0a890c390"
+    },
+    "careful_report": {
+      "path": "reports/evaluations/hybrid_rrf_cross_encoder.json",
+      "sha256": "42644654255eaefb176b9c0d0a9d35a6d48648394ffb435ce6e48cf6865fcda2"
+    },
+    "chunks": {
+      "path": "data/processed/chunks.jsonl",
+      "sha256": "61d97c037bfedda6d4c6ce66127392bc490435d2f475945c845fd28dc450fe50"
+    },
+    "dense_report": {
+      "path": "reports/evaluations/dense_baseline.json",
+      "sha256": "265406b5e7857ef33396907f6c3a97a3172199a0e400d1e653c75e611c993c87"
+    },
+    "golden": {
+      "path": "data/eval/golden_qa.jsonl",
+      "sha256": "3bd371932efc13dded4012f29d1b33a5f48f26e27e9ffc8a91ab933b984ef2b0"
+    },
+    "labels": {
+      "path": "data/eval/retrieval_labels.jsonl",
+      "sha256": "d8f4d3df9035681c4e0269e2db1e834faa4352a608cd2526eb9172650d22017d"
+    },
+    "model_costs": {
+      "path": "configs/model_costs.yaml",
+      "sha256": "7a36877e3c77629af461485e97fb0e343e17d3d063dfc5710602ce0f13754a2c"
+    },
+    "no_answer_config": {
+      "path": "configs/no_answer.yaml",
+      "sha256": "1fcfd45ddfd06b0459544c389fe20b99725c7783c948f3e5fb3479f4c40105ea"
+    },
+    "no_answer_report": {
+      "path": "reports/evaluations/no_answer.json",
+      "sha256": "be4bc094ac0fc947b68f24f9c46bc66739bb91bfd31f824095126d8a2e42566b"
+    },
+    "router_evaluation_config": {
+      "path": "configs/router_evaluation.yaml",
+      "sha256": "7a09dd93c209f7aad2874cb48d1f1753ef1226f9b0fd32b415b691b5070f8859"
+    },
+    "target_router": {
+      "path": "configs/routed.yaml",
+      "sha256": "b5783856458a9e5bddf65bd38aa90c0b4ee0ce4f6e2f19a827ae58a8eed8e13c"
+    }
+  },
+  "split": {
+    "method": "sha256_question_id_order",
+    "tuning_question_ids": [
+      "sqa-0962a7db4ec6c78a",
+      "sqa-100e77a31882d05f",
+      "sqa-1333a2c4d6953cf4",
+      "sqa-22853a3ab950cd44",
+      "sqa-2312659ece1beeb0",
+      "sqa-4cb482f1f218af58",
+      "sqa-4d1f9fc474b0154c",
+      "sqa-50e37593177ea153",
+      "sqa-52abd01126658d4e",
+      "sqa-54a24f6e54a73e24",
+      "sqa-580f65fefad3cf3a",
+      "sqa-5c5e1373d68176f8",
+      "sqa-6055940f3e30c975",
+      "sqa-6de296cda91f5dc6",
+      "sqa-7115fc46a1555f1a",
+      "sqa-7622236114712036",
+      "sqa-7f32d3b5b1a89fbf",
+      "sqa-7f4b9c901bcac8d2",
+      "sqa-8111f18ad4679ac4",
+      "sqa-8397e93659723d06",
+      "sqa-8f550fc0f0c97fdf",
+      "sqa-9214bfc1978670e0",
+      "sqa-9bbefdf430f9c31f",
+      "sqa-a6c95a648b8cccd8",
+      "sqa-a8ee8614cd6dc87b",
+      "sqa-bd0d27f9ade799b8",
+      "sqa-d20c9187fa7725e6",
+      "sqa-dc321a1b57e8d142",
+      "sqa-e27ab4d10e8d4e5f",
+      "sqa-fe6afefa50c92384"
+    ],
+    "validation_question_ids": [
+      "sqa-220fbcfa80439038",
+      "sqa-43e609692540e39f",
+      "sqa-5c5e20dbf84c3f0b",
+      "sqa-673de786b69493ab",
+      "sqa-7d97ec3c52aa5853",
+      "sqa-806e7d79beff73b8",
+      "sqa-9663384ed9b2a6ce",
+      "sqa-9ec13a094bedbaf2",
+      "sqa-ade53f89f8629636",
+      "sqa-bd90972847373159",
+      "sqa-bd90c5a97e0740e5",
+      "sqa-c00b9f531d2e5586",
+      "sqa-c550d812bb5272e0",
+      "sqa-ceaead1685abb224",
+      "sqa-ebcd24ac3da514b9"
+    ]
+  },
+  "stability": {
+    "all_selection_constraints_pass": true,
+    "deterministic_policy": true,
+    "fast_thresholds_unchanged": true,
+    "lifecycle_decision": "keep_draft",
+    "no_answer_threshold_unchanged": true,
+    "reason": "The selected CAREFUL threshold improves held-out supported retrieval without weakening refusal, but the evidence is small/in-sample and supported false refusal remains 20%.",
+    "target_matches_selected_candidate": true
+  },
+  "supported_route_metrics": {
+    "CAREFUL": {
+      "average_latency_ms": 6307.28929496431,
+      "hit_rate_at_5": 0.9130434782608695,
+      "question_count": 23,
+      "total_cost_usd": 0.0016780500000000002
+    },
+    "FAST": {
+      "average_latency_ms": 89.00670552975498,
+      "hit_rate_at_5": 1.0,
+      "question_count": 2,
+      "total_cost_usd": 7.774999999999999e-05
+    },
+    "NO_ANSWER": {
+      "average_latency_ms": 99.88633267089932,
+      "hit_rate_at_5": 0.0,
+      "question_count": 9,
+      "total_cost_usd": 0.0
+    },
+    "STANDARD": {
+      "average_latency_ms": 400.7186499868774,
+      "hit_rate_at_5": 0.5454545454545454,
+      "question_count": 11,
+      "total_cost_usd": 0.0013716000000000002
+    }
+  },
+  "target_router_id": "rule_router@0.2.0",
+  "target_router_status": "draft",
+  "transitions": {
+    "changed_question_count": 7,
+    "changed_questions": [
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "What occurs if an explicit signature parameter is provided when logging a PythonModel with type hints?",
+        "question_id": "sqa-4d1f9fc474b0154c",
+        "route_changed": true,
+        "score_gap": 0.028855900000000045,
+        "split": "supported_evidence",
+        "supported_cost_usd": 6.47e-05,
+        "supported_hit_at_5": 1.0,
+        "supported_latency_ms": 3226.8947170232423,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.7379672
+      },
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "What file format does MLflow use for saving models from a variety of tools?",
+        "question_id": "sqa-7f4b9c901bcac8d2",
+        "route_changed": true,
+        "score_gap": 0.013218560000000101,
+        "split": "supported_evidence",
+        "supported_cost_usd": 8.235e-05,
+        "supported_hit_at_5": 1.0,
+        "supported_latency_ms": 5690.12482103426,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.76627666
+      },
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "How can extra cookies be forbidden in a FastAPI cookie parameter model?",
+        "question_id": "sqa-8397e93659723d06",
+        "route_changed": true,
+        "score_gap": 0.026642900000000025,
+        "split": "supported_evidence",
+        "supported_cost_usd": 6.885e-05,
+        "supported_hit_at_5": 1.0,
+        "supported_latency_ms": 2836.01734804688,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.734375
+      },
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "Which standards can be used to establish a secure authentication setup in FastAPI according to the tutorial recap?",
+        "question_id": "sqa-ade53f89f8629636",
+        "route_changed": true,
+        "score_gap": 0.022113229999999984,
+        "split": "supported_evidence",
+        "supported_cost_usd": 4.795e-05,
+        "supported_hit_at_5": 1.0,
+        "supported_latency_ms": 7871.5781749924645,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.66909003
+      },
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "What schemas are generated for your model and where can you use them?",
+        "question_id": "sqa-bd90c5a97e0740e5",
+        "route_changed": true,
+        "score_gap": 0.027608069999999985,
+        "split": "supported_evidence",
+        "supported_cost_usd": 7.984999999999999e-05,
+        "supported_hit_at_5": 1.0,
+        "supported_latency_ms": 3432.4272960075177,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.5727953
+      },
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "In the Go client initialization, what host and port are configured?",
+        "question_id": "sqa-e27ab4d10e8d4e5f",
+        "route_changed": true,
+        "score_gap": 0.01777709999999999,
+        "split": "supported_evidence",
+        "supported_cost_usd": 6.720000000000001e-05,
+        "supported_hit_at_5": 0.0,
+        "supported_latency_ms": 7926.465356023982,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.5769328
+      },
+      {
+        "baseline_reason_code": "standard_fallback",
+        "baseline_route": "STANDARD",
+        "query_type": "supported",
+        "question": "What does an MLmodel file declare about each model to enable serving it as a Python function?",
+        "question_id": "sqa-fe6afefa50c92384",
+        "route_changed": true,
+        "score_gap": 0.019730350000000008,
+        "split": "supported_evidence",
+        "supported_cost_usd": 7.435e-05,
+        "supported_hit_at_5": 1.0,
+        "supported_latency_ms": 8113.280335965101,
+        "target_reason_code": "score_gap_below_careful_threshold",
+        "target_route": "CAREFUL",
+        "top_score": 0.68772745
+      }
+    ],
+    "counts": {
+      "CAREFUL->CAREFUL": 16,
+      "FAST->FAST": 2,
+      "NO_ANSWER->NO_ANSWER": 21,
+      "STANDARD->CAREFUL": 7,
+      "STANDARD->STANDARD": 11
+    }
+  }
+}

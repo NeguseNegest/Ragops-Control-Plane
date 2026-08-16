@@ -174,15 +174,15 @@ The response contains the normalized query, the complete `decision`, the exact `
 {
   "query": "What is FastAPI?",
   "decision": {
-    "router_id": "rule_router@0.1.0",
+    "router_id": "rule_router@0.2.0",
     "router_status": "draft",
     "feature_schema_version": 1,
-    "route": "STANDARD",
-    "reason_code": "standard_fallback",
-    "reason": "The query matches neither the earlier NO_ANSWER/CAREFUL rules nor every FAST condition.",
-    "matched_reason_codes": ["standard_fallback"],
-    "pipeline_config": "dense_baseline",
-    "maximum_top_k": 10,
+    "route": "CAREFUL",
+    "reason_code": "score_gap_below_careful_threshold",
+    "reason": "The top-two dense score gap is below the configured CAREFUL threshold.",
+    "matched_reason_codes": ["score_gap_below_careful_threshold"],
+    "pipeline_config": "hybrid_rrf_cross_encoder",
+    "maximum_top_k": 5,
     "reuse_probe": false,
     "generate_answer": true,
     "response_mode": null
@@ -216,7 +216,7 @@ The response contains the normalized query, the complete `decision`, the exact `
 }
 ```
 
-The values above come from the recorded Day 38 live CLI smoke query. They demonstrate the contract; cold process/model initialization dominates this one observation and is not a service-level latency claim.
+The probe values above come from the recorded Day 38 live CLI smoke query; the decision is deterministically recomputed under Day 42's `rule_router@0.2.0`. The `0.01691073` gap is below the new strict `0.03` CAREFUL threshold. Cold process/model initialization dominates the timing observation and is not a service-level latency claim.
 
 For a query whose top score is below the strict Day 39 threshold, the same response has `decision.route: NO_ANSWER` and:
 

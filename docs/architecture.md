@@ -17,9 +17,10 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A routing workflow that performs the configured dense probe (currently top two), emits schema-versioned confidence/query features, deterministically selects FAST/STANDARD/CAREFUL/NO_ANSWER with stable reasons, and exposes `/route`; NO_ANSWER returns a deterministic corpus-scoped refusal while the other routes remain decision-only.
 - A no-answer evaluation workflow that calibrates a strict score threshold from five unsupported questions, checks it on seven held-out unsupported questions, replays 45 supported-question scores for false-refusal measurement, and writes complete JSON/CSV evidence.
 - A paired router-evaluation workflow that validates and replays fixed FAST, fixed CAREFUL, and routed evidence across supported quality, refusal correctness, measured-artifact latency, and controlled generation-cost projections.
+- A router-stabilization workflow that archives the prior policy, evaluates a constrained CAREFUL-gap grid on a deterministic tuning/validation split, and emits route-distribution and transition evidence.
 - A generation-cost workflow that prefers provider usage, deterministically estimates missing prompt/answer tokens, selects exact model rates from a versioned table or explicit override, and returns/persists one provenance-complete cost record.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, and the Day 41 routed-versus-fixed tradeoff evaluation are implemented. Automatic FAST/STANDARD/CAREFUL execution, caching, canary gates, failure mining, monitoring, evaluation gates, and production cost aggregation/budgets remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, the Day 41 routed-versus-fixed tradeoff evaluation, and Day 42 router stabilization are implemented. Automatic FAST/STANDARD/CAREFUL execution, semantic caching, canary gates, failure mining, monitoring, evaluation gates, and production cost aggregation/budgets remain planned.
 
 ## System Diagram
 
@@ -407,7 +408,28 @@ Day 39 refusal evidence + current router config
 
 All three strategies use the same 45 supported questions. The 12 reviewed unsupported questions contribute refusal-policy quality but not fabricated fixed-pipeline retrieval, latency, or generation-cost rows. The latency calculation composes previously measured dense and reranked artifacts serially; the dense top-10 time is a conservative proxy for the top-2 probe. Cost reconstructs the real generation prompt from the selected processed chunks, uses the verified reference answer as a controlled output-length basis, and applies the Day 40 model table without calling a provider.
 
-The current report keeps `rule_router@0.1.0` in draft. Routed reaches 55.56% supported Hit@5, compared with 28.89% for always FAST and 84.44% for always CAREFUL. It cuts average replay latency 46.29% and projected total cost 9.75% versus always CAREFUL, but gives up 28.89 Hit@5 points and falsely refuses 9/45 supported questions. Day 42 owns threshold tuning and the dedicated distribution/hardening work.
+The current report keeps `rule_router@0.2.0` in draft. Routed reaches 64.44% supported Hit@5, compared with 28.89% for always FAST and 84.44% for always CAREFUL. It cuts average replay latency 28.54% and projected total cost 11.96% versus always CAREFUL, but gives up 20 Hit@5 points and falsely refuses 9/45 supported questions.
+
+## Day 42 Router Stabilization Flow
+
+```text
+archived routed_v0.1.0.yaml + current routed.yaml
+                         |
+45 supported IDs -> SHA256 order -> 30 tuning / 15 validation
+                         |
+         CAREFUL gap grid 0.010 ... 0.045
+                         |
+  validation non-regression + 100% unsupported refusal
+       + latency ceiling + projected-cost ceiling
+                         |
+                  select 0.030
+                         |
+  57-row distribution + transitions + JSON/CSV/Markdown
+```
+
+Only the CAREFUL top-two score-gap boundary can change in this workflow. The evaluator reconstructs each candidate from the archived policy, recomputes the complete Day 41 comparison, and rejects a target that changes any unrelated threshold or route field. The selected v0.2.0 policy moves seven supported rows from STANDARD to CAREFUL and leaves every FAST and NO_ANSWER decision unchanged. This raises supported Hit@5 by 8.89 points while keeping all 12 unsupported refusals; average replay latency rises 33.07% and projected cost falls 2.46% relative to v0.1.0.
+
+The policy is stable in the Day 42 engineering sense: configuration is versioned, inputs and selection are deterministic, boundary/drift behavior is tested, and every outcome has a reason and distribution row. Lifecycle status remains `draft` because the evidence is small, drawn from a previously inspected artifact family, and still contains a 20% supported false-refusal rate.
 
 ## Online Request Flow
 

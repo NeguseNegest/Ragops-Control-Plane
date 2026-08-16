@@ -184,7 +184,7 @@ def test_ci_route_uses_real_probe_and_returns_fast_decision_without_executing_or
 
     assert response.status_code == 200
     assert body["query"] == query.query
-    assert body["decision"]["router_id"] == "rule_router@0.1.0"
+    assert body["decision"]["router_id"] == "rule_router@0.2.0"
     assert body["decision"]["router_status"] == "draft"
     assert body["decision"]["route"] == "FAST"
     assert body["decision"]["reason_code"] == "fast_conditions_satisfied"

@@ -60,6 +60,8 @@ All configured acceptance checks pass: unsupported and held-out refusal accuracy
 
 The result meets the Day 39 acceptance criterion on the checked-in examples, but the 20% supported false-refusal rate is material. The router stays `draft`; this is a conservative hallucination-reduction tradeoff, not a production-ready operating point.
 
+Day 42 leaves the NO_ANSWER boundary unchanged and replays the persisted probe evidence under `rule_router@0.2.0`. The reported refusal metrics therefore remain identical; only non-refusal CAREFUL/STANDARD decisions and the router identity can change.
+
 ## API Contract
 
 `POST /route` still returns the Day 38 decision, exact features, minimal probe evidence, and timings. Day 39 adds a nullable `refusal` field.
@@ -83,6 +85,14 @@ Run the 12 live unsupported probes, replay the supported report, require every a
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 make evaluate-no-answer
 ```
 
+After a router-only policy version change, recompute every decision from the report's persisted unsupported scores and the dense report's cross-checked supported scores without claiming a new live Qdrant run:
+
+```bash
+make replay-no-answer
+```
+
+Replay rejects changed IDs/questions/splits/categories, malformed scores, supported scores that differ from the immutable dense report, or a NO_ANSWER boundary that no longer matches calibration.
+
 Run the focused no-answer, router, and API tests:
 
 ```bash
@@ -96,4 +106,4 @@ make test-no-answer
 - The examples are manually authored and do not cover adversarial paraphrases, multilingual questions, prompt injection, or every out-of-domain technology.
 - Raw top score cannot distinguish all evidence adequacy failures. A stronger future policy should evaluate semantic scope and evidence entailment rather than continually raising a cosine threshold.
 - The 45 supported rows are source-derived questions, not an unbiased production traffic sample.
-- Automatic routed execution, routing trace persistence, route-level latency/cost comparison, and threshold hardening remain Days 41–42 work.
+- Day 41 route-level comparison and Day 42 threshold hardening are complete offline. Automatic routed execution and routing trace persistence remain future work.

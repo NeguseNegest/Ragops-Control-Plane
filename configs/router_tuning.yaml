@@ -1,0 +1,35 @@
+schema_version: 1
+name: router_stabilization
+version: 0.1.0
+status: evaluated
+
+baseline_router_config: configs/routed_v0.1.0.yaml
+target_router_config: configs/routed.yaml
+router_evaluation_config: configs/router_evaluation.yaml
+
+split:
+  method: sha256_question_id_order
+  tuning_questions: 30
+  validation_questions: 15
+
+tuning:
+  parameter: thresholds.careful.score_gap_below
+  candidates: [0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.045]
+  expected_selected_value: 0.030
+
+constraints:
+  minimum_validation_hit_rate_delta: 0.0
+  minimum_unsupported_refusal_accuracy: 1.0
+  maximum_full_average_latency_fraction_of_always_careful: 0.75
+  maximum_full_total_cost_fraction_of_always_careful: 1.0
+
+selection:
+  objective: maximize_tuning_hit_rate
+  tie_breakers:
+    - minimize_tuning_average_latency
+    - minimize_threshold
+
+output:
+  json_path: reports/evaluations/router_distribution.json
+  csv_path: reports/evaluations/router_distribution.csv
+  markdown_path: reports/week6_router_stabilization.md

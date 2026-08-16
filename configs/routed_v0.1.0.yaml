@@ -1,10 +1,10 @@
 schema_version: 1
 name: rule_router
-version: 0.2.0
+version: 0.1.0
 status: draft
 feature_schema_version: 1
 
-# Conditions are evaluated in this exact order. STANDARD is the fallback.
+# Archived Day 39/41 policy retained as the immutable Day 42 tuning baseline.
 decision_order:
   - NO_ANSWER
   - CAREFUL
@@ -18,26 +18,18 @@ probe:
 thresholds:
   no_answer:
     on_empty_results: true
-    # Day 39: ceiling(max of five calibration unsupported scores + 0.0005)
-    # at three decimal places. This safety-first draft also falsely refuses
-    # 9/45 supported examples and must not be treated as production-ready.
     top_score_below: 0.531
 
   careful:
-    # CAREFUL matches when any condition is true.
     top_score_below: 0.56
     on_missing_score_gap: true
-    # Day 42 selected 0.03 from the predeclared tuning grid. It improved
-    # tuning and validation Hit@5 while staying below the 75%-of-CAREFUL
-    # replay-latency ceiling; see configs/router_tuning.yaml.
-    score_gap_below: 0.03
+    score_gap_below: 0.01
     token_count_above: 20
     complexity_marker_count_at_least: 1
     clause_marker_count_at_least: 3
     long_token_ratio_at_least: 0.40
 
   fast:
-    # FAST matches only when every condition is true.
     top_score_at_least: 0.72
     score_gap_at_least: 0.05
     token_count_at_most: 12

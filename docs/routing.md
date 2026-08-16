@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Day 36 defines the versioned routing policy, Day 37 implements the initial probe, Day 38 implements deterministic selection, and Day 39 calibrates `NO_ANSWER`, adds a deterministic refusal, and measures refusal correctness.
+Day 36 defines the versioned routing policy, Day 37 implements the initial probe, Day 38 implements deterministic selection, Day 39 calibrates `NO_ANSWER`, Day 41 measures the routed tradeoff, and Day 42 tunes and stabilizes the explainable policy.
 
 `POST /route` exposes decisions without executing FAST/STANDARD/CAREFUL. For `NO_ANSWER`, it now returns the exact policy refusal without calling a generation provider. `POST /query` still uses explicit config selection. The Day 37 diagnostic probe continues to print `route: null`; use `route-query` or `/route` when a decision is wanted.
 
@@ -33,7 +33,7 @@ query
 
 ## Route Definitions
 
-The checked-in policy is `rule_router@0.1.0` with lifecycle status `draft`. It defines four uppercase decision values:
+The checked-in policy is `rule_router@0.2.0` with lifecycle status `draft`. The archived pre-tuning policy is `configs/routed_v0.1.0.yaml`. The current policy defines four uppercase decision values:
 
 | Route | Intended use | Pipeline intent | Output ceiling | Probe reuse | Current lifecycle guard |
 | --- | --- | --- | ---: | --- | --- |
@@ -74,13 +74,13 @@ After NO_ANSWER, `CAREFUL` matches when **any** condition is true:
 
 - only one result was returned, so the score gap is unavailable;
 - `top_score < 0.56`;
-- `score_gap < 0.01`;
+- `score_gap < 0.03`;
 - `token_count > 20`;
 - `complexity_marker_count >= 1`;
 - `clause_marker_count >= 3`; or
 - `long_token_ratio >= 0.40`.
 
-The OR rule treats either weak retrieval evidence or linguistic complexity as enough reason to use the higher-quality path. Missing gap data is explicitly CAREFUL rather than silently ordinary.
+The OR rule treats either weak retrieval evidence or linguistic complexity as enough reason to use the higher-quality path. Missing gap data is explicitly CAREFUL rather than silently ordinary. Day 42 selected the strict `0.03` boundary through the constrained sweep described below; a gap exactly equal to `0.03` continues to FAST/STANDARD evaluation.
 
 ### FAST
 
@@ -105,7 +105,7 @@ The AND rule makes FAST intentionally narrow. `maximum_top_k=2` is no greater th
 
 Every decision contains:
 
-- `router_id` and `router_status`, currently `rule_router@0.1.0` and `draft`;
+- `router_id` and `router_status`, currently `rule_router@0.2.0` and `draft`;
 - `feature_schema_version` and uppercase `route`;
 - `reason_code`, stable human-readable `reason`, and ordered `matched_reason_codes`;
 - `pipeline_config`, `maximum_top_k`, `reuse_probe`, and `generate_answer`; and
@@ -133,7 +133,7 @@ The first matching route wins. Within CAREFUL, every matching condition is retai
 
 `InitialRetrievalFeatures` is a frozen Pydantic object with `extra="forbid"` and `schema_version: 1`.
 
-| Group | Field | Meaning | Decision-active in v0.1.0 |
+| Group | Field | Meaning | Decision-active in v0.2.0 |
 | --- | --- | --- | --- |
 | `query_length` | `character_count` | Stripped query length including internal whitespace and punctuation | No; retained for analysis |
 | `query_length` | `token_count` | Normalized Unicode word/number token count | Yes |
@@ -180,18 +180,18 @@ The draft thresholds reference `reports/evaluations/dense_baseline.json` and the
 | Dense top score | 0.3018593 | 0.6597541 | 0.8521882 |
 | Top-two score gap | 0.0003204 | 0.0299468 | 0.1451546 |
 
-Applying the Day 39 conditions to those 45 supported questions yields:
+Applying the Day 42 v0.2.0 conditions to those 45 supported questions yields:
 
 | Draft route | Questions | Dense Hit@1 | Dense Hit@5 | Interpretation |
 | --- | ---: | ---: | ---: | --- |
 | `NO_ANSWER` | 9 | — | — | False refusals under the safety-first Day 39 threshold |
-| `CAREFUL` | 16 | — | — | Complexity/ambiguity or the narrow `0.531`–`0.56` score band |
+| `CAREFUL` | 23 | — | 21 | Complexity/ambiguity, low score, or a top-two gap below `0.03` |
 | `FAST` | 2 | 2 | 2 | Narrow 2/2 observation, far too small to claim general precision |
-| `STANDARD` | 18 | — | — | Middle band retained on the approved production dense pipeline |
+| `STANDARD` | 11 | — | 6 | Middle band retained on the approved production dense pipeline |
 
-These counts were initially descriptive rather than a routed quality benchmark. The dedicated Day 39 evaluation adds 12 unsupported examples and records 12/12 refusals, 9/45 supported false refusals, and 57.14% refusal precision. Day 41 subsequently turns the same fixed evidence into a paired routed-versus-fixed tradeoff report described below. Dense score/gap distributions still overlap, so no universal semantic-confidence claim is made.
+The CAREFUL and STANDARD Hit@5 values use the route-selected final rankings: reranked top five for CAREFUL and dense top ten for STANDARD. FAST is 2/2 at its output depth; NO_ANSWER intentionally has no ranking and all nine supported rows are false refusals. The dedicated Day 39 evaluation records 12/12 unsupported refusals and 57.14% refusal precision. Dense score/gap distributions still overlap, so no universal semantic-confidence claim is made.
 
-The thresholds remain `draft` because the unsupported set is small and the supported false-refusal rate is material. Later work must add broader adversarial coverage, route-level latency/quality measurement, and threshold hardening.
+The policy remains `draft` because the unsupported set is small, the supported false-refusal rate is material, and the tuning and validation rows come from one previously inspected 45-question artifact family. Later work must add broader adversarial and live-traffic coverage.
 
 ## Configuration Safety
 
@@ -235,7 +235,7 @@ make route-query ROUTER_QUERY="What is FastAPI?"
 
 The route report omits document text and returns the policy identity, route, primary and matching reasons, execution intent, exact features, probe chunk IDs/scores, and probe timings.
 
-The Day 38 live CLI smoke check used the same local Qdrant corpus and offline model cache as Day 37. `What is FastAPI?` returned the same two chunks/scores and selected `STANDARD` with `standard_fallback`: its `0.66855043` top score remains safely above the Day 39-adjusted CAREFUL floor of `0.56`, its `0.01691073` gap is above CAREFUL's `0.01` floor, and its simple three-token query has no complexity match, but the top score is below FAST's `0.72` requirement. The cold process measured `17619.20 ms` total, including `17337.97 ms` embedding/model initialization and `25.64 ms` dense search; this is smoke evidence, not steady-state performance.
+The Day 38 live CLI smoke check used the same local Qdrant corpus and offline model cache as Day 37. Under the then-current v0.1.0 policy, `What is FastAPI?` selected STANDARD because its `0.01691073` gap exceeded the old strict `0.01` CAREFUL boundary. Day 42 does not claim another live query: replaying those exact probe features under v0.2.0 selects CAREFUL with `score_gap_below_careful_threshold`, because `0.01691073 < 0.03`. The historical cold process measured `17619.20 ms` total, including `17337.97 ms` embedding/model initialization and `25.64 ms` dense search; this is smoke evidence, not steady-state performance.
 
 The equivalent HTTP diagnostic is:
 
@@ -259,13 +259,13 @@ make validate-no-answer
 
 ## Day 41 Router Evaluation
 
-`configs/router_evaluation.yaml` defines a deterministic `artifact_replay` comparison among always FAST, always CAREFUL, and the current router. It cross-checks the dense and reranked question records against all 45 labels, recomputes every supported and unsupported decision against `rule_router@0.1.0`, reconstructs exact generation prompts from selected processed chunks, and rejects stale routing, dataset, chunk, or pricing evidence.
+`configs/router_evaluation.yaml` defines a deterministic `artifact_replay` comparison among always FAST, always CAREFUL, and the current router. It cross-checks the dense and reranked question records against all 45 labels, recomputes every supported and unsupported decision against `rule_router@0.2.0`, reconstructs exact generation prompts from selected processed chunks, and rejects stale routing, dataset, chunk, or pricing evidence.
 
-The recorded supported route mix is 2 FAST, 18 STANDARD, 16 CAREFUL, and 9 NO_ANSWER. Always FAST reaches 28.89% Hit@5; always CAREFUL reaches 84.44%; routed reaches 55.56%. Routed correctly refuses all 12 reviewed unsupported questions, but the nine supported NO_ANSWER decisions remain false refusals. The combined supported-evidence/unsupported-refusal proxy is 22.81% for always FAST, 66.67% for always CAREFUL, and 64.91% for routed.
+The recorded supported route mix is 2 FAST, 11 STANDARD, 23 CAREFUL, and 9 NO_ANSWER. Always FAST reaches 28.89% Hit@5; always CAREFUL reaches 84.44%; routed reaches 64.44%. Routed correctly refuses all 12 reviewed unsupported questions, but the nine supported NO_ANSWER decisions remain false refusals. The combined supported-evidence/unsupported-refusal proxy is 22.81% for always FAST, 66.67% for always CAREFUL, and 71.93% for routed.
 
-Measured-artifact serial replay estimates average retrieval latency at 679.9 ms for always FAST, 4681.6 ms for always CAREFUL, and 2514.3 ms for routed. Controlled `gpt-5-nano` prompt/reference-answer projections total `$0.00145935`, `$0.00355245`, and `$0.00320625`, respectively. These values include cold artifacts, use dense top-10 latency as a conservative top-2 probe proxy, and are neither a simultaneous live benchmark nor a provider invoice.
+Measured-artifact serial replay estimates average retrieval latency at 679.9 ms for always FAST, 4681.6 ms for always CAREFUL, and 3345.6 ms for routed. Controlled `gpt-5-nano` prompt/reference-answer projections total `$0.00145935`, `$0.00355245`, and `$0.00312740`, respectively. These values include cold artifacts, use dense top-10 latency as a conservative top-2 probe proxy, and are neither a simultaneous live benchmark nor a provider invoice.
 
-The result is `keep_router_draft`: routed makes a useful latency/quality compromise against the two extremes, but supported retrieval remains 28.89 Hit@5 points below always CAREFUL and false refusal is still 20%. Run:
+The result is `keep_router_draft`: routed makes a useful latency/quality compromise against the two extremes, but supported retrieval remains 20 Hit@5 points below always CAREFUL and false refusal is still 20%. Run:
 
 ```bash
 make validate-router-evaluation
@@ -275,6 +275,33 @@ make test-router-evaluation
 
 The canonical explanation and limitations are in [`../reports/week6_router_comparison.md`](../reports/week6_router_comparison.md).
 
+## Day 42 Stabilization and Route Distribution
+
+`configs/router_tuning.yaml` is the reproducible tuning contract. It compares the archived `rule_router@0.1.0` against v0.2.0 and permits only one changed behavioral field: `thresholds.careful.score_gap_below`. NO_ANSWER stays locked to the Day 39 calibration because lowering it would weaken safety on the held-out unsupported set; FAST stays locked because only two supported examples currently select it.
+
+Supported IDs are ordered by SHA256 and split into 30 tuning and 15 validation rows. The predeclared candidate grid is `0.010`, `0.015`, `0.020`, `0.025`, `0.030`, `0.035`, `0.040`, and `0.045`. Candidates must preserve validation Hit@5, keep unsupported refusal at 100%, remain at or below 75% of always-CAREFUL average replay latency, and not exceed always-CAREFUL projected cost. Selection maximizes tuning Hit@5, then minimizes tuning latency and the threshold. `0.030` and `0.035` tie on quality; `0.030` wins the deterministic lower-latency/lower-threshold tie-break. The higher `0.040` and `0.045` candidates fail the latency ceiling.
+
+The target distribution is:
+
+| Scope | FAST | STANDARD | CAREFUL | NO_ANSWER |
+| --- | ---: | ---: | ---: | ---: |
+| 45 supported | 2 | 11 | 23 | 9 |
+| 12 unsupported | 0 | 0 | 0 | 12 |
+| All 57 | 2 | 11 | 23 | 21 |
+
+Seven supported rows move from STANDARD to CAREFUL; every other route is stable. Six of those seven CAREFUL rankings contain relevant top-five evidence and one still misses, but one moved row was already a dense hit, so the net full-set gain is four supported hits. Compared with v0.1.0, supported Hit@5 rises from 55.56% to 64.44%, MRR from `0.4469` to `0.5267`, and the combined proxy from 64.91% to 71.93%. Average replay latency rises from 2514.3 to 3345.6 ms; projected cost falls from `$0.00320625` to `$0.00312740` because five-chunk CAREFUL prompts can be smaller than ten-chunk STANDARD prompts.
+
+Run:
+
+```bash
+make replay-no-answer
+make tune-router
+make validate-router-tuning
+make test-router-stabilization
+```
+
+The JSON report contains every candidate, constraint check, source hash, route reason, transition, and per-question distribution row. The CSV contains exactly 57 rows. The concise result is [`../reports/week6_router_stabilization.md`](../reports/week6_router_stabilization.md). This makes the router deterministic, regression-tested, and explainable for Day 42; it does not turn a small offline result into production approval.
+
 ## Remaining Work
 
-Day 42 must tune thresholds, expand router tests, and produce the dedicated distribution report before the policy can move beyond draft. Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.
+Day 43 begins semantic-cache design. Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.

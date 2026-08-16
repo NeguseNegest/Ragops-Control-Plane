@@ -7,11 +7,11 @@
     "token_estimator": "utf8_bytes_div4_ceiling_v1"
   },
   "decision": {
-    "next_step": "Day 42 must tune thresholds and inspect route distribution before automatic routed execution is considered stable.",
+    "next_step": "Day 42 tuning is complete; keep the policy draft until broader offline and live evidence reduces the supported false-refusal risk.",
     "status": "keep_router_draft",
     "summary": "The routed policy improves the combined support/refusal proxy over always FAST and reduces latency/cost versus always CAREFUL, but loses substantial supported retrieval quality and retains a 20% supported false-refusal rate."
   },
-  "evaluation_id": "router_comparison@0.1.0",
+  "evaluation_id": "router_comparison@0.2.0",
   "evaluation_status": "evaluated",
   "limitations": [
     "This is a deterministic replay of prior measured artifacts, not a simultaneous live benchmark.",
@@ -502,7 +502,7 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "complexity_marker_count_at_least_careful_threshold",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
           "route": "CAREFUL"
         }
@@ -526,9 +526,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -646,7 +646,7 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "clause_marker_count_at_least_careful_threshold",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
           "route": "CAREFUL"
         }
@@ -862,9 +862,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -934,9 +934,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -1126,9 +1126,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -1198,9 +1198,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -1342,9 +1342,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -1390,9 +1390,9 @@
         },
         "routed": {
           "correct": true,
-          "reason_code": "standard_fallback",
+          "reason_code": "score_gap_below_careful_threshold",
           "refused": false,
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     }
@@ -1613,7 +1613,7 @@
       "relevant_chunk_ids": [
         "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -1680,9 +1680,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 8.925e-05,
+            "amount_usd": 7.984999999999999e-05,
             "currency": "USD",
-            "input_tokens": 1569,
+            "input_tokens": 1381,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 27,
@@ -1693,28 +1693,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 1596
+            "total_tokens": 1408
           },
-          "hit_at_5": 0.0,
-          "latency_ms": 288.7860320042819,
-          "ndcg_at_5": 0.0,
-          "pipeline_config": "dense_baseline",
-          "recall_at_5": 0.0,
-          "reciprocal_rank": 0.0,
+          "hit_at_5": 1.0,
+          "latency_ms": 3432.4272960075177,
+          "ndcg_at_5": 0.6309297535714575,
+          "pipeline_config": "hybrid_rrf_cross_encoder",
+          "recall_at_5": 1.0,
+          "reciprocal_rank": 0.5,
           "refused": false,
           "retrieved_chunk_ids": [
-            "8df8da26-e2fa-5b29-99d4-b5dae8103bac",
-            "d14691c9-067a-5272-a4c6-b915ea2ad12d",
-            "bc61dba4-a0d1-58e2-a46b-26e623d65fa6",
-            "23f71e8b-5e03-5953-adc4-861ed3d5bc12",
-            "aef1f0dd-d983-5081-80ea-49fdc787db37",
-            "eaf9e709-f0cb-55c9-b656-de6f47f19f86",
-            "b974d384-0c75-58cb-b297-7423ac691b99",
-            "5e6681ea-7f02-5200-be3a-2d49f66dc6c6",
-            "df909fca-3fb7-54ae-bca3-dbdaf286ac6b",
-            "a2cdbd99-142e-58ce-bd1f-467fae09ee28"
+            "ee148e49-27f1-50bb-9cd4-1a3263497bc1",
+            "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335",
+            "7890a970-7397-54bd-9b74-1eb6382373b3",
+            "580289f2-16e0-55de-985e-e56614722357",
+            "f5e032f2-4362-5793-a19e-2eee4c5b523c"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -1826,7 +1821,7 @@
       "relevant_chunk_ids": [
         "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -1893,9 +1888,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 2.0200000000000003e-05,
+            "amount_usd": 6.720000000000001e-05,
             "currency": "USD",
-            "input_tokens": 348,
+            "input_tokens": 1288,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 7,
@@ -1906,28 +1901,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 355
+            "total_tokens": 1295
           },
           "hit_at_5": 0.0,
-          "latency_ms": 199.53838200308383,
+          "latency_ms": 7926.465356023982,
           "ndcg_at_5": 0.0,
-          "pipeline_config": "dense_baseline",
+          "pipeline_config": "hybrid_rrf_cross_encoder",
           "recall_at_5": 0.0,
           "reciprocal_rank": 0.0,
           "refused": false,
           "retrieved_chunk_ids": [
-            "e7dded3e-c071-50b1-b3d9-ef34c8c3af9d",
-            "757f5ceb-4f2c-5fdf-b3a6-c352241766b2",
-            "f4019142-991e-5d1d-9ec6-f14f7346673a",
-            "85fe5bba-3a23-54ab-8b22-8c547f3dde71",
-            "2d453ba8-e855-51ab-9ce3-f26a6ce69944",
-            "8ed49aa0-4b8d-51f3-ac14-fbe57e67fa54",
-            "d0311a50-751b-55e0-98fd-9f8a205aea03",
-            "f01bb5bb-0518-5415-a630-6fa06fe896d4",
-            "82592107-24c0-5227-941b-122c09eec225",
-            "139545dc-0181-5dd9-9af9-8b22fa0dc7cc"
+            "c84dd39b-5f58-5707-a526-97c5e6f7e978",
+            "535f0d59-bf72-544b-b3f4-13ead96fa740",
+            "fc659af8-0bac-5182-8be1-2ca7892ccbd5",
+            "3493af72-a145-542f-9ef1-3270c4e20878",
+            "db5f44fb-2e4b-5cd8-a4c6-b39fe4c9df80"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -2493,7 +2483,7 @@
       "relevant_chunk_ids": [
         "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -2560,9 +2550,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 9.84e-05,
+            "amount_usd": 8.235e-05,
             "currency": "USD",
-            "input_tokens": 1936,
+            "input_tokens": 1615,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 4,
@@ -2573,28 +2563,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 1940
+            "total_tokens": 1619
           },
-          "hit_at_5": 0.0,
-          "latency_ms": 221.92539204843342,
-          "ndcg_at_5": 0.0,
-          "pipeline_config": "dense_baseline",
-          "recall_at_5": 0.0,
-          "reciprocal_rank": 0.1111111111111111,
+          "hit_at_5": 1.0,
+          "latency_ms": 5690.12482103426,
+          "ndcg_at_5": 1.0,
+          "pipeline_config": "hybrid_rrf_cross_encoder",
+          "recall_at_5": 1.0,
+          "reciprocal_rank": 1.0,
           "refused": false,
           "retrieved_chunk_ids": [
-            "bfd25439-477b-51c7-a2a0-cc786bf90af2",
-            "340a7a12-017b-5c84-9e42-26cdfb3c730b",
-            "c582f4da-9e4e-5225-8bba-2093d7a92012",
-            "6cd7d628-b9df-5ae4-9a13-4750b6722af7",
-            "1c11fb41-d8e9-54c4-a6a8-7ee81559ae91",
-            "8793a7a9-7a3c-5156-96bc-0865d968fe11",
-            "6d5e0afd-78b5-5242-bb94-c944cb587d09",
-            "1617d361-2e2a-5103-a892-4798656621ca",
             "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
-            "8c1e4db1-8427-5d14-ba4a-0b472044d54c"
+            "bfd25439-477b-51c7-a2a0-cc786bf90af2",
+            "e8fbb621-b6b5-514d-afa7-86dad192161d",
+            "05701a59-154f-5880-8ad6-03c5b868a610",
+            "340a7a12-017b-5c84-9e42-26cdfb3c730b"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -2816,7 +2801,7 @@
       "relevant_chunk_ids": [
         "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -2883,9 +2868,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 0.00010475,
+            "amount_usd": 7.435e-05,
             "currency": "USD",
-            "input_tokens": 1975,
+            "input_tokens": 1367,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 15,
@@ -2896,28 +2881,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 1990
+            "total_tokens": 1382
           },
-          "hit_at_5": 0.0,
-          "latency_ms": 324.44204401690513,
-          "ndcg_at_5": 0.0,
-          "pipeline_config": "dense_baseline",
-          "recall_at_5": 0.0,
-          "reciprocal_rank": 0.0,
+          "hit_at_5": 1.0,
+          "latency_ms": 8113.280335965101,
+          "ndcg_at_5": 1.0,
+          "pipeline_config": "hybrid_rrf_cross_encoder",
+          "recall_at_5": 1.0,
+          "reciprocal_rank": 1.0,
           "refused": false,
           "retrieved_chunk_ids": [
+            "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
             "ce08fa6e-2a0d-5941-a768-721f1d318900",
             "05701a59-154f-5880-8ad6-03c5b868a610",
-            "8ff9af87-39b6-53d6-88e1-f4662041fb92",
             "ecf09611-c5f3-557e-8e79-fea8f479b1f6",
-            "f315f40c-0681-5c16-85e5-be7bccbc587b",
-            "12609df4-0eb5-5aa2-bab6-738c76027aca",
-            "670821d3-845a-54ee-9581-9d3395d96255",
-            "9b8cce66-ff93-53cf-8de8-1d18f9c90e7f",
-            "d5ef410f-88f0-55aa-90f9-1cc5e7d5b414",
-            "3d43d5c9-a8b1-5423-8d15-81085af21efd"
+            "dbe09aa4-6925-52d2-a65f-abac53855a8a"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -4090,7 +4070,7 @@
       "relevant_chunk_ids": [
         "0421b964-469f-55a3-ae9b-e64ce5cafe86"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -4157,9 +4137,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 7.27e-05,
+            "amount_usd": 4.795e-05,
             "currency": "USD",
-            "input_tokens": 1422,
+            "input_tokens": 927,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 4,
@@ -4170,28 +4150,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 1426
+            "total_tokens": 931
           },
           "hit_at_5": 1.0,
-          "latency_ms": 286.62529995199293,
-          "ndcg_at_5": 0.38685280723454163,
-          "pipeline_config": "dense_baseline",
+          "latency_ms": 7871.5781749924645,
+          "ndcg_at_5": 1.0,
+          "pipeline_config": "hybrid_rrf_cross_encoder",
           "recall_at_5": 1.0,
-          "reciprocal_rank": 0.2,
+          "reciprocal_rank": 1.0,
           "refused": false,
           "retrieved_chunk_ids": [
-            "08795bc3-e7c0-5c9d-a9e8-79a6aa1e9d0b",
-            "d0cacd06-ea3e-52c5-9497-bc5e8fb0eccd",
-            "9616f409-9214-5723-895a-458b59478f06",
-            "9cb2ccf7-13ed-5cbc-a693-d95d6228bfe0",
             "0421b964-469f-55a3-ae9b-e64ce5cafe86",
-            "2c389b96-f00f-548b-862f-8afcdd94062c",
-            "5e8a3c95-a811-536b-af16-2ad8dee0bbbb",
-            "c71ca15c-ecef-5019-8a35-cb4da289e4d6",
-            "94e49352-e82b-5ab0-bb87-6a6dc88ed38d",
-            "f48cfb5d-1ea0-565c-a5cb-3376ed7cd094"
+            "9616f409-9214-5723-895a-458b59478f06",
+            "6d43ca41-9634-526a-8383-2397ce372bdc",
+            "dd9f2a99-e8a0-5b8b-886d-2dbd383c4611",
+            "ae084e1e-75e7-53a7-873d-af6645df65dc"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -4421,7 +4396,7 @@
       "relevant_chunk_ids": [
         "21560148-6a34-5a28-9b74-593b0ac45fef"
       ],
-      "router_reason_code": "clause_marker_count_at_least_careful_threshold",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -4528,7 +4503,7 @@
       "relevant_chunk_ids": [
         "21560148-6a34-5a28-9b74-593b0ac45fef"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -4595,9 +4570,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 8.865e-05,
+            "amount_usd": 6.47e-05,
             "currency": "USD",
-            "input_tokens": 1469,
+            "input_tokens": 990,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 38,
@@ -4608,28 +4583,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 1507
+            "total_tokens": 1028
           },
           "hit_at_5": 1.0,
-          "latency_ms": 180.0962280249223,
+          "latency_ms": 3226.8947170232423,
           "ndcg_at_5": 1.0,
-          "pipeline_config": "dense_baseline",
+          "pipeline_config": "hybrid_rrf_cross_encoder",
           "recall_at_5": 1.0,
           "reciprocal_rank": 1.0,
           "refused": false,
           "retrieved_chunk_ids": [
             "21560148-6a34-5a28-9b74-593b0ac45fef",
-            "096edd22-507c-52c1-96c2-016f31daddf3",
-            "be8a1c31-d72d-5c8b-820b-1ec6a356a509",
-            "95c028b7-a820-520b-91af-f46b5579aa37",
+            "70bbe55a-8991-5310-9c38-65e359003b33",
             "055a9d79-9114-5102-a6e5-b19ced1866f2",
-            "095f9743-a28d-56a7-bef3-1abde6b4214c",
-            "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
-            "2052b6c0-03db-5627-a2bc-7c8ff3abe47a",
-            "26ac93ca-f305-5cd3-a36b-db4c0004d45c",
-            "ff366582-391a-5df5-b740-3ae1945297c2"
+            "14d4ab16-1a76-5eeb-8b5c-476d187b0b6e",
+            "95c028b7-a820-520b-91af-f46b5579aa37"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -5177,7 +5147,7 @@
       "relevant_chunk_ids": [
         "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
       ],
-      "router_reason_code": "complexity_marker_count_at_least_careful_threshold",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -5812,7 +5782,7 @@
       "relevant_chunk_ids": [
         "221aa309-cce0-5abb-bb6f-af8f90ff696a"
       ],
-      "router_reason_code": "standard_fallback",
+      "router_reason_code": "score_gap_below_careful_threshold",
       "strategies": {
         "always_careful": {
           "cost": {
@@ -5879,9 +5849,9 @@
         },
         "routed": {
           "cost": {
-            "amount_usd": 9.015000000000001e-05,
+            "amount_usd": 6.885e-05,
             "currency": "USD",
-            "input_tokens": 1675,
+            "input_tokens": 1249,
             "input_usd_per_million_tokens": 0.05,
             "model": "gpt-5-nano",
             "output_tokens": 16,
@@ -5892,28 +5862,23 @@
             "status": "estimated",
             "token_estimator": "utf8_bytes_div4_ceiling_v1",
             "token_source": "heuristic_estimate",
-            "total_tokens": 1691
+            "total_tokens": 1265
           },
-          "hit_at_5": 0.0,
-          "latency_ms": 184.1268960852176,
-          "ndcg_at_5": 0.0,
-          "pipeline_config": "dense_baseline",
-          "recall_at_5": 0.0,
-          "reciprocal_rank": 0.1,
+          "hit_at_5": 1.0,
+          "latency_ms": 2836.01734804688,
+          "ndcg_at_5": 0.6309297535714575,
+          "pipeline_config": "hybrid_rrf_cross_encoder",
+          "recall_at_5": 1.0,
+          "reciprocal_rank": 0.5,
           "refused": false,
           "retrieved_chunk_ids": [
-            "58ac3b23-a727-5051-9229-399cb201be40",
-            "8e795ac3-b7d7-5fee-bc21-fa265ac04b54",
-            "dd2fd4c8-4f74-5c4e-a77d-cabb319078dd",
-            "5eb7f761-c4a4-5652-925f-c29367c6c525",
-            "9cde6bd7-f662-5cbc-97e5-ae309ecd2404",
-            "7dcdcca3-6466-5700-97da-0c34fed16509",
+            "fcabdafe-e84d-580b-a55e-f98f23c4802d",
+            "221aa309-cce0-5abb-bb6f-af8f90ff696a",
             "0bc9232d-3b2c-5be7-9687-2e9cee497d79",
-            "6b634f76-13ef-5d4e-b188-32c432716720",
-            "838d35e3-e315-59b1-ba89-39bb63a6be15",
-            "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+            "2d2f4a0b-8116-5bba-a0e9-e07064f3460b",
+            "5eb7f761-c4a4-5652-925f-c29367c6c525"
           ],
-          "route": "STANDARD"
+          "route": "CAREFUL"
         }
       }
     },
@@ -6251,7 +6216,7 @@
       "FAST",
       "STANDARD"
     ],
-    "router_id": "rule_router@0.1.0",
+    "router_id": "rule_router@0.2.0",
     "status": "draft"
   },
   "run_name": "router_comparison",
@@ -6293,11 +6258,11 @@
     },
     "no_answer_report": {
       "path": "reports/evaluations/no_answer.json",
-      "sha256": "03c0c74cfadf4dfb71b65c253855f35041b0d87009f769c1eb4e7d2585aa159b"
+      "sha256": "be4bc094ac0fc947b68f24f9c46bc66739bb91bfd31f824095126d8a2e42566b"
     },
     "router_config": {
       "path": "configs/routed.yaml",
-      "sha256": "6f9c81ee0254e81be9028c3d9bdc439957ccf6bd1e824673c186c097889c0e3d"
+      "sha256": "b5783856458a9e5bddf65bd38aa90c0b4ee0ce4f6e2f19a827ae58a8eed8e13c"
     }
   },
   "strategies": {
@@ -6415,22 +6380,22 @@
       "combined_quality_proxy": {
         "correct_unsupported_refusals": 12,
         "definition": "supported_hit_at_5_or_correct_unsupported_refusal",
-        "success_rate": 0.6491228070175439,
-        "successful_supported": 25,
+        "success_rate": 0.7192982456140351,
+        "successful_supported": 29,
         "total_questions": 57
       },
       "generation_cost_projection_supported": {
         "amount_usd": {
-          "average": 7.125000000000001e-05,
+          "average": 6.949777777777779e-05,
           "count": 45,
           "maximum": 0.00021915000000000004,
           "minimum": 0.0,
-          "p50": 7.755e-05,
+          "p50": 7.110000000000001e-05,
           "p95": 0.00016231999999999995,
-          "total": 0.0032062500000000003
+          "total": 0.0031274000000000002
         },
         "currency": "USD",
-        "input_tokens": 59309,
+        "input_tokens": 57732,
         "output_tokens": 602,
         "price_table_id": "generation_model_costs@1.0.0",
         "status_counts": {
@@ -6438,17 +6403,17 @@
           "zero_cost": 9
         },
         "token_basis": "exact_prompt_plus_verified_reference_answer",
-        "total_tokens": 59911
+        "total_tokens": 58334
       },
       "latency_ms_supported": {
-        "average": 2514.2511458705285,
+        "average": 3345.612207536275,
         "count": 45,
         "maximum": 37720.06738599157,
         "method": "measured_artifact_serial_replay",
         "minimum": 39.548447995912284,
-        "p50": 286.62529995199293,
-        "p95": 6319.860685453749,
-        "total": 113141.30156417377
+        "p50": 2836.01734804688,
+        "p95": 7915.487919817679,
+        "total": 150552.54933913238
       },
       "refusal_quality": {
         "overall_policy_accuracy": 0.8421052631578947,
@@ -6457,32 +6422,32 @@
         "unsupported_refusal_accuracy": 1.0
       },
       "retrieval_quality_supported": {
-        "hit_rate_at_5": 0.5555555555555556,
-        "mrr": 0.4469135802469136,
-        "ndcg_at_5": 0.4701950609978155,
+        "hit_rate_at_5": 0.6444444444444445,
+        "mrr": 0.5266666666666666,
+        "ndcg_at_5": 0.5563063209957794,
         "question_count": 45,
-        "recall_at_5": 0.5555555555555556
+        "recall_at_5": 0.6444444444444445
       },
       "route_counts_supported": {
-        "CAREFUL": 16,
+        "CAREFUL": 23,
         "FAST": 2,
         "NO_ANSWER": 9,
-        "STANDARD": 18
+        "STANDARD": 11
       }
     }
   },
   "tradeoff": {
     "routed_vs_always_careful": {
-      "average_latency_relative_delta": -0.4629497975762184,
-      "combined_quality_proxy_delta": -0.01754385964912275,
-      "hit_rate_at_5_delta": -0.28888888888888886,
-      "total_cost_relative_delta": -0.09745386986445975
+      "average_latency_relative_delta": -0.28536903871362274,
+      "combined_quality_proxy_delta": 0.052631578947368474,
+      "hit_rate_at_5_delta": -0.19999999999999996,
+      "total_cost_relative_delta": -0.11964981913890417
     },
     "routed_vs_always_fast": {
-      "average_latency_relative_delta": 2.6981471701065405,
-      "combined_quality_proxy_delta": 0.4210526315789474,
-      "hit_rate_at_5_delta": 0.2666666666666667,
-      "total_cost_relative_delta": 1.1970397779833488
+      "average_latency_relative_delta": 3.9209747156306145,
+      "combined_quality_proxy_delta": 0.4912280701754386,
+      "hit_rate_at_5_delta": 0.3555555555555556,
+      "total_cost_relative_delta": 1.143008873813684
     }
   }
 }

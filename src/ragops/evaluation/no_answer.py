@@ -229,6 +229,36 @@ def _supported_features(question):
     return build_initial_retrieval_features(question.get("question"), chunks, requested_top_k=2)
 
 
+def _recorded_features(question_id, question, top_score, score_gap):
+    """Rebuild router features from one persisted top-score/gap pair."""
+    try:
+        top_score = float(top_score)
+        score_gap = float(score_gap)
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"Recorded router evidence for {question_id} requires numeric top_score and score_gap.") from error
+    if not math.isfinite(top_score) or not math.isfinite(score_gap) or score_gap < 0:
+        raise ValueError(f"Recorded router evidence for {question_id} must be finite with a non-negative gap.")
+    chunks = [
+        RetrievedChunk(
+            chunk_id=f"{question_id}-probe-1",
+            document_id="recorded-router-evidence",
+            text="Recorded router evidence placeholder.",
+            score=top_score,
+            rank=1,
+            metadata={},
+        ),
+        RetrievedChunk(
+            chunk_id=f"{question_id}-probe-2",
+            document_id="recorded-router-evidence",
+            text="Recorded router evidence placeholder.",
+            score=top_score - score_gap,
+            rank=2,
+            metadata={},
+        ),
+    ]
+    return build_initial_retrieval_features(question, chunks, requested_top_k=2)
+
+
 def _ratio(numerator, denominator):
     return numerator / denominator if denominator else 0.0
 
@@ -336,6 +366,166 @@ def run_no_answer_evaluation(config, runtime, progress=None):
             }
         )
 
+    metrics = refusal_metrics(unsupported_rows, supported_rows)
+    acceptance = acceptance_results(metrics, config.acceptance)
+    return {
+        "schema_version": NO_ANSWER_EVALUATION_SCHEMA_VERSION,
+        "run_name": config.name,
+        "evaluation_id": f"{config.name}@{config.version}",
+        "evaluation_status": config.status,
+        "router_id": f"{router_config.name}@{router_config.version}",
+        "router_status": router_config.status,
+        "probe": {
+            "pipeline_config": router_config.probe.pipeline_config,
+            "top_k": router_config.probe.top_k,
+            "feature_schema_version": router_config.feature_schema_version,
+        },
+        "refusal_policy": {
+            "answer": config.refusal.answer,
+            "prompt_version": config.refusal.prompt_version,
+            "generated_by": "deterministic_policy",
+        },
+        "threshold": {
+            "method": config.threshold_selection.method,
+            "maximum_calibration_unsupported_score": max(calibration_scores),
+            "score_margin": config.threshold_selection.score_margin,
+            "decimal_places": config.threshold_selection.decimal_places,
+            "recommended": recommended_threshold,
+            "configured": configured_threshold,
+        },
+        "counts": {
+            "unsupported": len(unsupported_rows),
+            "calibration_unsupported": inputs["counts"]["calibration"],
+            "evaluation_unsupported": inputs["counts"]["evaluation"],
+            "supported": len(supported_rows),
+        },
+        "metrics": metrics,
+        "acceptance": {**acceptance, "passed": all(acceptance.values())},
+        "limitations": [
+            "The unsupported set is small and manually authored; refusal accuracy is not a population estimate.",
+            "The threshold is corpus/model/index specific and raw cosine scores are not probabilities.",
+            "The 20 percent supported false-refusal ceiling is a safety-first draft tradeoff, not a production target.",
+            "Only score-threshold refusal is measured; adversarial paraphrases and semantic scope classification remain future work.",
+        ],
+        "questions": unsupported_rows + supported_rows,
+    }
+
+
+def replay_no_answer_evaluation(config, source_report):
+    """Recompute Day 39 decisions from persisted probe evidence without Qdrant."""
+    inputs = validate_no_answer_inputs(config)
+    if not isinstance(source_report, dict) or source_report.get("run_name") != config.name:
+        raise ValueError("No-answer replay source must be the existing canonical no-answer report.")
+    source_questions = source_report.get("questions")
+    if not isinstance(source_questions, list):
+        raise ValueError("No-answer replay source must contain question evidence.")
+    source_by_id = {}
+    for row in source_questions:
+        question_id = row.get("question_id") if isinstance(row, dict) else None
+        if not isinstance(question_id, str) or not question_id or question_id in source_by_id:
+            raise ValueError("No-answer replay source contains invalid or duplicate question IDs.")
+        source_by_id[question_id] = row
+
+    supported_questions = inputs["supported_report"]["questions"]
+    expected_ids = {example.id for example in inputs["examples"]} | {
+        question["question_id"] for question in supported_questions
+    }
+    if set(source_by_id) != expected_ids:
+        raise ValueError("No-answer replay source does not exactly cover current unsupported and supported evidence.")
+
+    router_config = inputs["router_config"]
+    router = RuleBasedRouter(router_config)
+    unsupported_rows = []
+    for example in inputs["examples"]:
+        source = source_by_id[example.id]
+        if (
+            source.get("question") != example.question
+            or source.get("query_type") != "unsupported"
+            or source.get("split") != example.split
+            or source.get("category") != example.category
+        ):
+            raise ValueError(f"No-answer replay provenance differs for unsupported question {example.id}.")
+        features = _recorded_features(
+            example.id,
+            example.question,
+            source.get("top_score"),
+            source.get("score_gap"),
+        )
+        decision = router.select(features)
+        refused = decision.route == "NO_ANSWER"
+        refusal = generate_no_answer(example.question, decision) if refused else None
+        unsupported_rows.append(
+            {
+                "question_id": example.id,
+                "question": example.question,
+                "query_type": "unsupported",
+                "split": example.split,
+                "category": example.category,
+                "top_score": features.retrieval_confidence.top_score,
+                "score_gap": features.retrieval_confidence.score_gap,
+                "route": decision.route,
+                "reason_code": decision.reason_code,
+                "refused": refused,
+                "refusal_answer": refusal.answer if refusal else None,
+                "refusal_prompt_sha256": refusal.prompt_sha256 if refusal else None,
+                "refusal_generated_by": refusal.generated_by if refusal else None,
+                "correct": refusal is not None and refusal.answer == config.refusal.answer,
+            }
+        )
+
+    supported_rows = []
+    for question in supported_questions:
+        question_id = question["question_id"]
+        source = source_by_id[question_id]
+        if (
+            source.get("question") != question["question"]
+            or source.get("query_type") != "supported"
+            or source.get("split") != "supported_evidence"
+            or source.get("category") != "supported"
+        ):
+            raise ValueError(f"No-answer replay provenance differs for supported question {question_id}.")
+        recorded_features = _recorded_features(
+            question_id,
+            question["question"],
+            source.get("top_score"),
+            source.get("score_gap"),
+        )
+        features = _supported_features(question)
+        recorded_confidence = recorded_features.retrieval_confidence
+        current_confidence = features.retrieval_confidence
+        if not math.isclose(recorded_confidence.top_score, current_confidence.top_score, rel_tol=0, abs_tol=1e-12) or not math.isclose(
+            recorded_confidence.score_gap, current_confidence.score_gap, rel_tol=0, abs_tol=1e-12
+        ):
+            raise ValueError(f"No-answer replay scores differ from current supported evidence for {question_id}.")
+        decision = router.select(features)
+        refused = decision.route == "NO_ANSWER"
+        refusal = generate_no_answer(question["question"], decision) if refused else None
+        supported_rows.append(
+            {
+                "question_id": question_id,
+                "question": question["question"],
+                "query_type": "supported",
+                "split": "supported_evidence",
+                "category": "supported",
+                "top_score": features.retrieval_confidence.top_score,
+                "score_gap": features.retrieval_confidence.score_gap,
+                "route": decision.route,
+                "reason_code": decision.reason_code,
+                "refused": refused,
+                "refusal_answer": refusal.answer if refusal else None,
+                "refusal_prompt_sha256": refusal.prompt_sha256 if refusal else None,
+                "refusal_generated_by": refusal.generated_by if refusal else None,
+                "correct": not refused,
+            }
+        )
+
+    calibration_scores = [row["top_score"] for row in unsupported_rows if row["split"] == "calibration"]
+    recommended_threshold = calibrated_threshold(calibration_scores, config.threshold_selection)
+    configured_threshold = router_config.thresholds.no_answer.top_score_below
+    if not math.isclose(recommended_threshold, configured_threshold, rel_tol=0, abs_tol=1e-12):
+        raise ValueError(
+            f"Configured NO_ANSWER threshold {configured_threshold} does not match calibrated threshold {recommended_threshold}."
+        )
     metrics = refusal_metrics(unsupported_rows, supported_rows)
     acceptance = acceptance_results(metrics, config.acceptance)
     return {

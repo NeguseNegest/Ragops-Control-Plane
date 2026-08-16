@@ -161,7 +161,7 @@ def test_probe_runs_dense_top_two_once_and_keeps_evidence_for_route_reuse():
     router_config = load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd())
     report = probe_report(result, router_config)
     assert report["router_policy"] == {
-        "router_id": "rule_router@0.1.0",
+        "router_id": "rule_router@0.2.0",
         "status": "draft",
         "probe": {"pipeline_config": "dense_baseline", "top_k": 2},
     }
@@ -234,7 +234,7 @@ def test_checked_in_router_config_defines_all_routes_features_and_threshold_band
     config = load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd())
 
     assert config.name == "rule_router"
-    assert config.version == "0.1.0"
+    assert config.version == "0.2.0"
     assert config.status == "draft"
     assert config.feature_schema_version == FEATURE_SCHEMA_VERSION
     assert config.decision_order == EXPECTED_DECISION_ORDER
@@ -243,7 +243,7 @@ def test_checked_in_router_config_defines_all_routes_features_and_threshold_band
     assert config.thresholds.no_answer.top_score_below == 0.531
     assert config.thresholds.careful.top_score_below == 0.56
     assert config.thresholds.careful.on_missing_score_gap
-    assert config.thresholds.careful.score_gap_below == 0.01
+    assert config.thresholds.careful.score_gap_below == 0.03
     assert config.thresholds.fast.top_score_at_least == 0.72
     assert config.routes.fast.reuse_probe
     assert config.routes.fast.maximum_top_k == config.probe.top_k
@@ -352,7 +352,7 @@ def test_router_selects_fast_with_stable_reason_and_probe_reuse_intent():
 def test_router_selects_standard_at_non_careful_boundaries_when_fast_is_not_fully_satisfied():
     router = RuleBasedRouter(load_router_config(Path("configs/routed.yaml"), project_root=Path.cwd()))
 
-    decision = router.select(make_features(top_score=0.56, score_gap=0.01, token_count=13, long_token_ratio=0.3))
+    decision = router.select(make_features(top_score=0.56, score_gap=0.03, token_count=13, long_token_ratio=0.3))
 
     assert decision.route == "STANDARD"
     assert decision.reason_code == "standard_fallback"
@@ -366,7 +366,7 @@ def test_router_selects_standard_at_non_careful_boundaries_when_fast_is_not_full
     [
         ({"result_count": 1, "top_score": 0.6, "score_gap": None}, "missing_score_gap"),
         ({"top_score": 0.559}, "top_score_below_careful_threshold"),
-        ({"score_gap": 0.009}, "score_gap_below_careful_threshold"),
+        ({"score_gap": 0.029}, "score_gap_below_careful_threshold"),
         ({"token_count": 21}, "token_count_above_careful_threshold"),
         ({"complexity_marker_count": 1}, "complexity_marker_count_at_least_careful_threshold"),
         ({"clause_marker_count": 3}, "clause_marker_count_at_least_careful_threshold"),
