@@ -9,12 +9,29 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from ragops.generation.cost import GenerationCost
 from ragops.pipeline_registry import PipelineVersion
 from ragops.tracing.context import COMPONENT_TIMING_FIELDS, ComponentLatencies
 
-TRACE_SCHEMA_VERSION = 3
+TRACE_SCHEMA_VERSION = 4
 DEFAULT_TRACE_DB_PATH = Path("data/traces/ragops_traces.sqlite3")
 TRACE_TABLES = frozenset({"traces", "retrieved_chunks", "feedback"})
+COST_TRACE_FIELDS = (
+    "generation_provider",
+    "generation_model",
+    "cost_amount_usd",
+    "cost_currency",
+    "cost_status",
+    "cost_input_tokens",
+    "cost_output_tokens",
+    "cost_total_tokens",
+    "cost_token_source",
+    "cost_token_estimator",
+    "cost_pricing_source",
+    "cost_price_table_id",
+    "cost_input_usd_per_million_tokens",
+    "cost_output_usd_per_million_tokens",
+)
 
 _TRACE_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS traces (
@@ -29,6 +46,20 @@ CREATE TABLE IF NOT EXISTS traces (
     status TEXT NOT NULL CHECK (status IN ('success', 'error')),
     retrieved_chunk_count INTEGER NOT NULL CHECK (retrieved_chunk_count >= 0),
     answer TEXT,
+    generation_provider TEXT CHECK (generation_provider IS NULL OR length(trim(generation_provider)) > 0),
+    generation_model TEXT CHECK (generation_model IS NULL OR length(trim(generation_model)) > 0),
+    cost_amount_usd REAL CHECK (cost_amount_usd IS NULL OR cost_amount_usd >= 0),
+    cost_currency TEXT CHECK (cost_currency IS NULL OR cost_currency = 'USD'),
+    cost_status TEXT CHECK (cost_status IS NULL OR cost_status IN ('zero_cost', 'estimated', 'unavailable')),
+    cost_input_tokens INTEGER CHECK (cost_input_tokens IS NULL OR cost_input_tokens >= 0),
+    cost_output_tokens INTEGER CHECK (cost_output_tokens IS NULL OR cost_output_tokens >= 0),
+    cost_total_tokens INTEGER CHECK (cost_total_tokens IS NULL OR cost_total_tokens >= 0),
+    cost_token_source TEXT CHECK (cost_token_source IS NULL OR cost_token_source IN ('provider_reported', 'heuristic_estimate', 'not_applicable', 'unavailable')),
+    cost_token_estimator TEXT CHECK (cost_token_estimator IS NULL OR length(trim(cost_token_estimator)) > 0),
+    cost_pricing_source TEXT CHECK (cost_pricing_source IS NULL OR cost_pricing_source IN ('model_cost_table', 'environment_override', 'not_applicable', 'unavailable')),
+    cost_price_table_id TEXT CHECK (cost_price_table_id IS NULL OR length(trim(cost_price_table_id)) > 0),
+    cost_input_usd_per_million_tokens REAL CHECK (cost_input_usd_per_million_tokens IS NULL OR cost_input_usd_per_million_tokens >= 0),
+    cost_output_usd_per_million_tokens REAL CHECK (cost_output_usd_per_million_tokens IS NULL OR cost_output_usd_per_million_tokens >= 0),
     total_latency_ms REAL NOT NULL CHECK (total_latency_ms >= 0),
     embedding_ms REAL CHECK (embedding_ms IS NULL OR embedding_ms >= 0),
     dense_ms REAL CHECK (dense_ms IS NULL OR dense_ms >= 0),
@@ -43,7 +74,26 @@ CREATE TABLE IF NOT EXISTS traces (
         OR
         (status = 'error' AND error_type IS NOT NULL AND error_message IS NOT NULL)
     ),
-    CHECK (endpoint = 'query' OR answer IS NULL)
+    CHECK (
+        endpoint = 'query'
+        OR (
+            answer IS NULL
+            AND generation_provider IS NULL
+            AND generation_model IS NULL
+            AND cost_amount_usd IS NULL
+            AND cost_currency IS NULL
+            AND cost_status IS NULL
+            AND cost_input_tokens IS NULL
+            AND cost_output_tokens IS NULL
+            AND cost_total_tokens IS NULL
+            AND cost_token_source IS NULL
+            AND cost_token_estimator IS NULL
+            AND cost_pricing_source IS NULL
+            AND cost_price_table_id IS NULL
+            AND cost_input_usd_per_million_tokens IS NULL
+            AND cost_output_usd_per_million_tokens IS NULL
+        )
+    )
 );
 
 CREATE INDEX IF NOT EXISTS idx_traces_created_at ON traces(created_at DESC);
@@ -145,6 +195,28 @@ PRAGMA user_version = 3;
 COMMIT;
 """
 
+_MIGRATE_3_TO_4_SQL = """
+BEGIN IMMEDIATE;
+
+ALTER TABLE traces ADD COLUMN generation_provider TEXT CHECK (generation_provider IS NULL OR length(trim(generation_provider)) > 0);
+ALTER TABLE traces ADD COLUMN generation_model TEXT CHECK (generation_model IS NULL OR length(trim(generation_model)) > 0);
+ALTER TABLE traces ADD COLUMN cost_amount_usd REAL CHECK (cost_amount_usd IS NULL OR cost_amount_usd >= 0);
+ALTER TABLE traces ADD COLUMN cost_currency TEXT CHECK (cost_currency IS NULL OR cost_currency = 'USD');
+ALTER TABLE traces ADD COLUMN cost_status TEXT CHECK (cost_status IS NULL OR cost_status IN ('zero_cost', 'estimated', 'unavailable'));
+ALTER TABLE traces ADD COLUMN cost_input_tokens INTEGER CHECK (cost_input_tokens IS NULL OR cost_input_tokens >= 0);
+ALTER TABLE traces ADD COLUMN cost_output_tokens INTEGER CHECK (cost_output_tokens IS NULL OR cost_output_tokens >= 0);
+ALTER TABLE traces ADD COLUMN cost_total_tokens INTEGER CHECK (cost_total_tokens IS NULL OR cost_total_tokens >= 0);
+ALTER TABLE traces ADD COLUMN cost_token_source TEXT CHECK (cost_token_source IS NULL OR cost_token_source IN ('provider_reported', 'heuristic_estimate', 'not_applicable', 'unavailable'));
+ALTER TABLE traces ADD COLUMN cost_token_estimator TEXT CHECK (cost_token_estimator IS NULL OR length(trim(cost_token_estimator)) > 0);
+ALTER TABLE traces ADD COLUMN cost_pricing_source TEXT CHECK (cost_pricing_source IS NULL OR cost_pricing_source IN ('model_cost_table', 'environment_override', 'not_applicable', 'unavailable'));
+ALTER TABLE traces ADD COLUMN cost_price_table_id TEXT CHECK (cost_price_table_id IS NULL OR length(trim(cost_price_table_id)) > 0);
+ALTER TABLE traces ADD COLUMN cost_input_usd_per_million_tokens REAL CHECK (cost_input_usd_per_million_tokens IS NULL OR cost_input_usd_per_million_tokens >= 0);
+ALTER TABLE traces ADD COLUMN cost_output_usd_per_million_tokens REAL CHECK (cost_output_usd_per_million_tokens IS NULL OR cost_output_usd_per_million_tokens >= 0);
+PRAGMA user_version = 4;
+
+COMMIT;
+"""
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -172,6 +244,20 @@ class TraceRecord(StrictModel):
     status: Literal["success", "error"]
     retrieved_chunk_count: int = Field(ge=0)
     answer: str | None = None
+    generation_provider: str | None = None
+    generation_model: str | None = None
+    cost_amount_usd: float | None = Field(default=None, ge=0)
+    cost_currency: Literal["USD"] | None = None
+    cost_status: Literal["zero_cost", "estimated", "unavailable"] | None = None
+    cost_input_tokens: int | None = Field(default=None, ge=0)
+    cost_output_tokens: int | None = Field(default=None, ge=0)
+    cost_total_tokens: int | None = Field(default=None, ge=0)
+    cost_token_source: Literal["provider_reported", "heuristic_estimate", "not_applicable", "unavailable"] | None = None
+    cost_token_estimator: str | None = None
+    cost_pricing_source: Literal["model_cost_table", "environment_override", "not_applicable", "unavailable"] | None = None
+    cost_price_table_id: str | None = None
+    cost_input_usd_per_million_tokens: float | None = Field(default=None, ge=0)
+    cost_output_usd_per_million_tokens: float | None = Field(default=None, ge=0)
     total_latency_ms: float = Field(ge=0)
     embedding_ms: float | None = Field(default=None, ge=0)
     dense_ms: float | None = Field(default=None, ge=0)
@@ -194,7 +280,16 @@ class TraceRecord(StrictModel):
             raise ValueError("trace_id must use canonical UUID form.")
         return value.lower()
 
-    @field_validator("pipeline_name", "answer", "error_type", "error_message")
+    @field_validator(
+        "pipeline_name",
+        "answer",
+        "generation_provider",
+        "generation_model",
+        "cost_token_estimator",
+        "cost_price_table_id",
+        "error_type",
+        "error_message",
+    )
     @classmethod
     def clean_text(cls, value):
         if value is None:
@@ -218,6 +313,13 @@ class TraceRecord(StrictModel):
             raise ValueError("Trace latencies must be finite.")
         return value
 
+    @field_validator("cost_amount_usd", "cost_input_usd_per_million_tokens", "cost_output_usd_per_million_tokens")
+    @classmethod
+    def validate_finite_cost(cls, value):
+        if value is not None and not math.isfinite(value):
+            raise ValueError("Trace cost amounts and rates must be finite.")
+        return value
+
     @model_validator(mode="after")
     def validate_result(self):
         if self.completed_at < self.created_at:
@@ -230,11 +332,36 @@ class TraceRecord(StrictModel):
             raise ValueError("Retrieve traces must not contain a generated answer.")
         if self.endpoint == "retrieve" and self.generation_ms is not None:
             raise ValueError("Retrieve traces must not contain generation latency.")
+        cost = self.generation_cost()
+        if self.endpoint == "retrieve" and cost is not None:
+            raise ValueError("Retrieve traces must not contain generation cost.")
         return self
 
     def component_latencies(self):
         """Return the validated component-latency response/storage view."""
         return ComponentLatencies.model_validate({field: getattr(self, field) for field in COMPONENT_TIMING_FIELDS})
+
+    def generation_cost(self):
+        """Return the validated nested cost view, or None for legacy/error/retrieval traces."""
+        values = {field: getattr(self, field) for field in COST_TRACE_FIELDS}
+        if not any(value is not None for value in values.values()):
+            return None
+        return GenerationCost(
+            provider=self.generation_provider,
+            model=self.generation_model,
+            amount_usd=self.cost_amount_usd,
+            currency=self.cost_currency,
+            status=self.cost_status,
+            input_tokens=self.cost_input_tokens,
+            output_tokens=self.cost_output_tokens,
+            total_tokens=self.cost_total_tokens,
+            token_source=self.cost_token_source,
+            token_estimator=self.cost_token_estimator,
+            pricing_source=self.cost_pricing_source,
+            price_table_id=self.cost_price_table_id,
+            input_usd_per_million_tokens=self.cost_input_usd_per_million_tokens,
+            output_usd_per_million_tokens=self.cost_output_usd_per_million_tokens,
+        )
 
 
 class RetrievedChunkTrace(StrictModel):
@@ -379,6 +506,9 @@ class TraceStore:
             if current_version == 2:
                 connection.executescript(_MIGRATE_2_TO_3_SQL)
                 current_version = 3
+            if current_version == 3:
+                connection.executescript(_MIGRATE_3_TO_4_SQL)
+                current_version = 4
             if current_version < TRACE_SCHEMA_VERSION:
                 raise ValueError(f"No migration is available from trace schema {current_version} to {TRACE_SCHEMA_VERSION}.")
         self.validate_schema()
@@ -401,6 +531,7 @@ class TraceStore:
                 "status",
                 "retrieved_chunk_count",
                 "answer",
+                *COST_TRACE_FIELDS,
                 "total_latency_ms",
                 *COMPONENT_TIMING_FIELDS,
                 "error_type",
@@ -474,6 +605,20 @@ class TraceStore:
             trace.status,
             trace.retrieved_chunk_count,
             trace.answer,
+            trace.generation_provider,
+            trace.generation_model,
+            trace.cost_amount_usd,
+            trace.cost_currency,
+            trace.cost_status,
+            trace.cost_input_tokens,
+            trace.cost_output_tokens,
+            trace.cost_total_tokens,
+            trace.cost_token_source,
+            trace.cost_token_estimator,
+            trace.cost_pricing_source,
+            trace.cost_price_table_id,
+            trace.cost_input_usd_per_million_tokens,
+            trace.cost_output_usd_per_million_tokens,
             trace.total_latency_ms,
             trace.embedding_ms,
             trace.dense_ms,
@@ -490,9 +635,14 @@ class TraceStore:
                 INSERT INTO traces (
                     trace_id, created_at, completed_at, endpoint, query, requested_top_k,
                     pipeline_name, pipeline_version, status, retrieved_chunk_count,
-                    answer, total_latency_ms, embedding_ms, dense_ms, bm25_ms,
-                    fusion_ms, reranker_ms, generation_ms, error_type, error_message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    answer, generation_provider, generation_model, cost_amount_usd,
+                    cost_currency, cost_status, cost_input_tokens, cost_output_tokens,
+                    cost_total_tokens, cost_token_source, cost_token_estimator,
+                    cost_pricing_source, cost_price_table_id,
+                    cost_input_usd_per_million_tokens, cost_output_usd_per_million_tokens,
+                    total_latency_ms, embedding_ms, dense_ms, bm25_ms, fusion_ms,
+                    reranker_ms, generation_ms, error_type, error_message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 trace_values,
             )

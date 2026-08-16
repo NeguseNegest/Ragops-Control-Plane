@@ -36,6 +36,7 @@ class GenerationResult(BaseModel):
     citation_text: str
     used_chunk_ids: list
     usage: GenerationUsage | None = None
+    prompt: str | None = None
 
 
 class GenerationClient:
@@ -144,4 +145,5 @@ def generate_answer(query, chunks, client=None):
         citation_text=format_citations(citations),
         used_chunk_ids=used_chunk_ids(chunks),
         usage=generated.usage,
+        prompt=prompt,
     )

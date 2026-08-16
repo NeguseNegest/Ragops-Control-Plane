@@ -2,9 +2,9 @@
 
 ## Current Status
 
-Day 36 defines the versioned routing policy, feature inputs, threshold semantics, route execution intent, precedence, calibration provenance, and registry lifecycle guards. Day 37 implements the initial dense probe that creates those inputs. Day 38 now implements the deterministic evaluator that converts them into one route, one primary reason, all matching reason codes, and the configured execution intent.
+Day 36 defines the versioned routing policy, Day 37 implements the initial probe, Day 38 implements deterministic selection, and Day 39 calibrates `NO_ANSWER`, adds a deterministic refusal, and measures refusal correctness.
 
-`POST /route` exposes that decision without executing it. `POST /query` still uses explicit config selection, so Day 38 does not silently change production retrieval/generation behavior. The separate Day 37 diagnostic probe also continues to print `route: null`; use `route-query` or `/route` when a decision is wanted.
+`POST /route` exposes decisions without executing FAST/STANDARD/CAREFUL. For `NO_ANSWER`, it now returns the exact policy refusal without calling a generation provider. `POST /query` still uses explicit config selection. The Day 37 diagnostic probe continues to print `route: null`; use `route-query` or `/route` when a decision is wanted.
 
 ```text
 query
@@ -44,7 +44,7 @@ The checked-in policy is `rule_router@0.1.0` with lifecycle status `draft`. It d
 
 `FAST` and `STANDARD` deliberately use the approved dense pipeline. The reranked pipeline has the best measured top-five quality and is the intended `CAREFUL` path, but it is only `evaluated` and has a costly warmed reranker stage. The whole routing policy therefore remains `draft`; defining CAREFUL intent is not the same as promoting or deploying it.
 
-`NO_ANSWER` defines execution intent only. Day 39 still needs the refusal response/prompt, unsupported examples, and correctness measurement.
+`NO_ANSWER` now produces a deterministic corpus-scoped refusal. It does not use retrieved chunks as citations and does not call an LLM.
 
 ## Decision Precedence and Thresholds
 
@@ -62,18 +62,18 @@ This order matters. A short query with a low score remains CAREFUL or NO_ANSWER;
 The selector chooses `NO_ANSWER` when either condition is true:
 
 - the dense probe returns zero results; or
-- `top_score < 0.25`.
+- `top_score < 0.531`.
 
-The inequality is strict. A score of exactly `0.25` continues to later rules.
+The inequality is strict. A score of exactly `0.531` continues to later rules.
 
-The current 45-question calibration set contains only supported questions, and its minimum top score is `0.3018593`. Setting the draft floor below that observed range prevents the design from knowingly refusing a labeled supported question. It does **not** prove that `0.25` detects unsupported questions; Day 39 must replace or confirm this provisional value using labeled unsupported examples.
+Day 39 selected `0.531` from five calibration unsupported examples: maximum score `0.5302763`, plus margin `0.0005`, rounded upward to three decimals. All seven newly authored held-out unsupported questions also fell below this value. The price is explicit: 9 of 45 supported evaluation questions now fall below the threshold and are falsely refused. See [`no_answer.md`](no_answer.md) for the complete method and report.
 
 ### CAREFUL
 
 After NO_ANSWER, `CAREFUL` matches when **any** condition is true:
 
 - only one result was returned, so the score gap is unavailable;
-- `top_score < 0.50`;
+- `top_score < 0.56`;
 - `score_gap < 0.01`;
 - `token_count > 20`;
 - `complexity_marker_count >= 1`;
@@ -180,18 +180,18 @@ The draft thresholds reference `reports/evaluations/dense_baseline.json` and the
 | Dense top score | 0.3018593 | 0.6597541 | 0.8521882 |
 | Top-two score gap | 0.0003204 | 0.0299468 | 0.1451546 |
 
-Applying the documented conditions to those 45 supported questions as a design preview yields:
+Applying the Day 39 conditions to those 45 supported questions yields:
 
 | Draft route | Questions | Dense Hit@1 | Dense Hit@5 | Interpretation |
 | --- | ---: | ---: | ---: | --- |
-| `NO_ANSWER` | 0 | 0 | 0 | Expected because unsupported examples are absent and the floor is below the supported range |
-| `CAREFUL` | 22 | 5 | 9 | Hard/ambiguous cohort; these dense outcomes do not predict reranker outcomes |
+| `NO_ANSWER` | 9 | — | — | False refusals under the safety-first Day 39 threshold |
+| `CAREFUL` | 16 | — | — | Complexity/ambiguity or the narrow `0.531`–`0.56` score band |
 | `FAST` | 2 | 2 | 2 | Narrow 2/2 observation, far too small to claim general precision |
-| `STANDARD` | 21 | 5 | 9 | Middle band retained on the approved production dense pipeline |
+| `STANDARD` | 18 | — | — | Middle band retained on the approved production dense pipeline |
 
-These counts are descriptive, not a route-quality benchmark. The 45 labels are source-derived, contain no unsupported examples, and dense score/gap distributions overlap heavily between hits and misses. No universal semantic-confidence claim is made.
+These counts are descriptive, not a routed quality benchmark. The dedicated Day 39 evaluation adds 12 unsupported examples and records 12/12 refusals, 9/45 supported false refusals, and 57.14% refusal precision. Dense score/gap distributions still overlap, so no universal semantic-confidence claim is made.
 
-The thresholds must remain `draft` until later work adds route-level latency/quality measurement, unsupported-query calibration, regression examples near every boundary, and review of the expensive CAREFUL traffic share.
+The thresholds remain `draft` because the unsupported set is small and the supported false-refusal rate is material. Later work must add broader adversarial coverage, route-level latency/quality measurement, and threshold hardening.
 
 ## Configuration Safety
 
@@ -235,7 +235,7 @@ make route-query ROUTER_QUERY="What is FastAPI?"
 
 The route report omits document text and returns the policy identity, route, primary and matching reasons, execution intent, exact features, probe chunk IDs/scores, and probe timings.
 
-The Day 38 live CLI smoke check used the same local Qdrant corpus and offline model cache as Day 37. `What is FastAPI?` returned the same two chunks/scores and selected `STANDARD` with `standard_fallback`: its `0.66855043` top score was safely above CAREFUL's `0.50` floor, its `0.01691073` gap was above CAREFUL's `0.01` floor, and its simple three-token query had no complexity match, but the top score was below FAST's `0.72` requirement. The cold process measured `17619.20 ms` total, including `17337.97 ms` embedding/model initialization and `25.64 ms` dense search; this is smoke evidence, not steady-state performance.
+The Day 38 live CLI smoke check used the same local Qdrant corpus and offline model cache as Day 37. `What is FastAPI?` returned the same two chunks/scores and selected `STANDARD` with `standard_fallback`: its `0.66855043` top score remains safely above the Day 39-adjusted CAREFUL floor of `0.56`, its `0.01691073` gap is above CAREFUL's `0.01` floor, and its simple three-token query has no complexity match, but the top score is below FAST's `0.72` requirement. The cold process measured `17619.20 ms` total, including `17337.97 ms` embedding/model initialization and `25.64 ms` dense search; this is smoke evidence, not steady-state performance.
 
 The equivalent HTTP diagnostic is:
 
@@ -245,7 +245,7 @@ curl -X POST http://127.0.0.1:8000/route \
   -d '{"query":"What is FastAPI?"}'
 ```
 
-`POST /route` runs the real configured dense probe and returns `decision`, `features`, minimal `probe_chunks` (`chunk_id`, `score`, `rank`), and `probe_timings`. It deliberately does not generate an answer, execute the selected final pipeline, return document text, or create a Day 31 query trace. The trace schema currently represents completed `/retrieve` and `/query` attempts; routing-decision trace persistence remains later execution/observability work.
+`POST /route` runs the real configured dense probe and returns `decision`, `features`, minimal `probe_chunks` (`chunk_id`, `score`, `rank`), `probe_timings`, and nullable `refusal`. For NO_ANSWER, `refusal` contains the exact Day 39 response, `no_answer_v1`, its prompt SHA256, and `generated_by=deterministic_policy`. Other routes return null. It does not execute a final pipeline, return document text, call an LLM for refusal, or create a Day 31 query trace.
 
 Invalid queries return HTTP 400. Probe resource failures, retrieval failures, and unexpected routing failures return stable HTTP 503 details without leaking internal exception text. Request bodies rejected before the handler return FastAPI HTTP 422.
 
@@ -253,8 +253,10 @@ Run focused validation with:
 
 ```bash
 make test-routing-probe
+make test-no-answer
+make validate-no-answer
 ```
 
 ## Remaining Work
 
-Day 39 must implement actual refusal behavior and recalibrate NO_ANSWER using labeled unsupported examples. Later routing execution work must connect decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. Until then, `/route` is a decision-only surface and `/query` remains explicitly selected; the API is not yet automatically routed or refusal-capable.
+Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.

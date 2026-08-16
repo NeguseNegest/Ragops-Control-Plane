@@ -8,10 +8,12 @@ from pydantic import ValidationError
 
 import ragops.app as app_module
 from ragops.generation.client import GenerationResult
+from ragops.generation.cost import GenerationCost
 from ragops.retrieval.dense import RetrievedChunk
 from ragops.tracing import store as store_module
 from ragops.tracing.context import COMPONENT_TIMING_FIELDS
 from ragops.tracing.store import (
+    COST_TRACE_FIELDS,
     TRACE_SCHEMA_VERSION,
     FeedbackRecord,
     RetrievedChunkTrace,
@@ -20,6 +22,54 @@ from ragops.tracing.store import (
     configured_pipeline_identity,
     configured_trace_db_path,
 )
+
+
+def trace_cost_fields(cost):
+    return {
+        "generation_provider": cost.provider,
+        "generation_model": cost.model,
+        "cost_amount_usd": cost.amount_usd,
+        "cost_currency": cost.currency,
+        "cost_status": cost.status,
+        "cost_input_tokens": cost.input_tokens,
+        "cost_output_tokens": cost.output_tokens,
+        "cost_total_tokens": cost.total_tokens,
+        "cost_token_source": cost.token_source,
+        "cost_token_estimator": cost.token_estimator,
+        "cost_pricing_source": cost.pricing_source,
+        "cost_price_table_id": cost.price_table_id,
+        "cost_input_usd_per_million_tokens": cost.input_usd_per_million_tokens,
+        "cost_output_usd_per_million_tokens": cost.output_usd_per_million_tokens,
+    }
+
+
+def schema_without_cost_columns():
+    endpoint_check = """    CHECK (
+        endpoint = 'query'
+        OR (
+            answer IS NULL
+            AND generation_provider IS NULL
+            AND generation_model IS NULL
+            AND cost_amount_usd IS NULL
+            AND cost_currency IS NULL
+            AND cost_status IS NULL
+            AND cost_input_tokens IS NULL
+            AND cost_output_tokens IS NULL
+            AND cost_total_tokens IS NULL
+            AND cost_token_source IS NULL
+            AND cost_token_estimator IS NULL
+            AND cost_pricing_source IS NULL
+            AND cost_price_table_id IS NULL
+            AND cost_input_usd_per_million_tokens IS NULL
+            AND cost_output_usd_per_million_tokens IS NULL
+        )
+    )"""
+    schema = store_module._TRACE_SCHEMA_SQL.replace(endpoint_check, "    CHECK (endpoint = 'query' OR answer IS NULL)")
+    return "\n".join(
+        line
+        for line in schema.splitlines()
+        if not any(line.strip().startswith(f"{field} ") for field in COST_TRACE_FIELDS)
+    )
 
 
 def make_trace(**updates):
@@ -87,7 +137,21 @@ def test_initialize_creates_versioned_schema_and_required_tables(tmp_path):
 
 def test_trace_and_ranked_chunks_round_trip(tmp_path):
     store = make_store(tmp_path)
-    trace = make_trace(embedding_ms=4.0, dense_ms=3.0, generation_ms=10.0)
+    cost = GenerationCost(
+        amount_usd=0.000004,
+        status="estimated",
+        provider="openai",
+        model="gpt-5-nano",
+        input_tokens=40,
+        output_tokens=5,
+        total_tokens=45,
+        token_source="provider_reported",
+        pricing_source="model_cost_table",
+        price_table_id="generation_model_costs@1.0.0",
+        input_usd_per_million_tokens=0.05,
+        output_usd_per_million_tokens=0.4,
+    )
+    trace = make_trace(embedding_ms=4.0, dense_ms=3.0, generation_ms=10.0, **trace_cost_fields(cost))
 
     assert store.record_trace(trace, make_chunks()) == trace.trace_id
 
@@ -103,6 +167,7 @@ def test_trace_and_ranked_chunks_round_trip(tmp_path):
         "dense_ms": 3.0,
         "generation_ms": 10.0,
     }
+    assert loaded.generation_cost() == cost
     assert store.counts() == {"feedback": 0, "retrieved_chunks": 2, "traces": 1}
 
 
@@ -134,6 +199,21 @@ def test_trace_rejects_invalid_status_fields_and_naive_timestamps():
         make_trace(generation_ms=float("inf"))
     with pytest.raises(ValidationError, match="generation latency"):
         make_trace(endpoint="retrieve", answer=None, generation_ms=1.0)
+    zero_cost = GenerationCost(
+        amount_usd=0.0,
+        status="zero_cost",
+        provider="template",
+        model="local-template-v1",
+        input_tokens=0,
+        output_tokens=0,
+        total_tokens=0,
+        token_source="not_applicable",
+        pricing_source="not_applicable",
+    )
+    with pytest.raises(ValidationError, match="generation cost"):
+        make_trace(endpoint="retrieve", answer=None, **trace_cost_fields(zero_cost))
+    with pytest.raises(ValidationError):
+        make_trace(generation_provider="openai", cost_status="estimated")
 
 
 def test_trace_chunks_require_contiguous_ranks_unique_ids_and_matching_count(tmp_path):
@@ -244,7 +324,7 @@ def test_schema_migrates_version_two_and_adds_empty_component_timings(tmp_path):
     trace = make_trace(retrieved_chunk_count=0)
     legacy_schema = "\n".join(
         line
-        for line in store_module._TRACE_SCHEMA_SQL.splitlines()
+        for line in schema_without_cost_columns().splitlines()
         if not any(line.strip().startswith(f"{field} REAL") for field in COMPONENT_TIMING_FIELDS)
     )
     with sqlite3.connect(path) as connection:
@@ -284,6 +364,56 @@ def test_schema_migrates_version_two_and_adds_empty_component_timings(tmp_path):
     with sqlite3.connect(path) as connection:
         columns = {row[1] for row in connection.execute("PRAGMA table_info(traces)").fetchall()}
         assert set(COMPONENT_TIMING_FIELDS).issubset(columns)
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == TRACE_SCHEMA_VERSION
+
+
+def test_schema_migrates_version_three_and_preserves_traces_with_empty_cost(tmp_path):
+    path = tmp_path / "version-three.sqlite3"
+    trace = make_trace(retrieved_chunk_count=0, embedding_ms=2.0, dense_ms=1.0, generation_ms=3.0)
+    with sqlite3.connect(path) as connection:
+        connection.executescript(schema_without_cost_columns())
+        connection.execute("PRAGMA user_version = 3")
+        connection.execute(
+            """
+            INSERT INTO traces (
+                trace_id, created_at, completed_at, endpoint, query, requested_top_k,
+                pipeline_name, pipeline_version, status, retrieved_chunk_count,
+                answer, total_latency_ms, embedding_ms, dense_ms, bm25_ms,
+                fusion_ms, reranker_ms, generation_ms, error_type, error_message
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                trace.trace_id,
+                trace.created_at.isoformat(),
+                trace.completed_at.isoformat(),
+                trace.endpoint,
+                trace.query,
+                trace.requested_top_k,
+                trace.pipeline_name,
+                trace.pipeline_version,
+                trace.status,
+                0,
+                trace.answer,
+                trace.total_latency_ms,
+                trace.embedding_ms,
+                trace.dense_ms,
+                None,
+                None,
+                None,
+                trace.generation_ms,
+                None,
+                None,
+            ),
+        )
+
+    store = TraceStore(path).initialize()
+    migrated = store.get_trace(trace.trace_id)
+
+    assert migrated == trace
+    assert migrated.generation_cost() is None
+    with sqlite3.connect(path) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(traces)").fetchall()}
+        assert set(COST_TRACE_FIELDS).issubset(columns)
         assert connection.execute("PRAGMA user_version").fetchone()[0] == TRACE_SCHEMA_VERSION
 
 

@@ -66,12 +66,20 @@ Omitting `config` selects `dense_baseline`. Omitting `debug` keeps the stable `d
     "generation_ms": 18.4
   },
   "cost": {
-    "amount_usd": 0.00042,
+    "amount_usd": 0.00002409,
     "currency": "USD",
     "status": "estimated",
+    "provider": "openai",
+    "model": "gpt-5-nano",
     "input_tokens": 1800,
     "output_tokens": 60,
-    "total_tokens": 1860
+    "total_tokens": 1860,
+    "token_source": "provider_reported",
+    "token_estimator": null,
+    "pricing_source": "model_cost_table",
+    "price_table_id": "generation_model_costs@1.0.0",
+    "input_usd_per_million_tokens": 0.05,
+    "output_usd_per_million_tokens": 0.4
   },
   "debug": {
     "pipeline_id": "hybrid_rrf_cross_encoder@1.0.0",
@@ -87,7 +95,7 @@ Omitting `config` selects `dense_baseline`. Omitting `debug` keeps the stable `d
       "reranker_output": 5
     },
     "generation_provider": "openai",
-    "generation_model": "configured-model",
+    "generation_model": "gpt-5-nano",
     "resource_cache_hits": {
       "bm25_index": true,
       "reranker_model": true
@@ -106,14 +114,16 @@ Docker images include the checked-in configs. Compose mounts `./data/processed` 
 
 ## Cost Semantics
 
-`cost` describes answer-generation cost only; local retrieval compute is not assigned a dollar price.
+`cost` describes answer-generation inference only; local retrieval/embedding/reranking compute is not assigned a dollar price.
 
-- The deterministic local template returns `amount_usd: 0.0` and `status: zero_cost`.
-- OpenAI Responses and Gemini Interactions token usage is preserved when supplied by the SDK.
-- When both per-million-token rate variables are configured, the API returns `status: estimated` and calculates input plus output token cost.
-- When provider usage or either price is unavailable, the response returns `status: unavailable` and `amount_usd: null` rather than falsely reporting zero.
+- The deterministic local template returns `amount_usd: 0.0`, zero billable tokens, `status: zero_cost`, and not-applicable token/pricing sources.
+- OpenAI Responses and Gemini Interactions usage is authoritative when supplied by the SDK and is labeled `provider_reported`.
+- Without provider usage, Day 40 estimates the exact prompt and answer with the versioned UTF-8-byte heuristic and labels them `heuristic_estimate`; it never presents those counts as billed usage.
+- Exact default-model rates come from `generation_model_costs@1.0.0`. A complete environment rate pair overrides the table. Unknown models never inherit another model's price.
+- Missing rate/token evidence returns `status: unavailable` and `amount_usd: null`, while retaining whatever non-price provenance is known.
+- The complete response cost record is persisted on its successful SQLite query trace and checked for exact parity by the live API evaluator.
 
-The price inputs are operator-controlled because model prices change. Estimates are not provider invoices, and Day 33 does not persist or aggregate them.
+Estimates are not provider invoices. Model prices change, and the standard table excludes cached input, tools, grounding, batch/flex/priority tiers, storage, media, credits, taxes, and negotiated rates. See [`cost_estimation.md`](cost_estimation.md) for precedence, formula, schema-v4 persistence, commands, and limitations.
 
 ## Error Contract
 
@@ -136,7 +146,7 @@ The integration cases verify:
 
 - `/health` returns the package version without creating a trace;
 - `/retrieve` returns the expected ranked fixture chunk and persists matching unused evidence;
-- `/query` returns matching body/header/storage trace IDs, config provenance, citations, used chunks, timings, debug output, and zero template cost;
+- `/query` returns matching body/header/storage trace IDs, config provenance, citations, used chunks, timings, debug output, and an identical response/trace zero-cost template record;
 - malformed bodies, invalid depths, unknown configs, and wrong field types return HTTP 422 before creating a trace; and
 - an accepted whitespace-only query returns the documented traced HTTP 400 response.
 
@@ -146,11 +156,11 @@ Run the GitHub Actions-equivalent target locally with `make test-api-ci PYTHON=.
 
 Day 35 adds `scripts/evaluate_api.py` for full-corpus service verification. Unlike the Day 34 in-memory fixture, it calls a running `/query` endpoint backed by the real Qdrant corpus. For every label it validates config/route/version, ranks and scores, citations and used chunks, debug metadata, cost shape, and response/header trace parity before computing retrieval metrics.
 
-When the evaluator can read the API's SQLite path, it verifies the corresponding trace and ordered evidence immediately after each response. It also requires exact top-10 ranking parity with the offline dense report and verifies all four configured MLflow runs unless those checks are explicitly skipped. The default Make target is `make evaluate-api`; `API_URL` and `API_TRACE_DB_PATH` must identify the running service and its database.
+When the evaluator can read the API's SQLite path, it verifies the corresponding trace, generation-cost parity, and ordered evidence immediately after each response. It also requires exact top-10 ranking parity with the offline dense report and verifies all four configured MLflow runs unless those checks are explicitly skipped. The default Make target is `make evaluate-api`; `API_URL` and `API_TRACE_DB_PATH` must identify the running service and its database. The historical Day 35 report predates schema v4; cost parity applies to new Day 40 runs.
 
-## Day 36–38 Routing Decision API
+## Day 36–39 Routing and Refusal API
 
-Day 36 defines and validates the draft FAST/STANDARD/CAREFUL/NO_ANSWER policy in `configs/routed.yaml`. Day 37 loads its configured dense probe and emits structured router features. Day 38 deterministically evaluates those inputs and exposes the result through `POST /route`:
+Day 36 defines the policy, Day 37 emits probe features, Day 38 selects a route/reason, and Day 39 returns an enforced refusal when that route is `NO_ANSWER`. Submit a query to `POST /route`:
 
 ```json
 {
@@ -201,14 +211,30 @@ The response contains the normalized query, the complete `decision`, the exact `
     {"chunk_id": "45fca43c-6f25-56b7-a4ce-cf43ce7718a7", "score": 0.66855043, "rank": 1},
     {"chunk_id": "18b16f8c-b010-5d65-911b-5529df8a4b5d", "score": 0.6516397, "rank": 2}
   ],
-  "probe_timings": {"total_ms": 17619.19936002232, "embedding_ms": 17337.966794962995, "dense_ms": 25.63913504127413}
+  "probe_timings": {"total_ms": 17619.19936002232, "embedding_ms": 17337.966794962995, "dense_ms": 25.63913504127413},
+  "refusal": null
 }
 ```
 
 The values above come from the recorded Day 38 live CLI smoke query. They demonstrate the contract; cold process/model initialization dominates this one observation and is not a service-level latency claim.
 
-`POST /route` is decision-only: it does not execute the selected final pipeline, generate/refuse an answer, or expose document text. It also does not create a Day 31 query trace because the current trace schema records completed `/retrieve` and `/query` attempts. Invalid queries return HTTP 400; unavailable probe resources or failed probe execution return HTTP 503; malformed request bodies return HTTP 422 before entering the handler.
+For a query whose top score is below the strict Day 39 threshold, the same response has `decision.route: NO_ANSWER` and:
 
-`POST /query` remains explicitly config-selected (or defaults to `dense_baseline`), and its lower-case `route` still describes the pipeline actually executed. Day 38 therefore exposes automatic classification without silently enabling automatic dispatch. Day 39 still owns actual refusal behavior and unsupported-query calibration.
+```json
+{
+  "refusal": {
+    "answer": "I do not know based on the available FastAPI, MLflow, and Qdrant documentation.",
+    "prompt_version": "no_answer_v1",
+    "prompt_sha256": "<64 lowercase hexadecimal characters>",
+    "generated_by": "deterministic_policy"
+  }
+}
+```
 
-Use `make validate-router-config`, `make probe-query ROUTER_QUERY="What is FastAPI?"`, and `make route-query ROUTER_QUERY="What is FastAPI?"` to inspect each boundary outside the API. See [`routing.md`](routing.md) for exact precedence, reason codes, threshold semantics, and remaining limitations.
+The refusal is policy-generated rather than model-generated: no template/OpenAI/Gemini call occurs, probe evidence is not cited, and no unsupported factual content is introduced. FAST, STANDARD, and CAREFUL continue to return `refusal: null`.
+
+`POST /route` does not execute the selected final retrieval/generation pipeline or expose document text. It also does not create a Day 31 query trace because the current trace schema records completed `/retrieve` and `/query` attempts. Invalid queries return HTTP 400; unavailable probe resources or failed probe execution return HTTP 503; malformed request bodies return HTTP 422 before entering the handler.
+
+`POST /query` remains explicitly config-selected (or defaults to `dense_baseline`), and its lower-case `route` still describes the pipeline actually executed. Day 39 therefore enforces refusal on the routing surface without silently enabling general automatic dispatch.
+
+Use `make validate-router-config`, `make validate-no-answer`, and `make evaluate-no-answer` for policy/evaluation evidence. See [`routing.md`](routing.md) for precedence and [`no_answer.md`](no_answer.md) for threshold derivation, metrics, and limitations.

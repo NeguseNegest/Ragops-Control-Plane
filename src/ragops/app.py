@@ -23,7 +23,15 @@ from ragops.api.schemas import (
     RouteResponse,
 )
 from ragops.generation.client import generate_answer
-from ragops.generation.cost import configured_generation_pricing, estimate_generation_cost, generation_model, generation_provider
+from ragops.generation.cost import (
+    GenerationCost,
+    ModelCostTable,
+    configured_generation_pricing,
+    estimate_generation_cost,
+    generation_model,
+    generation_provider,
+    load_model_cost_table,
+)
 from ragops.generation.factory import create_generation_client
 from ragops.generation.no_answer import generate_no_answer
 from ragops.indexing.qdrant import DEFAULT_QDRANT_URL, create_qdrant_client
@@ -123,12 +131,36 @@ def persist_request_trace(
     used_chunk_ids=(),
     error=None,
     pipeline_identity=None,
+    generation_cost=None,
 ):
     """Persist one completed API attempt or return a trace-specific service error."""
     pipeline_identity = pipeline_identity or app.state.pipeline_identity
     status = "error" if error is not None else "success"
     error_type = type(error).__name__ if error is not None else None
     error_message = (str(error).strip() or error_type) if error is not None else None
+    cost_fields = {}
+    if generation_cost is not None:
+        generation_cost = (
+            generation_cost
+            if isinstance(generation_cost, GenerationCost)
+            else GenerationCost.model_validate(generation_cost)
+        )
+        cost_fields = {
+            "generation_provider": generation_cost.provider,
+            "generation_model": generation_cost.model,
+            "cost_amount_usd": generation_cost.amount_usd,
+            "cost_currency": generation_cost.currency,
+            "cost_status": generation_cost.status,
+            "cost_input_tokens": generation_cost.input_tokens,
+            "cost_output_tokens": generation_cost.output_tokens,
+            "cost_total_tokens": generation_cost.total_tokens,
+            "cost_token_source": generation_cost.token_source,
+            "cost_token_estimator": generation_cost.token_estimator,
+            "cost_pricing_source": generation_cost.pricing_source,
+            "cost_price_table_id": generation_cost.price_table_id,
+            "cost_input_usd_per_million_tokens": generation_cost.input_usd_per_million_tokens,
+            "cost_output_usd_per_million_tokens": generation_cost.output_usd_per_million_tokens,
+        }
     record = TraceRecord(
         trace_id=trace_id,
         created_at=created_at,
@@ -141,6 +173,7 @@ def persist_request_trace(
         status=status,
         retrieved_chunk_count=len(chunks),
         answer=answer,
+        **cost_fields,
         total_latency_ms=latency_ms,
         **component_latencies.model_dump(),
         error_type=error_type,
@@ -160,6 +193,7 @@ def create_app(
     pipeline_version=None,
     pipeline_runtime=None,
     generation_pricing=None,
+    model_cost_table=None,
     retrieval_client_factory=None,
     query_embedder=None,
 ):
@@ -180,6 +214,9 @@ def create_app(
         pipeline_runtime = PipelineRuntime(**runtime_parameters)
     app.state.pipeline_runtime = pipeline_runtime
     app.state.generation_pricing = generation_pricing if generation_pricing is not None else configured_generation_pricing()
+    app.state.model_cost_table = (
+        ModelCostTable.model_validate(model_cost_table) if model_cost_table is not None else load_model_cost_table()
+    )
     retrieval_parameters = {}
     if retrieval_client_factory is not None:
         retrieval_parameters["client_factory"] = retrieval_client_factory
@@ -421,8 +458,11 @@ def create_app(
             app.state.generation_client,
             generation_result.usage,
             pricing=app.state.generation_pricing,
+            cost_table=app.state.model_cost_table,
+            input_text=generation_result.prompt,
+            output_text=generation_result.answer,
         )
-        cost_response = QueryCostResponse(**generation_cost.__dict__)
+        cost_response = QueryCostResponse.model_validate(generation_cost.model_dump())
         debug_response = None
         if request.debug:
             debug_response = QueryDebugResponse(
@@ -451,6 +491,7 @@ def create_app(
             answer=generation_result.answer,
             used_chunk_ids=generation_result.used_chunk_ids,
             pipeline_identity=definition.identity,
+            generation_cost=generation_cost,
         )
         response.headers["X-Trace-ID"] = trace_id
         return QueryResponse(

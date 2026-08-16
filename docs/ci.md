@@ -2,7 +2,7 @@
 
 ## Day 34 Goal
 
-The API gate makes the request path reproducible in a fresh GitHub Actions runner. Its original Day 34 contract covers `GET /health`, `POST /retrieve`, `POST /query`, and invalid request handling; Day 38 adds `POST /route`. It uses real production composition while replacing only resources that would otherwise require a network, Docker, or a large model download.
+The API gate makes the request path reproducible in a fresh GitHub Actions runner. Its original Day 34 contract covers `GET /health`, `POST /retrieve`, `POST /query`, and invalid request handling; Day 38 adds `POST /route`, Day 39 adds deterministic refusal/refusal evaluation, and Day 40 adds model-cost/token-estimator/schema-v4 persistence coverage. It uses real production composition while replacing only resources that would otherwise require a network, Docker, or a large model download.
 
 ## Test Topology
 
@@ -24,7 +24,7 @@ FastAPI TestClient
 
 The production dense retriever accepts an optional query-embedding callable at its runtime boundary. Normal callers still resolve the existing MiniLM embedder. The CI application injects an exact map from the three fixture questions to three-dimensional vectors; this isolates request orchestration from model availability without mocking Qdrant ranking or bypassing the retriever factory.
 
-Each test gets a fresh in-memory Qdrant client and a temporary schema-v3 SQLite database. A lightweight client adapter makes request-level `close()` calls harmless while retaining the same backing in-memory collection for the life of that test. The actual Qdrant client is closed at fixture teardown.
+Each test gets a fresh in-memory Qdrant client and a temporary schema-v4 SQLite database. A lightweight client adapter makes request-level `close()` calls harmless while retaining the same backing in-memory collection for the life of that test. The actual Qdrant client is closed at fixture teardown.
 
 ## Coverage
 
@@ -32,12 +32,12 @@ The end-to-end fixture asserts HTTP payloads and their durable effects:
 
 - health response and trace absence;
 - dense retrieval rank/order, component timing shape, and persisted evidence;
-- routing through the real dense probe, exact FAST decision/reason/execution intent, minimal evidence, timings, and trace absence because no final query is executed;
-- query route/config/version, trace ID header parity, citations, generation-use flags, debug metadata, and template zero-cost semantics;
+- routing through the real dense probe, exact decision/reason/execution intent, minimal evidence, timings, deterministic NO_ANSWER refusal shape, and trace absence because no final query is executed;
+- query route/config/version, trace ID header parity, citations, generation-use flags, debug metadata, and exact response/trace template-cost parity;
 - FastAPI 422 behavior for missing fields, invalid `top_k`, unknown configs, and incorrect types; and
 - traced handler-level HTTP 400 behavior for a whitespace query.
 
-The focused target also runs the API-evaluator, existing API, pipeline-runtime, Day 36 router-config/policy validation, Day 37 routing-probe, Day 38 route/reason boundary tests, generation/cost/provider, trace-context/store, and dense-retrieval regression tests. This preserves failure-path, live-report validation logic, threshold/registry/calibration guards, exact inequality/precedence behavior, probe-feature validation, and selectable-pipeline coverage that does not need to be duplicated in the small-corpus file.
+The focused target also runs the API-evaluator, existing API, pipeline-runtime, Day 36 router-config/policy validation, Day 37 routing-probe, Day 38 route/reason boundary tests, Day 39 no-answer dataset/calibration/prompt/evaluator tests, Day 40 price-table/heuristic/arithmetic/schema-migration/cost-parity tests, generation/provider, trace-context/store, and dense-retrieval regressions. This preserves failure-path, live-report validation logic, threshold/registry/calibration guards, exact inequality/precedence behavior, probe-feature validation, deterministic refusal invariants, false-refusal measurement, honest cost provenance, and selectable-pipeline coverage that does not need to be duplicated in the small-corpus file.
 
 ## GitHub Actions Job
 

@@ -1,0 +1,25 @@
+schema_version: 1
+name: generation_model_costs
+version: 1.0.0
+status: approved
+currency: USD
+token_estimator: utf8_bytes_div4_ceiling_v1
+
+# Standard synchronous text-token prices. Cached-input, batch, flex/priority,
+# grounding, tool, storage, image, audio, and free-tier adjustments are excluded.
+models:
+  - provider: openai
+    model: gpt-5-nano
+    input_usd_per_million_tokens: 0.05
+    output_usd_per_million_tokens: 0.40
+    source_url: https://developers.openai.com/api/docs/models/gpt-5-nano
+    source_checked_at: 2026-08-16
+    notes: Standard uncached text input and output pricing; tool calls and cached input are excluded.
+
+  - provider: gemini
+    model: gemini-3.6-flash
+    input_usd_per_million_tokens: 1.50
+    output_usd_per_million_tokens: 7.50
+    source_url: https://ai.google.dev/gemini-api/docs/pricing
+    source_checked_at: 2026-08-16
+    notes: Standard paid-tier text pricing; output pricing includes thinking tokens, while tools and caching are excluded.

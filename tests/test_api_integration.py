@@ -218,12 +218,19 @@ def test_ci_query_returns_complete_contract_and_matching_trace(api_harness):
     assert query.expected_chunk_id in body["used_chunk_ids"]
     assert body["cost"]["status"] == "zero_cost"
     assert body["cost"]["amount_usd"] == 0.0
+    assert body["cost"]["provider"] == "template"
+    assert body["cost"]["model"] == "local-template-v1"
+    assert body["cost"]["input_tokens"] == 0
+    assert body["cost"]["output_tokens"] == 0
+    assert body["cost"]["token_source"] == "not_applicable"
+    assert body["cost"]["pricing_source"] == "not_applicable"
     assert body["debug"]["pipeline_id"] == "dense_baseline@1.0.0"
     assert body["debug"]["returned_chunks"] == 2
     trace = trace_store.get_trace(body["trace_id"])
     assert trace.status == "success"
     assert trace.pipeline_name == "dense_baseline"
     assert trace.answer == body["answer"]
+    assert trace.generation_cost().model_dump(mode="json") == body["cost"]
     stored_chunks = trace_store.list_retrieved_chunks(trace.trace_id)
     assert [chunk.chunk_id for chunk in stored_chunks] == body["used_chunk_ids"]
     assert all(chunk.used_for_generation for chunk in stored_chunks)

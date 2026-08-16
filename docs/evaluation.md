@@ -2,12 +2,27 @@
 
 ## Scope
 
-The implemented evaluation stack has two distinct layers:
+The implemented evaluation stack has three distinct layers:
 
 1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, Day 29 tracking, and the Day 30 registry) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; records the runs in MLflow; and binds those evidence bundles to versioned pipeline identities.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
+3. Refusal evaluation (Day 39) calibrates the NO_ANSWER score threshold from one unsupported split, measures it on a held-out unsupported split, replays supported-query scores to expose false refusals, and requires explicit accuracy/precision checks before writing its report.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, and Day 35 proves the dense results survive the complete online HTTP and tracing composition.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, Day 35 proves the dense results survive the complete online HTTP and tracing composition, and Day 39 adds measured no-answer behavior without claiming that a small authored sample is production calibration.
+
+## Day 39 refusal evaluation
+
+`configs/no_answer.yaml` defines the dataset identities, calibration rule, exact refusal text/version, acceptance thresholds, router path, and output artifacts. Five pre-existing unsupported golden questions form the calibration split; seven newly reviewed near-domain/high-stakes questions form the held-out evaluation split. Calibration takes the maximum unsupported top score, adds `0.0005`, and rounds upward to three decimal places, yielding the strict router rule `top_score < 0.531`.
+
+The live evaluator sends all 12 unsupported questions through the real configured dense probe and router. It separately replays the top-two scores from all 45 supported rows in the immutable dense report, so false-refusal measurement uses fixed, reviewable evidence. It then checks unsupported refusal accuracy, held-out refusal accuracy, supported answer rate, and refusal precision before atomically replacing `reports/evaluations/no_answer.json` and `.csv`.
+
+The recorded run refused 12/12 unsupported questions and 7/7 held-out questions. It answered 36/45 supported questions, producing 9 false refusals; refusal precision was 57.14%, balanced accuracy 90%, and overall accuracy 84.21%. These checks meet the configured Day 39 acceptance boundary, but the 20% supported false-refusal rate is material and keeps the policy in `draft` status. Full methodology, commands, and interpretation limits are in [`no_answer.md`](no_answer.md).
+
+## Day 40 cost evidence
+
+Day 40 does not add a quality benchmark. It makes each successful query's generation-cost evidence explicit and durable so later router comparisons can aggregate comparable records. The response and trace retain exact provider/model, token counts/source/estimator, rate source/table identity, rates, currency, status, and amount. Provider usage takes precedence over heuristic counts, environment rates take precedence over the checked-in exact-model table, and unavailable evidence never becomes zero.
+
+The live API evaluator now requires response/trace cost parity in addition to its earlier answer, timing, ranking, and chunk checks. The historical Day 35 artifact predates schema v4 and is not retroactively rewritten; new evaluations exercise the strengthened contract. See [`cost_estimation.md`](cost_estimation.md) for the formula and limits.
 
 ## Day 35 API-path evaluation
 
@@ -16,7 +31,7 @@ Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21
 By default it also enforces three external invariants:
 
 1. all 45 complete top-10 chunk rankings and aggregate metrics exactly match `reports/evaluations/dense_baseline.json`;
-2. every response UUID exists in the configured SQLite store with matching pipeline identity, answer, total/component timings, ordered chunks, and generation-use flags; and
+2. every response UUID exists in the configured SQLite store with matching pipeline identity, answer, total/component timings, Day 40 generation cost, ordered chunks, and generation-use flags; and
 3. the four current evidence digests in `configs/mlflow.yaml` each resolve to a complete FINISHED MLflow run with exact parameters, metrics, tags, and artifacts.
 
 Run it while a host API is using the same trace database:

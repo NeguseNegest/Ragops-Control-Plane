@@ -160,6 +160,9 @@ def verify_response_trace(trace_store, body, label, config):
     for field, value in body.component_latencies.model_dump().items():
         if not _equal_latency(getattr(trace, field), value):
             raise ValueError(f"API trace {trace_id} component {field} differs from its response.")
+    trace_cost = trace.generation_cost()
+    if trace_cost is None or trace_cost.model_dump(mode="json") != body.cost.model_dump(mode="json"):
+        raise ValueError(f"API trace {trace_id} generation cost differs from its response.")
 
     stored_chunks = trace_store.list_retrieved_chunks(trace_id)
     response_chunk_ids = [chunk.chunk_id for chunk in body.chunks]

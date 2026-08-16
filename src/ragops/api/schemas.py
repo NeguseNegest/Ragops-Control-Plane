@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ragops.api.pipelines import QueryConfigName, QueryRoute
+from ragops.generation.cost import GenerationCost
 from ragops.generation.no_answer import NO_ANSWER_PROMPT_VERSION, NO_ANSWER_RESPONSE
 from ragops.pipeline_registry import PipelineStatus, PipelineVersion
 from ragops.routing.probe import InitialRetrievalFeatures, ProbeTimings
@@ -101,26 +102,8 @@ class CitationResponse(BaseModel):
     chunk_ids: list[str]
 
 
-class QueryCostResponse(StrictResponseModel):
+class QueryCostResponse(GenerationCost):
     """Generation cost state without pretending an unavailable value is zero."""
-
-    amount_usd: float | None = Field(default=None, ge=0)
-    currency: Literal["USD"] = "USD"
-    status: Literal["zero_cost", "estimated", "unavailable"]
-    input_tokens: int | None = Field(default=None, ge=0)
-    output_tokens: int | None = Field(default=None, ge=0)
-    total_tokens: int | None = Field(default=None, ge=0)
-
-    @model_validator(mode="after")
-    def validate_cost_state(self):
-        if self.status == "unavailable" and self.amount_usd is not None:
-            raise ValueError("Unavailable cost must not contain an amount.")
-        if self.status != "unavailable" and self.amount_usd is None:
-            raise ValueError("Available cost must contain an amount.")
-        token_values = (self.input_tokens, self.output_tokens, self.total_tokens)
-        if any(value is not None for value in token_values) and not all(value is not None for value in token_values):
-            raise ValueError("Generation token counts must be all present or all absent.")
-        return self
 
 
 class QueryDebugResponse(StrictResponseModel):

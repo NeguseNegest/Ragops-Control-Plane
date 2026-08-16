@@ -9,6 +9,7 @@ from ragops.evaluation.no_answer import (
     NoAnswerExample,
     calibrated_threshold,
     load_no_answer_config,
+    load_supported_report,
     run_no_answer_evaluation,
     validate_no_answer_inputs,
     write_no_answer_artifacts,
@@ -92,6 +93,14 @@ def test_threshold_is_calibration_max_plus_margin_rounded_up():
         calibrated_threshold([], config.threshold_selection)
 
 
+def test_supported_report_rejects_a_non_mapping_json_root(tmp_path):
+    report_path = tmp_path / "supported.json"
+    report_path.write_text("[]\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="dense_baseline question report"):
+        load_supported_report(report_path, expected_questions=45)
+
+
 def test_no_answer_prompt_and_result_are_exact_deterministic_and_citation_free():
     result = routed_probe("How do I configure Pinecone?", 0.48, 0.02)
     assert result.decision.route == "NO_ANSWER"
@@ -100,7 +109,6 @@ def test_no_answer_prompt_and_result_are_exact_deterministic_and_citation_free()
     first = generate_no_answer(result.probe.query, result.decision)
     second = generate_no_answer(result.probe.query, result.decision.model_dump(mode="python"))
 
-    assert "Do not answer the question" in prompt
     assert "Do not answer the question" in prompt
     assert NO_ANSWER_RESPONSE in prompt
     assert first == second
@@ -146,6 +154,13 @@ def test_no_answer_evaluation_measures_refusal_and_false_refusal_tradeoff():
         "evaluation_unsupported": 7,
         "supported": 45,
     }
+    assert report["evaluation_id"] == "no_answer@0.1.0"
+    assert report["probe"] == {"pipeline_config": "dense_baseline", "top_k": 2, "feature_schema_version": 1}
+    assert report["refusal_policy"] == {
+        "answer": NO_ANSWER_RESPONSE,
+        "prompt_version": "no_answer_v1",
+        "generated_by": "deterministic_policy",
+    }
     assert report["metrics"]["confusion_matrix"] == {
         "true_refusal": 12,
         "missed_unsupported": 0,
@@ -160,6 +175,8 @@ def test_no_answer_evaluation_measures_refusal_and_false_refusal_tradeoff():
     assert report["acceptance"]["passed"]
     unsupported = [row for row in report["questions"] if row["query_type"] == "unsupported"]
     assert all(row["refusal_answer"] == NO_ANSWER_RESPONSE and row["correct"] for row in unsupported)
+    assert all(len(row["refusal_prompt_sha256"]) == 64 for row in unsupported)
+    assert all(row["refusal_generated_by"] == "deterministic_policy" for row in unsupported)
 
 
 def test_no_answer_artifacts_are_atomic_complete_and_refuse_overwrite(tmp_path):
@@ -178,5 +195,6 @@ def test_no_answer_artifacts_are_atomic_complete_and_refuse_overwrite(tmp_path):
         rows = list(csv.DictReader(input_file))
     assert len(rows) == 57
     assert sum(row["refused"] == "True" for row in rows) == 21
+    assert b"\r\n" not in paths[1].read_bytes()
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
         write_no_answer_artifacts(report, config)

@@ -14,7 +14,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–38 routing policy, probe, and deterministic decision surface.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–40 routing, refusal, and per-query generation-cost path.
 
 ## Project Objective
 
@@ -36,7 +36,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 38. The current baseline includes:
+Implementation is complete through Day 40. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -50,7 +50,7 @@ Implementation is complete through Day 38. The current baseline includes:
 - selectable offline-template, OpenAI Responses API, and Gemini Interactions API generation clients
 - `GET /health`, `POST /retrieve`, `POST /route`, and `POST /query`
 - explicit `dense_baseline`, `hybrid_rrf`, and `hybrid_rrf_cross_encoder` selection on `POST /query`, with lazy BM25/cross-encoder reuse and request-scoped Qdrant clients
-- response trace IDs, route/config provenance, opt-in debug diagnostics, and honest zero/estimated/unavailable generation cost states
+- response trace IDs, route/config provenance, opt-in debug diagnostics, and honest zero/estimated/unavailable generation cost states with token/rate provenance
 - Streamlit query interface with answers, citations, evidence, scores, and latency
 - local and Docker Qdrant configuration through `QDRANT_URL`
 - request validation, API error translation, and dashboard error handling
@@ -61,7 +61,7 @@ Implementation is complete through Day 38. The current baseline includes:
 - a live cross-encoder evaluator with a common-depth four-way comparison, controlled pre-rerank ablation, cold/warm component latency, and explicit reranking regressions
 - MLflow logging for dense, BM25, RRF, and reranked evaluations with config-derived run names, flattened parameters, quality/latency metrics, validated CSV/JSON/config/report artifacts, and idempotent artifact imports
 - a deterministic pipeline registry with semantic versions, lifecycle status, config checksums, common-depth evidence, MLflow references, and guarded baseline/candidate/production aliases
-- atomic SQLite request tracing for successful and failed `/retrieve` and `/query` calls, including pipeline provenance and the complete ranked evidence set
+- atomic schema-v4 SQLite request tracing for successful and failed `/retrieve` and `/query` calls, including pipeline provenance, complete ranked evidence, component timings, and successful-query generation cost
 - a monotonic trace context that captures embedding, dense search, BM25, RRF fusion, cross-encoder, and generation latency, retains partial timings on failure, and returns the timing shape through both online endpoints
 - a feedback table linked to traces, schema/version validation, a migration path, and a persistent Docker volume
 - a checked-in four-document vector fixture, deterministic query embeddings, in-memory Qdrant, temporary SQLite, and end-to-end `/health`, `/retrieve`, `/query`, and invalid-request integration tests
@@ -71,17 +71,19 @@ Implementation is complete through Day 38. The current baseline includes:
 - a strict `rule_router@0.1.0` draft design with FAST/STANDARD/CAREFUL/NO_ANSWER definitions, ordered threshold bands, route execution intent, calibration provenance, and pipeline-registry lifecycle guards
 - a router-configured dense initial probe (currently top two) with validated top score, score gap, query length, deterministic lexical-complexity features, reusable evidence, and separate probe timings
 - deterministic FAST/STANDARD/CAREFUL/NO_ANSWER selection with stable primary/all-match reasons, validated execution intent, a decision CLI, and a decision-only `/route` API
+- a calibrated `top_score < 0.531` no-answer gate, deterministic corpus-scoped refusal with no LLM call/citations, 12 reviewed unsupported examples, and checked-in refusal-correctness JSON/CSV evidence
+- a reviewed `generation_model_costs@1.0.0` table, provider-usage-first token accounting, deterministic missing-usage estimation, explicit environment rate overrides, and exact response/trace cost parity
 - strict faithfulness and answer-relevance rubrics, query-type-aware refusal judging, and a manual spot-check workflow
 - cross-provider OpenAI generation and Gemini judging for a deterministic 10-question Day 20 sample
 
 Current limitations:
 
-- `POST /query` exposes dense, RRF hybrid, and hybrid-plus-reranker retrieval by explicit config selection; `POST /retrieve` and the Streamlit form still use dense retrieval only. `POST /route` now returns the draft automatic decision and its reason, but it deliberately does not execute that route or implement Day 39 refusal behavior.
+- `POST /query` exposes dense, RRF hybrid, and hybrid-plus-reranker retrieval by explicit config selection; `POST /retrieve` and the Streamlit form still use dense retrieval only. `POST /route` returns the draft decision and enforces a deterministic refusal for NO_ANSWER, but it does not execute FAST/STANDARD/CAREFUL.
 - Unweighted RRF improves substantially over dense retrieval on the current labels but does not beat BM25; version `hybrid_rrf@1.0.0` is therefore `rejected` and has no registry alias.
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
-- Grounding and refusal are prompt instructions in the online path; the offline judge measures them but does not enforce or repair runtime answers.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query cost is returned but not persisted or aggregated; MLflow currently tracks retrieval evaluations only, and automatic route execution, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
+- Explicit `/query` generation still relies on grounding instructions, but the NO_ANSWER branch on `/route` is policy-enforced and never calls a generation provider. This does not yet protect callers that bypass routing and invoke `/query` directly.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted, but it is not aggregated, budget-enforced, invoice-reconciled, or logged to MLflow; automatic route execution, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
 - The Day 35 API evaluation is a dense retrieval parity check using the deterministic template generator. It does not repeat external-provider generation judging or the expensive 45-question reranker benchmark through HTTP.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
@@ -237,7 +239,7 @@ export GEMINI_MODEL=gemini-3.6-flash
 
 Both API keys may be present, but `RAGOPS_LLM_PROVIDER` selects exactly one runtime provider: `template`, `openai`, or `gemini`. Restart the API after changing it. Keep real API keys out of the repository. The ignored `.env` file can hold local values, but `make serve` does not load that file automatically; export the values into the shell first. Docker Compose reads `.env` for variable substitution and passes the selected provider configuration to the API container.
 
-The template provider reports a zero generation cost. OpenAI and Gemini responses preserve SDK token usage. To calculate an estimate, configure both `RAGOPS_LLM_INPUT_USD_PER_MILLION_TOKENS` and `RAGOPS_LLM_OUTPUT_USD_PER_MILLION_TOKENS` with rates appropriate to the selected model. If usage or pricing is missing, `cost.status` is `unavailable` and `amount_usd` is `null`; the API never presents missing cost data as zero.
+The template provider reports zero billable model tokens and zero generation cost. OpenAI and Gemini SDK usage is authoritative when present; otherwise the exact prompt and answer use the versioned `ceil(UTF-8 bytes / 4)` heuristic. Exact default-model prices come from [`configs/model_costs.yaml`](configs/model_costs.yaml); a complete `RAGOPS_LLM_INPUT_USD_PER_MILLION_TOKENS` and `RAGOPS_LLM_OUTPUT_USD_PER_MILLION_TOKENS` pair overrides the table. Unknown models or incomplete evidence remain `unavailable`, never zero. Every successful query stores the identical cost/provenance from its response in SQLite schema v4. See [`docs/cost_estimation.md`](docs/cost_estimation.md).
 
 ### Prepare the corpus and index
 
@@ -618,7 +620,31 @@ The feature-only result intentionally contains `route: null`. Day 38 evaluates t
 make route-query ROUTER_QUERY="What is FastAPI?"
 ```
 
-The decision-only HTTP surface is `POST /route`. It does not execute the chosen retrieval/generation path and does not create a `/query` trace. See [`docs/routing.md`](docs/routing.md) for route definitions, exact threshold semantics, reason codes, calibration limitations, feature fields, and score-gap edge cases.
+The HTTP surface is `POST /route`. It does not execute FAST/STANDARD/CAREFUL or create a `/query` trace. When it selects NO_ANSWER, it returns the exact deterministic refusal and no citations/provider generation.
+
+Day 39 validates the no-answer configuration and its input provenance without Qdrant:
+
+```bash
+make validate-no-answer
+```
+
+Run the 12 unsupported probes against local Qdrant and atomically regenerate the refusal report:
+
+```bash
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 make evaluate-no-answer
+```
+
+The recorded result refused 12/12 unsupported examples, including 7/7 held out from threshold selection. It also falsely refused 9/45 supported examples, so the policy remains `draft`: unsupported refusal accuracy is 100%, supported answer rate 80%, refusal precision 57.14%, balanced accuracy 90%, and overall accuracy 84.21%. See [`docs/no_answer.md`](docs/no_answer.md) for the method, artifacts, exact tradeoff, and interpretation limits; [`docs/routing.md`](docs/routing.md) covers the complete route contract.
+
+### Validate Day 40 generation cost accounting
+
+Day 40 validates the exact model table, its official source metadata, and the token-estimator identity without an API key or provider call:
+
+```bash
+make validate-model-costs
+```
+
+`POST /query` now returns provider/model identity, token counts and their source, estimator version when used, rate source/table identity, exact rates, and the computed amount. SQLite schema v4 persists the same object on successful query traces; existing schema-v3 rows migrate with null cost rather than fabricated history. Run `make test-cost` for the focused cost/trace/API suite and see [`docs/cost_estimation.md`](docs/cost_estimation.md) for the formula and limits.
 
 ## Main Components
 
@@ -628,11 +654,15 @@ data/raw -> cleaning -> chunking -> chunks.jsonl -> embeddings -> Qdrant
                                           +-> BM25 tokens -> persisted BM25 index
 
 query -> configured Retriever -> citations -> generation -> FastAPI response
+                                                   |
+                                                   +-> usage / token heuristic + model cost table -> response + SQLite trace
 
 query -> dense top 2 -> top score + score gap --+
 query -> length + lexical complexity ----------+-> structured router features
                                                        |
 configs/routed.yaml -> draft thresholds ---------------+-> deterministic selector -> route + reasons + execution intent
+                                                                                         |
+                                                                                         +-> NO_ANSWER -> deterministic refusal
 
 query -> dense top 20 --+
                          +-> RRF -> hybrid top 10 -> CLI
@@ -647,19 +677,19 @@ query -> BM25 top 25 ---+
 - `src/ragops/indexing`: Qdrant collection creation and indexing
 - `src/ragops/retrieval`: common retriever contract and factory, dense retrieval, BM25 indexing/retrieval, deterministic RRF hybrid fusion, and shared result normalization
 - `src/ragops/reranking`: validated cross-encoder model wrapper, candidate reranking, and the hybrid-plus-reranker pipeline
-- `src/ragops/routing`: strict router config/policy validation, registry and calibration checks, dense initial-probe orchestration, the schema-v1 feature contract, and deterministic route/reason selection
+- `src/ragops/routing`: strict router config/policy validation, supported/unsupported calibration provenance, dense initial-probe orchestration, the schema-v1 feature contract, and deterministic route/reason selection
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
-- `src/ragops/generation`: citations, grounded prompts, provider selection, template/OpenAI/Gemini clients, provider usage normalization, and cost estimation
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels and metrics, dense/BM25/RRF/reranker and live-API evaluation, comparisons, and LLM-as-judge orchestration
+- `src/ragops/generation`: citations, grounded prompts, deterministic no-answer refusal, provider selection, template/OpenAI/Gemini clients, provider usage normalization, heuristic token estimation, strict model-cost loading, and auditable cost calculation
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration and refusal metrics, comparisons, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
-- `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, retrieved-evidence, and feedback persistence
+- `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, generation-cost, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, router-config validation, initial routing probe, deterministic routing decision, dataset-review, labeling, offline/API evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
-- `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
+- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, router/no-answer validation and evaluation, model-cost validation, initial probe/decision commands, dataset review/labeling, offline/API evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
+- `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, cost, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Next Milestone
 
-Proceed to Day 39: implement and evaluate actual no-answer/refusal behavior using labeled unsupported queries rather than treating the provisional score floor as proven.
+Proceed to Day 41: evaluate routed RAG against fixed FAST and CAREFUL baselines using quality, latency, and the durable Day 40 cost contract.

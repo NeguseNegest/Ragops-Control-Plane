@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import UTC, datetime
 
 import pytest
@@ -141,9 +142,17 @@ def response_payload(trace_id=TRACE_ID, chunks=None, latency_ms=10.0):
             "amount_usd": 0.0,
             "currency": "USD",
             "status": "zero_cost",
-            "input_tokens": None,
-            "output_tokens": None,
-            "total_tokens": None,
+            "provider": "template",
+            "model": "local-template-v1",
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "token_source": "not_applicable",
+            "token_estimator": None,
+            "pricing_source": "not_applicable",
+            "price_table_id": None,
+            "input_usd_per_million_tokens": None,
+            "output_usd_per_million_tokens": None,
         },
         "debug": {
             "pipeline_id": "dense_baseline@1.0.0",
@@ -166,6 +175,7 @@ def make_response(**overrides):
 
 def record_matching_trace(store, payload, total_latency_ms=None):
     now = datetime.now(UTC)
+    cost = payload["cost"]
     store.record_trace(
         TraceRecord(
             trace_id=payload["trace_id"],
@@ -179,6 +189,20 @@ def record_matching_trace(store, payload, total_latency_ms=None):
             status="success",
             retrieved_chunk_count=len(payload["chunks"]),
             answer=payload["answer"],
+            generation_provider=cost["provider"],
+            generation_model=cost["model"],
+            cost_amount_usd=cost["amount_usd"],
+            cost_currency=cost["currency"],
+            cost_status=cost["status"],
+            cost_input_tokens=cost["input_tokens"],
+            cost_output_tokens=cost["output_tokens"],
+            cost_total_tokens=cost["total_tokens"],
+            cost_token_source=cost["token_source"],
+            cost_token_estimator=cost["token_estimator"],
+            cost_pricing_source=cost["pricing_source"],
+            cost_price_table_id=cost["price_table_id"],
+            cost_input_usd_per_million_tokens=cost["input_usd_per_million_tokens"],
+            cost_output_usd_per_million_tokens=cost["output_usd_per_million_tokens"],
             total_latency_ms=payload["latency_ms"] if total_latency_ms is None else total_latency_ms,
             embedding_ms=1.0,
             dense_ms=2.0,
@@ -324,6 +348,26 @@ def test_run_api_evaluation_rejects_trace_mismatch(tmp_path):
     record_matching_trace(store, payload, total_latency_ms=11.0)
 
     with pytest.raises(ValueError, match="total latency differs"):
+        run_api_evaluation(
+            make_config(tmp_path),
+            [make_label()],
+            client=FakeClient([make_response()]),
+            trace_store=store,
+            clock=FakeClock([0.0, 0.1]),
+        )
+
+
+def test_run_api_evaluation_rejects_response_trace_cost_mismatch(tmp_path):
+    payload = response_payload()
+    store = TraceStore(tmp_path / "traces.sqlite3").initialize()
+    record_matching_trace(store, payload)
+    with sqlite3.connect(store.path) as connection:
+        connection.execute(
+            "UPDATE traces SET generation_model = ? WHERE trace_id = ?",
+            ("different-template-model", str(payload["trace_id"])),
+        )
+
+    with pytest.raises(ValueError, match="generation cost differs"):
         run_api_evaluation(
             make_config(tmp_path),
             [make_label()],

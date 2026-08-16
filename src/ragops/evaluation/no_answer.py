@@ -166,7 +166,9 @@ def load_supported_report(path, expected_questions):
         report = json.loads(Path(path).read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         raise ValueError(f"Invalid supported report JSON: {path}: {error}") from error
-    questions = report.get("questions") if isinstance(report, dict) else None
+    if not isinstance(report, dict):
+        raise ValueError("Supported report must be the dense_baseline question report.")
+    questions = report.get("questions")
     if report.get("run_name") != "dense_baseline" or not isinstance(questions, list):
         raise ValueError("Supported report must be the dense_baseline question report.")
     if len(questions) != expected_questions:
@@ -232,7 +234,7 @@ def _ratio(numerator, denominator):
 
 
 def refusal_metrics(unsupported_rows, supported_rows):
-    true_positive = sum(row["refused"] for row in unsupported_rows)
+    true_positive = sum(row["correct"] for row in unsupported_rows)
     false_negative = len(unsupported_rows) - true_positive
     false_positive = sum(row["refused"] for row in supported_rows)
     true_negative = len(supported_rows) - false_positive
@@ -292,7 +294,9 @@ def run_no_answer_evaluation(config, runtime, progress=None):
                 "reason_code": result.decision.reason_code,
                 "refused": refused,
                 "refusal_answer": refusal.answer if refusal else None,
-                "correct": refused and refusal.answer == config.refusal.answer,
+                "refusal_prompt_sha256": refusal.prompt_sha256 if refusal else None,
+                "refusal_generated_by": refusal.generated_by if refusal else None,
+                "correct": refusal is not None and refusal.answer == config.refusal.answer,
             }
         )
         if progress:
@@ -312,6 +316,7 @@ def run_no_answer_evaluation(config, runtime, progress=None):
         features = _supported_features(question)
         decision = router.select(features)
         refused = decision.route == "NO_ANSWER"
+        refusal = generate_no_answer(question["question"], decision) if refused else None
         supported_rows.append(
             {
                 "question_id": question["question_id"],
@@ -324,7 +329,9 @@ def run_no_answer_evaluation(config, runtime, progress=None):
                 "route": decision.route,
                 "reason_code": decision.reason_code,
                 "refused": refused,
-                "refusal_answer": NO_ANSWER_RESPONSE if refused else None,
+                "refusal_answer": refusal.answer if refusal else None,
+                "refusal_prompt_sha256": refusal.prompt_sha256 if refusal else None,
+                "refusal_generated_by": refusal.generated_by if refusal else None,
                 "correct": not refused,
             }
         )
@@ -334,9 +341,20 @@ def run_no_answer_evaluation(config, runtime, progress=None):
     return {
         "schema_version": NO_ANSWER_EVALUATION_SCHEMA_VERSION,
         "run_name": config.name,
+        "evaluation_id": f"{config.name}@{config.version}",
+        "evaluation_status": config.status,
         "router_id": f"{router_config.name}@{router_config.version}",
         "router_status": router_config.status,
-        "prompt_version": config.refusal.prompt_version,
+        "probe": {
+            "pipeline_config": router_config.probe.pipeline_config,
+            "top_k": router_config.probe.top_k,
+            "feature_schema_version": router_config.feature_schema_version,
+        },
+        "refusal_policy": {
+            "answer": config.refusal.answer,
+            "prompt_version": config.refusal.prompt_version,
+            "generated_by": "deterministic_policy",
+        },
         "threshold": {
             "method": config.threshold_selection.method,
             "maximum_calibration_unsupported_score": max(calibration_scores),
@@ -388,11 +406,14 @@ def write_no_answer_artifacts(report, config, overwrite=False):
         "route",
         "reason_code",
         "refused",
+        "refusal_answer",
+        "refusal_prompt_sha256",
+        "refusal_generated_by",
         "correct",
     ]
     csv_temporary = config.output.csv_path.with_name(f".{config.output.csv_path.name}.tmp")
     with csv_temporary.open("w", encoding="utf-8", newline="") as output_file:
-        writer = csv.DictWriter(output_file, fieldnames=fieldnames)
+        writer = csv.DictWriter(output_file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for question in report["questions"]:
             writer.writerow({field: question[field] for field in fieldnames})

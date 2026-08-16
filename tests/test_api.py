@@ -384,9 +384,17 @@ def test_query_returns_production_response_and_selected_trace_identity(monkeypat
         "amount_usd": None,
         "currency": "USD",
         "status": "unavailable",
+        "provider": "object",
+        "model": None,
         "input_tokens": None,
         "output_tokens": None,
         "total_tokens": None,
+        "token_source": "unavailable",
+        "token_estimator": None,
+        "pricing_source": "unavailable",
+        "price_table_id": "generation_model_costs@1.0.0",
+        "input_usd_per_million_tokens": None,
+        "output_usd_per_million_tokens": None,
     }
     assert body["debug"] is None
     trace, stored_chunks = trace_store.calls[0]
@@ -398,6 +406,7 @@ def test_query_returns_production_response_and_selected_trace_identity(monkeypat
     assert trace.generation_ms == body["component_latencies"]["generation_ms"]
     assert trace.pipeline_name == "dense_baseline"
     assert trace.pipeline_version == "1.0.0"
+    assert trace.generation_cost().model_dump(mode="json") == body["cost"]
     assert stored_chunks[0].used_for_generation is True
 
 
@@ -429,12 +438,56 @@ def test_query_runs_dense_hybrid_and_reranked_configs(config, route, expected_ti
     assert body["route"] == route
     assert body["cost"]["amount_usd"] == 0.0
     assert body["cost"]["status"] == "zero_cost"
+    assert body["cost"]["provider"] == "template"
+    assert body["cost"]["model"] == "local-template-v1"
+    assert body["cost"]["input_tokens"] == 0
+    assert body["cost"]["output_tokens"] == 0
+    assert body["cost"]["token_source"] == "not_applicable"
     assert {name for name, value in body["component_latencies"].items() if value is not None} == expected_timings
     assert body["debug"]["pipeline_id"] == f"{config}@1.0.0"
     assert body["debug"]["requested_top_k"] == 1
     assert body["debug"]["returned_chunks"] == 1
     assert body["debug"]["generation_provider"] == "template"
     assert trace_store.calls[0][0].pipeline_name == config
+    assert trace_store.calls[0][0].generation_cost().model_dump(mode="json") == body["cost"]
+
+
+def test_query_estimates_missing_usage_for_a_known_model_and_persists_the_same_cost(monkeypatch):
+    class OpenAIClientWithoutUsage:
+        provider = "openai"
+        model = "gpt-5-nano"
+
+    generation_client = OpenAIClientWithoutUsage()
+
+    def fake_generate_answer(query, chunks, client):
+        assert client is generation_client
+        return GenerationResult(
+            answer="A grounded answer. [1]",
+            citations=[],
+            citation_text="",
+            used_chunk_ids=["chunk-1"],
+            prompt="A deterministic prompt containing retrieved context.",
+        )
+
+    monkeypatch.setattr(app_module, "generate_answer", fake_generate_answer)
+    trace_store = RecordingTraceStore()
+    client = make_client(trace_store, generation_client=generation_client)
+
+    response = client.post("/query", json={"query": "What is FastAPI?", "top_k": 1})
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["cost"]["status"] == "estimated"
+    assert body["cost"]["provider"] == "openai"
+    assert body["cost"]["model"] == "gpt-5-nano"
+    assert body["cost"]["input_tokens"] > 0
+    assert body["cost"]["output_tokens"] > 0
+    assert body["cost"]["token_source"] == "heuristic_estimate"
+    assert body["cost"]["token_estimator"] == "utf8_bytes_div4_ceiling_v1"
+    assert body["cost"]["pricing_source"] == "model_cost_table"
+    assert body["cost"]["price_table_id"] == "generation_model_costs@1.0.0"
+    assert body["cost"]["amount_usd"] > 0
+    assert trace_store.calls[0][0].generation_cost().model_dump(mode="json") == body["cost"]
 
 
 def test_unknown_query_config_is_rejected_before_endpoint_and_not_traced():
