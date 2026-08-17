@@ -144,9 +144,9 @@ def main():
     """Build the complete Day 13 query playground.
 
     The page collects one question, validates it, calls the existing FastAPI
-    endpoint, and displays the grounded response. Later control-plane features
-    such as routing, caching, feedback, analytics, and canary views stay out of
-    this first dashboard.
+    endpoint, and displays the grounded response. Routing and compact engineering
+    analytics belong to the later Day 49 dashboard pass; caching, feedback, and
+    canary views are explicitly outside the required scope.
     """
     st.set_page_config(page_title="RAGOps Control Plane", layout="wide")
     st.title("RAGOps Control Plane")

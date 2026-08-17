@@ -2,15 +2,49 @@
 
 ## Scope
 
-The implemented evaluation stack has five distinct layers:
+The implemented evaluation stack has six distinct layers:
 
 1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, Day 29 tracking, and the Day 30 registry) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; records the runs in MLflow; and binds those evidence bundles to versioned pipeline identities.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
 3. Refusal evaluation (Day 39) calibrates the NO_ANSWER score threshold from one unsupported split, measures it on a held-out unsupported split, replays supported-query scores to expose false refusals, and requires explicit accuracy/precision checks before writing its report.
 4. Router evaluation (Day 41) replays the same supported questions through always-FAST, always-CAREFUL, and routed strategies, combines that evidence with reviewed unsupported refusal outcomes, and compares quality, serially composed retrieval latency, and a controlled Day 40 generation-cost projection.
 5. Router stabilization (Day 42) evaluates a predeclared CAREFUL-gap grid on a deterministic tuning/validation split, enforces refusal/validation/latency/cost constraints, and publishes a complete route distribution and transition audit.
+6. The automated evaluation gate (Day 44) executes a SHA-pinned five-case regression suite through the real dense retriever, rule router, and template citation path; calculates deterministic quality, refusal, latency, and error metrics; and returns a shell-enforceable pass/fail decision.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, Day 35 proves the dense results survive the complete online HTTP and tracing composition, Day 39 adds measured no-answer behavior without claiming that a small authored sample is production calibration, Day 41 makes the router's actual tradeoff explicit, and Day 42 hardens and explains that policy without promoting it.
+Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, Day 35 proves the dense results survive the complete online HTTP and tracing composition, Day 39 adds measured no-answer behavior without claiming that a small authored sample is production calibration, Day 41 makes the router's actual tradeoff explicit, Day 42 hardens and explains that policy without promoting it, and Day 44 adds fast local regression enforcement without replacing the larger Day 47 benchmark.
+
+## Day 44 automated evaluation gate
+
+`configs/eval_gate.yaml` is the complete gate contract. It pins `dense_baseline@1.0.0`, `rule_router@0.2.0`, the existing four-record CI corpus, and `tests/fixtures/eval_gate_cases.jsonl` by SHA256. The separate gate dataset contains three supported questions with exact relevant chunk IDs and two unsupported questions with required refusal behavior. Strict models reject unknown fields, stale hashes, duplicate identities/questions/relevance labels, invalid behavior/query-type combinations, missing corpus references, non-finite or zero vectors, dimension drift, pipeline identity/status drift, collection mismatch, and incoherent thresholds before execution.
+
+The current compact candidate is the executable dense pipeline. That means “candidate” here is the pipeline selected for this regression run, not the pipeline-registry `candidate` alias. The cross-encoder alias requires the full BM25 artifact and model stack and remains part of the final comparative benchmark rather than being replaced by a fake CI reranker. The gate instantiates the production `DenseRetriever` through the common factory, seeds real in-memory Qdrant, injects only the checked deterministic query vectors, applies the actual router, and uses the production template citation builder. It requires no Docker service, external provider, API key, downloaded model, mutable trace database, or ignored full-corpus artifact.
+
+Five cases produce these metrics and thresholds:
+
+| Check | Threshold | Interpretation |
+| --- | ---: | --- |
+| Recall@2 | `>= 1.0` | Every supported case retains its labeled evidence within the compact cutoff. |
+| Recall regression | `<= 0.0` from the `1.0` fixture baseline | The checked deterministic baseline cannot silently degrade. |
+| MRR | `>= 1.0` | Every supported relevant chunk remains rank one. |
+| Answer presence | `>= 1.0` | Every supported case reaches generation and returns a non-empty template answer. |
+| Citation coverage | `>= 1.0` | Every labeled relevant chunk is referenced by a citation ID actually present in the answer. |
+| Citation precision | `>= 1.0` | Every answer-referenced citation chunk is relevant under the compact labels. |
+| Refusal correctness | `>= 1.0` | Supported cases answer and unsupported cases select `NO_ANSWER`. |
+| Whole-case p95 latency | `<= 100 ms` | The in-memory smoke path remains bounded with wide cold-runner headroom. |
+| Runtime errors | `<= 0` | Any per-case exception fails the gate while remaining visible in its report. |
+
+The p95 calculation uses nearest rank across all five whole-case measurements. Ten separate cold-process local runs observed p95 values from `1.074` to `1.272 ms`; the config records the maximum `1.272 ms` observation and the reason for the wider `100 ms` ceiling. This number measures the compact deterministic path, not full-corpus or cross-encoder latency.
+
+Generation metrics are limited to deterministic evidence available offline. The template path can prove that an answer exists and that its cited IDs map to labeled evidence; it cannot establish semantic faithfulness. The report therefore emits `faithfulness: null` with `not_available_without_external_judge`. Day 20/47 judge evidence remains the appropriate source for semantic generation quality.
+
+Run the gate and its focused tests with:
+
+```bash
+make eval-gate
+make test-eval-gate
+```
+
+The CLI prints all nine comparisons and returns `0` only when every check passes, `1` for a measured threshold failure, and `2` when configuration or execution setup prevents a valid run. The acceptance regression deliberately cycles the supported deterministic embeddings through the real dense retriever. Recall, recall-regression, MRR, and citation checks fail, and the report maps that outcome to exit status `1`. A separate test injects `300 ms` whole-case measurements and proves the latency check fails without masking perfect quality; another proves a per-case retrieval exception increments the error count and fails the gate. Day 45 will invoke this already-executable local gate in GitHub Actions.
 
 ## Day 39 refusal evaluation
 

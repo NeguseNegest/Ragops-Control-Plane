@@ -77,7 +77,7 @@ The registry validator rejects dangling aliases and aliases to `draft`, `rejecte
 6. Deploy the selected config separately and verify the running service. The registry alias alone has no runtime side effect.
 7. Keep the previous approved version registered so rollback remains an explicit alias and deployment reversal rather than reconstruction from memory.
 
-Later evaluation-gate and canary milestones can automate parts of steps 4–6, but Day 30 deliberately keeps promotion reviewable and local.
+The Day 44 compact evaluation gate automates offline regression checks relevant to steps 4–5, but registry promotion remains a separate, reviewable decision and the full candidate benchmark remains required. Canary or deployment automation is optional Future Work, not a remaining milestone.
 
 ## Rollback workflow
 

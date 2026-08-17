@@ -505,7 +505,7 @@ def create_app(
             citation_text=generation_result.citation_text,
             chunks=response_chunks,
             used_chunk_ids=generation_result.used_chunk_ids,
-            latency_ms=latency_ms,
+            latency_ms=latency_ms, 
             component_latencies=component_latencies,
             cost=cost_response,
             debug=debug_response,

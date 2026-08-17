@@ -43,6 +43,12 @@ Day 41 adds `make test-router-evaluation`, which uses temporary miniature dense/
 
 Day 42 adds `make test-router-stabilization`. Its temporary fixture checks the deterministic SHA256 split, constrained candidate selection, latency/threshold tie-breakers, target-policy drift rejection, route transitions, report completeness, and overwrite protection. The target also rechecks current `0.03` boundary behavior and no-answer replay provenance. `make validate-router-tuning` remains a local full-artifact gate for the same ignored-corpus reason as the Day 41 validator.
 
+## Day 44 Local Evaluation Gate
+
+`make eval-gate` now executes the separate `configs/eval_gate.yaml` contract. It reuses the four-record in-memory Qdrant corpus but loads a dedicated five-case dataset with three supported relevance labels and two unsupported refusal expectations. The selected dense config, router config, corpus, and cases are checksum-pinned. Nine checks cover Recall@2, recall regression, MRR, answer presence, answer-referenced citation coverage/precision, refusal correctness, whole-case p95 latency, and runtime errors. The command prints each decision and returns non-zero when any threshold fails.
+
+This local command is implemented and independently tested in Day 44, including a deliberately permuted dense-query-vector regression that fails quality/citation thresholds. It is not added to the workflow in the same milestone: Day 45 owns CI job integration, dependency/job topology, and the status badge.
+
 ## GitHub Actions Job
 
 `.github/workflows/ci.yml` runs on pushes, pull requests, and manual dispatch. The job:
@@ -62,4 +68,4 @@ make test-api-ci PYTHON=.venv/bin/python
 
 ## Boundary
 
-This is an API reliability gate, not the Day 52 evaluation gate or the broader Day 53 multi-job CI design. It proves that the checked-in endpoint contract and core error behavior run in CI. It does not execute the full documentation corpus, measure retrieval/generation quality thresholds, contact MLflow, load the BM25 artifact, score with the cross-encoder, exercise an external LLM, or validate Docker deployment. Those broader integrations remain explicit later milestones.
+The current GitHub workflow is an API reliability gate and does not yet invoke the implemented Day 44 compact evaluation gate; that integration belongs to Day 45. The API job proves that the checked-in endpoint contract and core error behavior run in CI. Neither it nor the compact gate executes the full documentation corpus, contacts MLflow, loads the BM25 artifact, scores with the cross-encoder, exercises an external LLM, or validates Docker deployment. Broader live integrations remain explicit local workflows.

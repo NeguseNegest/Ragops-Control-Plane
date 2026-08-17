@@ -9,7 +9,7 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
 - Offline hybrid and reranked CLIs that retrieve independent dense and BM25 candidate pools, fuse ranks without normalizing incompatible raw scores, and optionally apply a cross-encoder.
 - A deterministic pipeline-registry workflow that binds versioned configs to validated evaluation evidence and guarded baseline/candidate/production aliases.
-- An online observability workflow that measures request components with a monotonic trace context and atomically stores each accepted retrieval/query attempt, its stage latencies, and its ranked evidence in SQLite, with a related feedback model for later UI/API integration.
+- An online observability workflow that measures request components with a monotonic trace context and atomically stores each accepted retrieval/query attempt, its stage latencies, and its ranked evidence in SQLite. The earlier schema also retains a tested feedback record model, but no feedback API is required or claimed.
 - A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
 - An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
 - A live integration-review workflow that evaluates all verified dense questions through HTTP, requires offline/API ranking parity, cross-checks response traces in SQLite, and verifies the complete retrieval evidence suite in MLflow.
@@ -19,8 +19,9 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A paired router-evaluation workflow that validates and replays fixed FAST, fixed CAREFUL, and routed evidence across supported quality, refusal correctness, measured-artifact latency, and controlled generation-cost projections.
 - A router-stabilization workflow that archives the prior policy, evaluates a constrained CAREFUL-gap grid on a deterministic tuning/validation split, and emits route-distribution and transition evidence.
 - A generation-cost workflow that prefers provider usage, deterministically estimates missing prompt/answer tokens, selects exact model rates from a versioned table or explicit override, and returns/persists one provenance-complete cost record.
+- A compact evaluation-gate workflow that executes hash-pinned supported and unsupported cases through in-memory Qdrant, the production dense retriever, the real router, and template citation generation before enforcing nine shell-visible thresholds.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, the Day 41 routed-versus-fixed tradeoff evaluation, and Day 42 router stabilization are implemented. Automatic FAST/STANDARD/CAREFUL execution, semantic caching, canary gates, failure mining, monitoring, evaluation gates, and production cost aggregation/budgets remain planned.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, the Day 41 routed-versus-fixed tradeoff evaluation, Day 42 router stabilization, and the Day 44 compact evaluation gate are implemented. Automatic FAST/STANDARD/CAREFUL execution and Day 45 evaluation-gate CI integration remain required work. Semantic caching, canary simulation, automated failure mining, and a separate monitoring platform are explicitly deferred.
 
 ## System Diagram
 
@@ -150,6 +151,7 @@ flowchart LR
 | Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | No-answer evaluator | `src/ragops/evaluation/no_answer.py`, `scripts/evaluate_no_answer.py` | Validate reviewed unsupported provenance, derive the score threshold from calibration only, run held-out probes, replay supported evidence, compute refusal/false-refusal metrics, enforce acceptance thresholds, and atomically write JSON/CSV evidence. |
 | Router evaluator | `src/ragops/evaluation/router_comparison.py`, `scripts/evaluate_router.py` | Strictly pair dense/reranked/refusal evidence, recompute current route decisions, build exact controlled prompts, aggregate quality/latency/cost tradeoffs, and atomically write JSON/CSV/Markdown artifacts. |
+| Evaluation gate | `src/ragops/evaluation/gate.py`, `scripts/eval_gate.py`, `configs/eval_gate.yaml` | Load hash-pinned compact evidence, run the selected production dense path and router in memory, calculate retrieval/generation/refusal/latency/error metrics, print nine threshold decisions, and return a shell-enforceable status. |
 | Experiment tracker | `src/ragops/tracking/mlflow.py`, `scripts/log_retrieval_runs.py` | Validate retrieval evidence, flatten configs and metrics, log or import idempotent MLflow runs, upload CSV/JSON/YAML/Markdown artifacts, and verify the four-run acceptance state. |
 | Pipeline registry | `src/ragops/pipeline_registry.py`, `scripts/build_pipeline_registry.py` | Validate semantic versions and lifecycle status, bind configs to common-depth evidence and MLflow identity, compute checksums, enforce alias policy, and atomically generate the registry snapshot. |
 | Trace store | `src/ragops/tracing/store.py`, `scripts/init_trace_store.py` | Validate and migrate SQLite schema state; atomically persist requests with ordered evidence; and store feedback against existing trace IDs. |
@@ -188,7 +190,7 @@ Day 30 generates `reports/pipeline_registry.json` from the versioned retrieval Y
 
 Aliases are validated pointers to exact `name@version` identities. `baseline` points to approved BM25, `candidate` points to the evaluated cross-encoder pipeline, and `production` points to the approved dense config used by default. The negative unweighted-RRF result remains registered as rejected without an alias. Draft, rejected, retired, missing, and stale entries cannot receive registry aliases; baseline and production require approved status. Day 33 separately permits an explicit `hybrid_rrf` API request for controlled comparison and exposes its rejected status in debug output. That execution is not promotion.
 
-This is a control-plane boundary, not automatic deployment. Moving the `production` alias records a reviewed promotion decision but does not change the API's default config. Automatic deployment wiring, evaluation gates, and canary automation remain later milestones. Detailed version, promotion, and rollback rules are in `docs/pipeline_registry.md`.
+This is a control-plane boundary, not automatic deployment. Moving the `production` alias records a reviewed promotion decision but does not change the API's default config. The Day 44 evaluation gate now automates compact offline regression checks; deployment wiring and canary automation are optional Future Work. Detailed version, promotion, and rollback rules are in `docs/pipeline_registry.md`.
 
 ## SQLite Trace Boundary
 
@@ -508,13 +510,16 @@ Both provider credentials may be configured simultaneously, but the online API u
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
 - The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
-- Feedback endpoints, automatic non-refusal route execution, semantic caching, canary gates, failure mining, monitoring, and the quality evaluation gate are not implemented. Days 36–41 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, and an offline fixed-versus-routed tradeoff report, while Day 34 supplies API CI coverage; none yet enforce retrieval/generation benchmark or cost-budget thresholds online.
+- Automatic non-refusal route execution is not implemented. Days 36–42 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, an offline fixed-versus-routed tradeoff report, and threshold stabilization. Day 44 now enforces compact offline thresholds, but Day 45 has not yet integrated that command into GitHub Actions and the gate does not claim online/full-corpus benchmark enforcement.
+- Feedback HTTP collection, semantic caching, canary simulation, automated failure mining, and a separate monitoring stack are deliberately outside the condensed required scope. The existing tested SQLite feedback model is retained as completed schema work, without implying an endpoint or future milestone.
 
-## Planned Placeholders
+## Condensed Finishing Scope
 
-The repository contains empty files reserved for later project-plan milestones. They are not active implementations:
+Day 43 removes empty placeholder files rather than allowing filenames to imply implementations. Required remaining work is created together with code, tests, and evidence:
 
-- configurations: `cached_routed.yaml`
-- scripts: `eval_gate.py`, `mine_failures.py`, `run_canary.py`, `seed_demo_data.py`, and `simulate_traffic.py`
-- tests: `test_cache.py` and `test_eval_gate.py`
-- topic documents: `canary_gates.md`, `failure_mining.md`, `limitations.md`, `monitoring.md`, and `semantic_cache.md`
+- Day 45: evaluation-gate integration into GitHub Actions
+- Days 46–48: final reviewed evaluation data, benchmark/ablation run, and manual failure analysis with regression cases
+- Day 49: two-tab query/engineering dashboard
+- Days 50–52: architecture and README, clean-environment hardening, and portfolio packaging
+
+Deferred extensions are recorded in README Future Work and [`limitations.md`](limitations.md), not represented by empty configs, packages, scripts, workflows, tests, or topic pages.

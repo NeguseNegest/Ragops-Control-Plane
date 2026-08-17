@@ -46,7 +46,7 @@ Each row belongs to one trace through a cascading foreign key. The composite pri
 
 ### `feedback`
 
-Feedback belongs to an existing trace through a cascading foreign key. A record has its own UUID and UTC timestamp and requires a rating (`-1` or `1`), a non-empty comment, or both. Metadata is deterministic JSON. Day 31 provides `TraceStore.record_feedback()` and read methods; collection through an HTTP endpoint is intentionally deferred.
+Feedback belongs to an existing trace through a cascading foreign key. A record has its own UUID and UTC timestamp and requires a rating (`-1` or `1`), a non-empty comment, or both. Metadata is deterministic JSON. Day 31 provides and tests `TraceStore.record_feedback()` and read methods. The condensed plan retains that completed schema work but explicitly removes an HTTP feedback endpoint from required scope.
 
 ## Atomicity and Failure Behavior
 
@@ -121,4 +121,4 @@ The Compose smoke queries separately proved the named volume path across contain
 
 Traces intentionally contain raw queries, generated answers, complete retrieved text, metadata, and error messages. Treat the database as potentially sensitive application data, restrict filesystem/volume access, define retention before production use, and avoid placing secrets or personal data in queries.
 
-The trace system does not provide retention jobs, redaction, encryption, feedback endpoints, trace search APIs, dashboard trace views, distributed tracing, cost aggregation/budgets, provider-invoice reconciliation, or PostgreSQL replication. Those are separate operational milestones rather than properties of this local SQLite baseline. Token heuristics and pricing limitations are documented in [`cost_estimation.md`](cost_estimation.md).
+The trace system does not provide retention jobs, redaction, encryption, feedback endpoints, trace search APIs, distributed tracing, cost aggregation/budgets, provider-invoice reconciliation, or PostgreSQL replication. The compact Day 49 engineering dashboard may read recent traces, but the other capabilities are optional Future Work rather than remaining core milestones. Token heuristics and pricing limitations are documented in [`cost_estimation.md`](cost_estimation.md).

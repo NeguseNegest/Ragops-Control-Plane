@@ -1,0 +1,54 @@
+schema_version: 1
+name: compact_evaluation_gate
+version: 1.0.0
+
+candidate:
+  pipeline_type: dense
+  config_path: configs/dense_baseline.yaml
+  config_sha256: ebc0e67ea08211905b94328ac4302b71e237833600aae689d5fc533d7f82fbc1
+  expected_name: dense_baseline
+  expected_version: 1.0.0
+  expected_status: approved
+
+router:
+  config_path: configs/routed.yaml
+  config_sha256: b5783856458a9e5bddf65bd38aa90c0b4ee0ce4f6e2f19a827ae58a8eed8e13c
+
+corpus:
+  records_path: tests/fixtures/ci_small_corpus.jsonl
+  records_sha256: d384fc3d8d02f12c063f2083e2cda8843e309b8f03ed8546bdeba4aae4693d26
+  collection_name: rag_chunks
+  vector_size: 3
+
+dataset:
+  cases_path: tests/fixtures/eval_gate_cases.jsonl
+  cases_sha256: 39fcb7ea8be1e2630e7ac0f51324202cdfa6b25aa444430b8e12cecad86fe373
+  minimum_supported_cases: 3
+  minimum_unsupported_cases: 2
+  retrieval_k: 2
+
+generation:
+  provider: template
+  available_metrics:
+    - answer_presence_rate
+    - citation_coverage
+    - citation_precision
+
+thresholds:
+  baseline_recall_at_k: 1.0
+  minimum_recall_at_k: 1.0
+  maximum_recall_regression: 0.0
+  minimum_mrr: 1.0
+  minimum_answer_presence_rate: 1.0
+  minimum_citation_coverage: 1.0
+  minimum_citation_precision: 1.0
+  minimum_refusal_correctness: 1.0
+  maximum_p95_latency_ms: 100.0
+  maximum_error_count: 0
+
+latency_calibration:
+  environment: local in-memory Qdrant with deterministic embeddings
+  measured_on: 2026-08-17
+  sample_runs: 10
+  observed_p95_latency_ms: 1.272
+  threshold_headroom_reason: Allows cold CI runners while still catching deliberate or structural slowdowns.

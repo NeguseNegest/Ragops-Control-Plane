@@ -18,25 +18,25 @@ RAGOps Control Plane is a work-in-progress platform for developing and evaluatin
 
 ## Project Objective
 
-The intended system will compare versioned RAG pipelines across retrieval quality, generation quality, latency, and estimated cost, then promote or reject candidates through explicit evaluation and canary gates.
+The intended system will compare versioned RAG pipelines across retrieval quality, generation quality, latency, and estimated cost, then accept or reject candidates through explicit, automated evaluation gates.
 
 Target capabilities:
 
 - deterministic ingestion, chunking, embedding, and index versioning
 - dense, BM25, hybrid, and cross-encoder-reranked retrieval
 - citation-grounded generation with unsupported-query refusal
-- golden, adversarial, and failure-mined evaluation datasets
+- golden, adversarial, and manually curated regression datasets
 - retrieval, generation, latency, and cost metrics tracked in MLflow
 - FastAPI serving with SQLite traces and component-level timings
-- rule-based query routing and corpus-aware semantic caching
-- production-versus-candidate canary simulation and automated promotion gates
-- failure mining, operational monitoring, Streamlit analytics, and CI evaluation checks
+- rule-based query routing with explicit no-answer behavior
+- automated evaluation gates integrated into GitHub Actions
+- manual failure analysis, compact Streamlit engineering analytics, and query-level operational metrics
 
 The primary outputs are reproducible pipeline comparisons and promotion decisions supported by measurable quality, latency, and cost constraints.
 
 ## Current Implementation
 
-Implementation is complete through Day 42. The current baseline includes:
+Implementation is complete through Day 44. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -85,7 +85,7 @@ Current limitations:
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Explicit `/query` generation still relies on grounding instructions, but the NO_ANSWER branch on `/route` is policy-enforced and never calls a generation provider. This does not yet protect callers that bypass routing and invoke `/query` directly.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted; Day 41 aggregates a controlled reference-answer projection for comparison, but production costs are not budget-enforced, invoice-reconciled, or logged to MLflow. Automatic route execution, caching, canary gates, failure mining, monitoring, and the later quality evaluation gate remain planned. Day 34 CI covers API behavior, not benchmark promotion thresholds.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted; Day 41 aggregates a controlled reference-answer projection for comparison, but production costs are not budget-enforced, invoice-reconciled, or logged to MLflow. Day 44 adds an offline compact quality gate; Day 45 still needs to invoke it in GitHub Actions. Automatic non-refusal route execution remains required work. Semantic caching, canary simulation, automated failure mining, and a large monitoring stack are deliberately deferred to Future Work.
 - The Day 35 API evaluation is a dense retrieval parity check using the deterministic template generator. It does not repeat external-provider generation judging or the expensive 45-question reranker benchmark through HTTP.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
@@ -169,7 +169,7 @@ Three related tables preserve the request:
 | --- | --- |
 | `traces` | UUID, UTC timestamps, endpoint, raw query, requested depth, pipeline name/version, success/error status, answer, total latency, six optional component latencies, and error details. |
 | `retrieved_chunks` | One row per ranked chunk with IDs, full text, score, source, deterministic metadata JSON, and whether generation used it. |
-| `feedback` | Optional positive/negative rating or comment tied to an existing trace. Day 31 supplies the repository method; a feedback HTTP endpoint is not added yet. |
+| `feedback` | Optional positive/negative rating or comment tied to an existing trace. Day 31 supplies and tests the repository method; an HTTP feedback endpoint is outside the required scope. |
 
 Initialize or verify the local store with:
 
@@ -583,6 +583,19 @@ make test-api-ci PYTHON=.venv/bin/python
 
 The same target runs in `.github/workflows/ci.yml` with the deliberately small dependency set in `requirements-ci.txt`. Offline environment flags make an accidental model download fail instead of hiding a test dependency. See [`docs/ci.md`](docs/ci.md) for the fixture contract, coverage boundary, and workflow design.
 
+### Run the compact evaluation gate
+
+Day 44 turns the small offline corpus into an executable regression gate:
+
+```bash
+make eval-gate
+make test-eval-gate
+```
+
+`configs/eval_gate.yaml` pins the selected `dense_baseline@1.0.0` config, router, four-record corpus, and a separate five-case dataset by SHA256. Three supported cases run the production dense retriever and template citation path; two unsupported cases must select the real `NO_ANSWER` policy. The command checks Recall@2, MRR, recall regression, answer presence, citation coverage/precision, refusal correctness, whole-case p95 latency, and runtime error count. It prints every comparison and exits `0` only when all nine pass.
+
+The checked thresholds require perfect deterministic quality on this deliberately tiny fixture and cap p95 at `100 ms`. Ten cold-process local calibration runs observed a maximum p95 of `1.272 ms`; the wider ceiling allows CI-runner variance without making latency unbounded. The focused suite deliberately permutes the three supported query embeddings through the real dense path and proves the resulting retrieval/citation regression exits as a failure. Template generation cannot establish semantic faithfulness, so the report marks that metric unavailable instead of inventing a score. Day 45 remains responsible for adding this already-executable command to GitHub Actions.
+
 ### Run the Week 5 integration review
 
 Start Qdrant and MLflow, then run FastAPI with the trace database that the evaluator will inspect:
@@ -717,16 +730,30 @@ query -> BM25 top 25 ---+
 - `src/ragops/routing`: strict router config/policy validation, supported/unsupported calibration provenance, dense initial-probe orchestration, the schema-v1 feature contract, and deterministic route/reason selection
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
 - `src/ragops/generation`: citations, grounded prompts, deterministic no-answer refusal, provider selection, template/OpenAI/Gemini clients, provider usage normalization, heuristic token estimation, strict model-cost loading, and auditable cost calculation
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, deterministic router tuning/distribution, comparisons, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, deterministic router tuning/distribution, the compact threshold gate, comparisons, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
 - `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, generation-cost, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: ingestion, indexing, dense/BM25/hybrid/reranked retrieval, router/no-answer validation and evaluation, model-cost validation, initial probe/decision commands, dataset review/labeling, offline/API evaluation, MLflow import, registry, and trace-store commands; later-milestone script files remain empty placeholders
-- `tests`: unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, cost, metric, evaluation-runner, LLM-judge, registry, and tracing tests; later-milestone test files remain empty placeholders
+- `scripts`: implemented ingestion, indexing, dense/BM25/hybrid/reranked retrieval, router/no-answer validation and evaluation, model-cost validation, initial probe/decision commands, dataset review/labeling, offline/API evaluation and gating, MLflow import, registry, and trace-store commands
+- `tests`: implemented unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, cost, metric, evaluation-runner/gate, LLM-judge, registry, and tracing coverage; future test modules are created only with their implementations
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
+
+## Future Work
+
+The condensed 52-day plan intentionally defers the following extensions so final evaluation, CI, failure analysis, reproducibility, and documentation remain the priority:
+
+- semantic caching for repeated-query latency and cost reduction
+- canary, shadow, or online deployment experiments against real traffic
+- OpenTelemetry distributed tracing and Prometheus/Grafana integration
+- PostgreSQL trace storage and larger-scale retention/search
+- Kubernetes and Terraform deployment automation
+- automated failure mining from real user feedback
+- learned query routing and online experimentation
+
+These are architectural extensions, not partially implemented repository features. No cache, canary, traffic-simulation, feedback-API, or automated failure-mining behavior is currently claimed.
 
 ## Next Milestone
 
-Proceed to Day 43: document the semantic-cache architecture, including a separate `semantic_cache` Qdrant collection, payload schema, initial `0.94` similarity threshold, and manifest-hash invalidation strategy.
+Proceed to Day 45: integrate lint, unit/API tests, the evaluation smoke path, and the Day 44 evaluation gate into the GitHub Actions pull-request workflow, then add the CI status badge.

@@ -304,4 +304,4 @@ The JSON report contains every candidate, constraint check, source hash, route r
 
 ## Remaining Work
 
-Day 43 begins semantic-cache design. Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.
+Day 43 removes abandoned-scope placeholders and stale roadmap references; semantic caching is explicitly deferred. Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.
