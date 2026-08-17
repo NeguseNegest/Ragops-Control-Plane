@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "name": "final_evaluation_dataset",
+  "version": "1.0.0",
+  "status": "reviewed",
+  "review": {
+    "completed_on": "2026-08-17",
+    "reviewer": "codex-day46-source-and-scope-audit",
+    "historical_questions_reviewed": 80,
+    "excluded_question_count": 10,
+    "excluded_questions": [
+      {
+        "id": "sqa-9214bfc1978670e0",
+        "reason": "ambiguous_without_context",
+        "rationale": "The question does not identify FastAPI or the submitted object and duplicates the stronger request-body case."
+      },
+      {
+        "id": "sqa-bd90c5a97e0740e5",
+        "reason": "semantic_duplicate",
+        "rationale": "The generated-schema detail is already covered inside the broader manually authored request-body question."
+      },
+      {
+        "id": "sqa-e27ab4d10e8d4e5f",
+        "reason": "ambiguous_without_context",
+        "rationale": "The question does not identify Qdrant or which Go client example is being referenced."
+      },
+      {
+        "id": "sqa-6de296cda91f5dc6",
+        "reason": "ambiguous_without_context",
+        "rationale": "The phrase interface is underspecified and overlaps the more precise UploadFile object and spooling questions."
+      },
+      {
+        "id": "sqa-100e77a31882d05f",
+        "reason": "semantic_duplicate",
+        "rationale": "The response-password behavior is already tested by the stronger manually authored response-model case."
+      },
+      {
+        "id": "sqa-7115fc46a1555f1a",
+        "reason": "ambiguous_without_context",
+        "rationale": "Class-based decision making is not anchored to a named system, task, or source concept."
+      },
+      {
+        "id": "sqa-7f32d3b5b1a89fbf",
+        "reason": "ambiguous_without_context",
+        "rationale": "The question omits the named method and domain needed to interpret intermediate representation correctly."
+      },
+      {
+        "id": "sqa-5c5e20dbf84c3f0b",
+        "reason": "semantic_duplicate",
+        "rationale": "The generic vector-similarity operation overlaps the reviewed Qdrant distance-metric coverage."
+      },
+      {
+        "id": "sqa-9ec13a094bedbaf2",
+        "reason": "weak_or_trivial",
+        "rationale": "A context-free field datatype lookup is too narrow to support a meaningful pipeline comparison."
+      },
+      {
+        "id": "sqa-bd90972847373159",
+        "reason": "ambiguous_without_context",
+        "rationale": "The vector-chunk tradeoff lacks the retrieval stage and configuration context needed for one defensible answer."
+      }
+    ],
+    "manual_retrieval_decision_count": 15,
+    "curation_contract_sha256": "52da9602189de9b1bd17219a2221430b64a0b6ec9bd2ee5850cea2ecf12ee527"
+  },
+  "construction": {
+    "policy": "immutable_historical_inputs_plus_explicit_reviewed_curation",
+    "historical_inputs_are_unchanged": true,
+    "unsupported_overlap_policy": "Unsupported golden questions intentionally overlap the adversarial set so generation and refusal behavior can be evaluated on the same reviewed prompts."
+  },
+  "counts": {
+    "golden": 100,
+    "retrieval_labels": 50,
+    "adversarial": 30
+  },
+  "golden_distribution": {
+    "query_type": {
+      "ambiguous": 5,
+      "supported": 72,
+      "unsupported": 23
+    },
+    "difficulty": {
+      "easy": 30,
+      "hard": 35,
+      "medium": 35
+    },
+    "supported_source_family": {
+      "fastapi": 26,
+      "mlflow": 25,
+      "qdrant": 21
+    }
+  },
+  "retrieval_distribution": {
+    "label_method": {
+      "manual": 15,
+      "verified_synthetic_source": 35
+    },
+    "source_family": {
+      "fastapi": 18,
+      "mlflow": 18,
+      "qdrant": 14
+    },
+    "unique_question_count": 50,
+    "relevant_chunk_count": 61
+  },
+  "adversarial_distribution": {
+    "category": {
+      "false_premise": 1,
+      "general_out_of_scope": 2,
+      "high_stakes_out_of_scope": 7,
+      "instruction_injection": 2,
+      "near_domain_technology": 18
+    },
+    "difficulty": {
+      "easy": 1,
+      "hard": 16,
+      "medium": 13
+    }
+  },
+  "source_provenance": {
+    "historical_golden_path": {
+      "path": "data/eval/golden_qa.jsonl",
+      "sha256": "3bd371932efc13dded4012f29d1b33a5f48f26e27e9ffc8a91ab933b984ef2b0"
+    },
+    "historical_retrieval_labels_path": {
+      "path": "data/eval/retrieval_labels.jsonl",
+      "sha256": "d8f4d3df9035681c4e0269e2db1e834faa4352a608cd2526eb9172650d22017d"
+    },
+    "historical_adversarial_path": {
+      "path": "data/eval/no_answer_queries.jsonl",
+      "sha256": "40f86d7891fdd8e2c96ea9d7895e16a084e7bff84ea64d34ed6941ee9d267f7d"
+    },
+    "additions_path": {
+      "path": "data/eval/day46_additions.jsonl",
+      "sha256": "144ffa1309edbf32bcc1ee6770d0a1246f8ba4716d1db5744343c12079ff4f61"
+    },
+    "chunks_path": {
+      "path": "data/processed/chunks.jsonl",
+      "sha256": "61d97c037bfedda6d4c6ce66127392bc490435d2f475945c845fd28dc450fe50"
+    }
+  },
+  "artifacts": {
+    "golden": {
+      "path": "data/eval/final_golden_qa.jsonl",
+      "sha256": "9fca796ed41397cdd1e462c56ba3ea0a7e6c2e99f3f036bf4303f70d0953acdb"
+    },
+    "retrieval_labels": {
+      "path": "data/eval/final_retrieval_labels.jsonl",
+      "sha256": "5571bf5397864ae5170c682296814d427e5b152b2d1f07335f2ca10da9d8d1c3"
+    },
+    "adversarial": {
+      "path": "data/eval/final_adversarial_qa.jsonl",
+      "sha256": "1c08d5c9c3437ed693de99aed5a8f2e5c15b5094adf5cfc8d687fff0916dcf83"
+    }
+  },
+  "acceptance": {
+    "passed": true,
+    "golden_range": {
+      "minimum": 100,
+      "maximum": 125,
+      "expected": 100
+    },
+    "retrieval_label_range": {
+      "minimum": 50,
+      "maximum": 75,
+      "expected": 50
+    },
+    "adversarial_range": {
+      "minimum": 25,
+      "maximum": 40,
+      "expected": 30
+    },
+    "minimum_hard_golden": 25,
+    "minimum_source_families": 3,
+    "minimum_adversarial_categories": 5,
+    "minimum_manual_retrieval_labels": 15
+  }
+}

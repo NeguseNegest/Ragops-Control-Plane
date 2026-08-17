@@ -1,4 +1,4 @@
-# API Continuous Integration
+# Continuous Integration
 
 ## Day 34 Goal
 
@@ -47,25 +47,38 @@ Day 42 adds `make test-router-stabilization`. Its temporary fixture checks the d
 
 `make eval-gate` now executes the separate `configs/eval_gate.yaml` contract. It reuses the four-record in-memory Qdrant corpus but loads a dedicated five-case dataset with three supported relevance labels and two unsupported refusal expectations. The selected dense config, router config, corpus, and cases are checksum-pinned. Nine checks cover Recall@2, recall regression, MRR, answer presence, answer-referenced citation coverage/precision, refusal correctness, whole-case p95 latency, and runtime errors. The command prints each decision and returns non-zero when any threshold fails.
 
-This local command is implemented and independently tested in Day 44, including a deliberately permuted dense-query-vector regression that fails quality/citation thresholds. It is not added to the workflow in the same milestone: Day 45 owns CI job integration, dependency/job topology, and the status badge.
+This local command is independently tested, including a deliberately permuted dense-query-vector regression that fails quality/citation thresholds. Day 45 runs the focused smoke suite and live threshold command as separate pull-request checks.
 
-## GitHub Actions Job
+## Day 45 GitHub Actions Jobs
 
-`.github/workflows/ci.yml` runs on pushes, pull requests, and manual dispatch. The job:
+`.github/workflows/ci.yml` runs on pushes, pull requests, and manual dispatch. It exposes five independent checks:
 
-1. checks out the repository and configures Python 3.12;
-2. installs `requirements-ci.txt` rather than the full ML/application dependency set;
-3. lints source, tests, scripts, and dashboard code with Ruff; and
-4. runs `make test-api-ci PYTHON=python`.
+| Job | Command | Responsibility |
+| --- | --- | --- |
+| `lint` | `python -m ruff check src tests scripts dashboard` | Repository-wide static checks. |
+| `unit` | `make test-unit-ci PYTHON=python` | 286 hermetic BM25/chunking/citation/evaluation/final-dataset/hybrid/indexing/ingestion/judge/tracking/registry/reranking/label/metric/interface/synthetic-QA and workflow-contract tests. |
+| `api` | `make test-api-ci PYTHON=python` | 179 API integration, API evaluator, routing, refusal, cost, generation, trace, and dense-retrieval tests. |
+| `evaluation-smoke` | `make test-evaluation-smoke EVAL_GATE_PYTHON=python` | Nine strict-input, real-smoke, degraded-pipeline, latency, error, citation, summary, and exit-code tests. |
+| `evaluation-gate` | `make eval-gate EVAL_GATE_PYTHON=python` | The actual five-case compact candidate run and all nine thresholds. |
+
+Each job independently checks out the repository, configures Python 3.12, installs `requirements-ci.txt`, and has a ten-minute timeout. `actions/setup-python` enables pip caching keyed to the exact CI requirements file. The jobs deliberately have no `needs` edges: all five start independently, so one failure cannot hide another by causing it to be skipped. Workflow concurrency cancels superseded runs for the same workflow/ref, and repository permissions are read-only.
 
 `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1` ensure an accidental Hugging Face dependency fails immediately. `RAGOPS_LLM_PROVIDER=template` prevents an external generation provider from being selected. No Qdrant/MLflow container, API key, corpus download, model download, or persistent database is needed.
 
-Run the same target locally with:
+Run the workflow-equivalent commands locally with:
 
 ```bash
+make lint
+make test-unit-ci PYTHON=.venv/bin/python
 make test-api-ci PYTHON=.venv/bin/python
+make test-evaluation-smoke
+make eval-gate
 ```
+
+`tests/test_ci_workflow.py` loads the workflow with string-preserving YAML semantics and asserts its triggers, five exact job IDs/commands, read-only permissions, concurrency cancellation, Python/cache setup, common dependency boundary, offline/template environment, absence of secrets/services, and README badge URL. This makes the CI topology itself regression-tested.
+
+A clean temporary Python 3.12 environment containing only the nine direct packages in `requirements-ci.txt` passed the Day 45 baseline: Ruff, all 280 then-current unit tests, all 179 API tests, all nine smoke tests, and the live 9/9 gate. Day 46 adds six hermetic final-dataset tests to the unit job, bringing its current total to 286 without adding a dependency. The clean environment did not install Torch, Transformers, sentence-transformers, MLflow, Streamlit, OpenAI, or Gemini SDK dependencies.
 
 ## Boundary
 
-The current GitHub workflow is an API reliability gate and does not yet invoke the implemented Day 44 compact evaluation gate; that integration belongs to Day 45. The API job proves that the checked-in endpoint contract and core error behavior run in CI. Neither it nor the compact gate executes the full documentation corpus, contacts MLflow, loads the BM25 artifact, scores with the cross-encoder, exercises an external LLM, or validates Docker deployment. Broader live integrations remain explicit local workflows.
+CI now enforces the compact gate but does not execute the ignored full documentation corpus, contact MLflow, load the generated full BM25 artifact, score with the cross-encoder model, exercise an external LLM, or validate Docker deployment. The unit tests validate the algorithms and artifact contracts with temporary miniature inputs; the API job validates serving composition with in-memory Qdrant/temporary SQLite; the compact gate protects a known five-case fixture. Full live integrations and the larger Day 47 benchmark remain explicit workflows rather than being misrepresented as pull-request checks.

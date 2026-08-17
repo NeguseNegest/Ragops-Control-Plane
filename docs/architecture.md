@@ -12,6 +12,7 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - An online observability workflow that measures request components with a monotonic trace context and atomically stores each accepted retrieval/query attempt, its stage latencies, and its ranked evidence in SQLite. The earlier schema also retains a tested feedback record model, but no feedback API is required or claimed.
 - A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
 - An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
+- A five-job GitHub Actions workflow that independently exposes lint, hermetic unit, offline API, evaluation-smoke, and live compact-gate results under one cached minimal dependency boundary.
 - A live integration-review workflow that evaluates all verified dense questions through HTTP, requires offline/API ranking parity, cross-checks response traces in SQLite, and verifies the complete retrieval evidence suite in MLflow.
 - A validated draft router-design workflow that binds ordered FAST/STANDARD/CAREFUL/NO_ANSWER thresholds to versioned feature inputs, calibration evidence, execution intent, and eligible pipeline lifecycle states.
 - A routing workflow that performs the configured dense probe (currently top two), emits schema-versioned confidence/query features, deterministically selects FAST/STANDARD/CAREFUL/NO_ANSWER with stable reasons, and exposes `/route`; NO_ANSWER returns a deterministic corpus-scoped refusal while the other routes remain decision-only.
@@ -21,7 +22,7 @@ RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-
 - A generation-cost workflow that prefers provider usage, deterministically estimates missing prompt/answer tokens, selects exact model rates from a versioned table or explicit override, and returns/persists one provenance-complete cost record.
 - A compact evaluation-gate workflow that executes hash-pinned supported and unsupported cases through in-memory Qdrant, the production dense retriever, the real router, and template citation generation before enforcing nine shell-visible thresholds.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, the Day 41 routed-versus-fixed tradeoff evaluation, Day 42 router stabilization, and the Day 44 compact evaluation gate are implemented. Automatic FAST/STANDARD/CAREFUL execution and Day 45 evaluation-gate CI integration remain required work. Semantic caching, canary simulation, automated failure mining, and a separate monitoring platform are explicitly deferred.
+Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, the Day 41 routed-versus-fixed tradeoff evaluation, Day 42 router stabilization, the Day 44 compact evaluation gate, and Day 45 five-check CI integration are implemented. Automatic FAST/STANDARD/CAREFUL execution remains required work. Semantic caching, canary simulation, automated failure mining, and a separate monitoring platform are explicitly deferred.
 
 ## System Diagram
 
@@ -146,7 +147,7 @@ flowchart LR
 | Hybrid retriever | `src/ragops/retrieval/hybrid.py`, `scripts/retrieve_hybrid.py` | Retrieve independently ranked dense and BM25 candidate pools, validate their identities and ranks, fuse them with deterministic RRF, and expose readable or JSON CLI results. |
 | Reranked retriever | `src/ragops/reranking/cross_encoder.py`, `scripts/retrieve_hybrid_rerank.py` | Compose a cross-encoder over the configured RRF candidate retriever while retaining candidate order, provenance, and component timings. |
 | Citations and generation | `src/ragops/generation` | Deduplicate sources, assign citation IDs, build a context-only prompt, select one process-wide provider, call the template/OpenAI/Gemini client, and produce the exact provider-free NO_ANSWER refusal. |
-| Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py` | Generate, validate, review, and merge synthetic QA candidates; build and cross-validate retrieval relevance labels. |
+| Evaluation datasets | `src/ragops/evaluation/synthetic_qa.py`, `retrieval_labels.py`, `final_dataset.py` | Generate and review synthetic QA, cross-validate relevance labels, and reproducibly curate the final reviewed golden/retrieval/adversarial snapshots without mutating historical benchmark inputs. |
 | Retrieval metrics | `src/ragops/evaluation/retrieval_metrics.py` | Compute per-question and macro-average Recall@k, reciprocal rank/MRR, Hit Rate@k, and binary nDCG@k. |
 | Evaluation runners | `src/ragops/evaluation/runner.py`, `bm25_runner.py`, `hybrid_runner.py`, `reranker_runner.py` | Build config-driven dense, BM25, hybrid, or reranked pipelines; write complete JSON/CSV runs; and produce paired metrics, latency, win/loss, cohort, relevance-group, and failure comparisons. |
 | No-answer evaluator | `src/ragops/evaluation/no_answer.py`, `scripts/evaluate_no_answer.py` | Validate reviewed unsupported provenance, derive the score threshold from calibration only, run held-out probes, replay supported evidence, compute refusal/false-refusal metrics, enforce acceptance thresholds, and atomically write JSON/CSV evidence. |
@@ -163,7 +164,7 @@ flowchart LR
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, routing/refusal, and production query endpoints; select configs; translate stage-aware errors; return trace/route/debug/cost/timing data; enforce the deterministic NO_ANSWER response on `/route`; and persist matching `/retrieve` and `/query` traces before returning. |
 | API integration suite | `tests/test_api_integration.py`, `configs/ci_small.yaml` | Seed in-memory Qdrant from a checked-in corpus, inject deterministic query embeddings, use isolated SQLite state, and verify complete HTTP/storage behavior without external services. |
-| API CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt` | Lint and run the focused offline API suite on Python 3.12 with only the dependencies needed by that path. |
+| CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt`, `tests/test_ci_workflow.py` | Independently run Ruff, 286 unit tests, 179 API/control-plane tests, nine compact-evaluation smoke tests, and the live threshold gate on Python 3.12; cache the minimal dependency boundary and regression-test the workflow contract itself. |
 | Live API evaluator | `src/ragops/evaluation/api_runner.py`, `scripts/evaluate_api.py` | Evaluate verified labels through HTTP, validate the complete response contract, compare exact rankings with offline evidence, cross-check SQLite rows, and verify live MLflow evidence. |
 | API container | `Dockerfile`, `requirements-api.txt`, `docker-compose.yml` | Build a CPU-only serving image with cached runtime dependencies, deployment-root configuration, configurable host port, health probing, a persistent model-cache volume, and no tracking/dashboard packages. |
 | Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
@@ -243,6 +244,23 @@ The versioned datasets currently contain:
 | `golden_qa.jsonl` | 80 questions: 70 supported, 5 ambiguous, and 5 unsupported; 35 manual and 45 approved synthetic rows. |
 | `synthetic_qa_candidates.jsonl` | 100 reviewed candidates: 50 OpenAI and 50 Gemini; 45 approved and 55 rejected. |
 | `retrieval_labels.jsonl` | 45 verified labels, each linked to one audited source chunk from an approved synthetic candidate. |
+
+These three files are immutable historical inputs for already-recorded reports. Day 46 derives, rather than overwrites, the benchmark inputs used from Day 47 onward:
+
+| Final dataset | Reviewed contents |
+| --- | --- |
+| `final_golden_qa.jsonl` | 100 questions: 72 supported, 5 ambiguous, 23 unsupported, with 35 hard cases and uniform final-review metadata. |
+| `final_retrieval_labels.jsonl` | 50 labels: 35 retained verified-synthetic labels plus 15 manual decisions covering all three source families. |
+| `final_adversarial_qa.jsonl` | 30 refusal cases across five scope/adversarial categories. |
+
+```text
+historical golden/labels/no-answer ----+
+                                        +-> strict Day 46 curation -> final 100 / 50 / 30 snapshots
+reviewed exclusions + additions -------+                 |
+processed source chunks ----------------+                 +-> hash-rich audit report
+```
+
+The curation code verifies exact source/chunk provenance, normalized uniqueness, review metadata, count bounds, query-type and difficulty coverage, source-family coverage, and adversarial-category diversity. The source files remain separate so old report hashes stay meaningful and the final construction remains explainable.
 
 Retrieval labels follow a separate offline path:
 
@@ -510,15 +528,14 @@ Both provider credentials may be configured simultaneously, but the online API u
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracking currently covers retrieval evaluation only. Generation judgments, cost, online request traces, and promotion decisions are not logged to MLflow; online request traces live in SQLite.
 - The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
-- Automatic non-refusal route execution is not implemented. Days 36–42 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, an offline fixed-versus-routed tradeoff report, and threshold stabilization. Day 44 now enforces compact offline thresholds, but Day 45 has not yet integrated that command into GitHub Actions and the gate does not claim online/full-corpus benchmark enforcement.
+- Automatic non-refusal route execution is not implemented. Days 36–42 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, an offline fixed-versus-routed tradeoff report, and threshold stabilization. Days 44–45 enforce compact offline thresholds locally and in GitHub Actions, but the gate does not claim online/full-corpus or cross-encoder benchmark enforcement.
 - Feedback HTTP collection, semantic caching, canary simulation, automated failure mining, and a separate monitoring stack are deliberately outside the condensed required scope. The existing tested SQLite feedback model is retained as completed schema work, without implying an endpoint or future milestone.
 
 ## Condensed Finishing Scope
 
 Day 43 removes empty placeholder files rather than allowing filenames to imply implementations. Required remaining work is created together with code, tests, and evidence:
 
-- Day 45: evaluation-gate integration into GitHub Actions
-- Days 46–48: final reviewed evaluation data, benchmark/ablation run, and manual failure analysis with regression cases
+- Days 47–48: final benchmark/ablation run and manual failure analysis with regression cases, using the completed Day 46 snapshots
 - Day 49: two-tab query/engineering dashboard
 - Days 50–52: architecture and README, clean-environment hardening, and portfolio packaging
 

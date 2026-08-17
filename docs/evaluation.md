@@ -44,7 +44,7 @@ make eval-gate
 make test-eval-gate
 ```
 
-The CLI prints all nine comparisons and returns `0` only when every check passes, `1` for a measured threshold failure, and `2` when configuration or execution setup prevents a valid run. The acceptance regression deliberately cycles the supported deterministic embeddings through the real dense retriever. Recall, recall-regression, MRR, and citation checks fail, and the report maps that outcome to exit status `1`. A separate test injects `300 ms` whole-case measurements and proves the latency check fails without masking perfect quality; another proves a per-case retrieval exception increments the error count and fails the gate. Day 45 will invoke this already-executable local gate in GitHub Actions.
+The CLI prints all nine comparisons and returns `0` only when every check passes, `1` for a measured threshold failure, and `2` when configuration or execution setup prevents a valid run. The acceptance regression deliberately cycles the supported deterministic embeddings through the real dense retriever. Recall, recall-regression, MRR, and citation checks fail, and the report maps that outcome to exit status `1`. A separate test injects `300 ms` whole-case measurements and proves the latency check fails without masking perfect quality; another proves a per-case retrieval exception increments the error count and fails the gate. Day 45 invokes the focused smoke suite and this executable gate as independent GitHub Actions jobs.
 
 ## Day 39 refusal evaluation
 
@@ -497,3 +497,45 @@ The Docker-backed Qdrant endpoint became unresponsive before the run and timed o
 - Reference answers can influence relevance scoring, so they are explicitly excluded as faithfulness evidence.
 - Retrieval quality constrains generation quality: a faithful answer can still be incomplete when the correct chunk was not retrieved.
 - Scores should be interpreted with the retrieved evidence and reviewer notes, not in isolation.
+
+## Day 46 final evaluation dataset
+
+Day 46 creates new final snapshots rather than rewriting `golden_qa.jsonl`, `retrieval_labels.jsonl`, or `no_answer_queries.jsonl`. Those earlier inputs are retained because Days 20, 39, 41, and 42 already produced reports and hashes from them. The Day 47 benchmark must use the `final_*` artifacts below; older reports remain historically reproducible.
+
+| Artifact | Count | Composition |
+| --- | ---: | --- |
+| `data/eval/final_golden_qa.jsonl` | 100 | 72 supported, 5 ambiguous, 23 unsupported; 30 easy, 35 medium, 35 hard. |
+| `data/eval/final_retrieval_labels.jsonl` | 50 | 35 retained verified-synthetic labels and 15 newly manual labels; 61 relevant chunk judgments. |
+| `data/eval/final_adversarial_qa.jsonl` | 30 | 18 near-domain, 7 high-stakes, 2 instruction-injection, 1 false-premise, and 2 general out-of-scope prompts. |
+
+### Construction and review
+
+The source contract is `configs/final_evaluation_dataset.yaml`. It records the reviewer and date, exact count bounds, ten exclusions with individual rationales, 15 manual retrieval decisions, and all historical/addition/chunk/output paths. `data/eval/day46_additions.jsonl` is the human-readable addition manifest.
+
+The process was:
+
+1. Review all 80 historical golden questions and their provenance.
+2. Exclude ten approved synthetic rows that were context-free, semantically duplicated stronger manual questions, or too trivial for comparative evaluation. No historical file is mutated.
+3. Retain the other 70 historical rows and attach uniform final-review metadata while preserving their original origin/provider/source metadata.
+4. Add 12 hard supported questions: four each for FastAPI, MLflow, and Qdrant. Every answer was checked against one or more exact processed chunk IDs recorded in its metadata.
+5. Add 18 unsupported/adversarial prompts and include each in both the final golden set and the final adversarial set. This intentional overlap allows generation/refusal behavior to be compared on the same reviewed prompts.
+6. Retain the 35 synthetic retrieval labels whose questions survived curation. Add 15 independent manual relevance decisions—five per source family—against exact source-scoped chunks.
+7. Carry forward all 12 Day 39 unsupported cases into the 30-case final adversarial set, preserving their calibration/evaluation role and original reviewer provenance.
+
+The final-set builder rejects duplicate IDs or normalized questions, unknown exclusions, output/source path collisions, unsupported questions with a source, supported sources absent from the corpus, unknown or cross-source chunk IDs, duplicate relevance decisions, insufficient query-type/difficulty/source/category/manual-label coverage, and any count outside the reviewed bounds. Every final golden row must carry `final_review_status`, `final_reviewed_by`, and `final_reviewed_on` metadata.
+
+### Reproduction and audit
+
+Build or validate with:
+
+```bash
+make finalize-evaluation-dataset
+make validate-final-evaluation-dataset
+make test-final-dataset
+```
+
+Building reconstructs all three snapshots from immutable historical inputs plus the explicit additions/config and atomically writes `reports/evaluations/final_dataset_review.json`. Validation independently reconstructs the expected rows and report and rejects any stale or hand-edited output. The report contains distributions, every exclusion decision, source SHA256s—including the processed corpus—and final artifact SHA256s.
+
+Full construction/validation needs the ignored generated `data/processed/chunks.jsonl` to verify source evidence. `tests/test_final_dataset.py` is hermetic: miniature local chunks test the complete curation contract, while a structural test protects the committed final artifacts and hashes without requiring the full corpus in CI.
+
+The set is deliberately capped at 100/50/30 rather than expanded indefinitely. It is large enough to compare five pipeline variants across supported retrieval and refusal behavior, but every row, exclusion, added answer, manual relevance judgment, and adversarial category remains inspectable in a small number of text files. It is still a curated documentation benchmark, not an unbiased sample of production traffic.

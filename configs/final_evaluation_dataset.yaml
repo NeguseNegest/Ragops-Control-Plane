@@ -1,0 +1,130 @@
+schema_version: 1
+name: final_evaluation_dataset
+version: 1.0.0
+status: reviewed
+
+sources:
+  historical_golden_path: data/eval/golden_qa.jsonl
+  historical_retrieval_labels_path: data/eval/retrieval_labels.jsonl
+  historical_adversarial_path: data/eval/no_answer_queries.jsonl
+  additions_path: data/eval/day46_additions.jsonl
+  chunks_path: data/processed/chunks.jsonl
+
+outputs:
+  golden_path: data/eval/final_golden_qa.jsonl
+  retrieval_labels_path: data/eval/final_retrieval_labels.jsonl
+  adversarial_path: data/eval/final_adversarial_qa.jsonl
+  report_path: reports/evaluations/final_dataset_review.json
+
+review:
+  reviewer: codex-day46-source-and-scope-audit
+  completed_on: "2026-08-17"
+  excluded_golden:
+    - id: sqa-9214bfc1978670e0
+      reason: ambiguous_without_context
+      rationale: The question does not identify FastAPI or the submitted object and duplicates the stronger request-body case.
+    - id: sqa-bd90c5a97e0740e5
+      reason: semantic_duplicate
+      rationale: The generated-schema detail is already covered inside the broader manually authored request-body question.
+    - id: sqa-e27ab4d10e8d4e5f
+      reason: ambiguous_without_context
+      rationale: The question does not identify Qdrant or which Go client example is being referenced.
+    - id: sqa-6de296cda91f5dc6
+      reason: ambiguous_without_context
+      rationale: The phrase interface is underspecified and overlaps the more precise UploadFile object and spooling questions.
+    - id: sqa-100e77a31882d05f
+      reason: semantic_duplicate
+      rationale: The response-password behavior is already tested by the stronger manually authored response-model case.
+    - id: sqa-7115fc46a1555f1a
+      reason: ambiguous_without_context
+      rationale: Class-based decision making is not anchored to a named system, task, or source concept.
+    - id: sqa-7f32d3b5b1a89fbf
+      reason: ambiguous_without_context
+      rationale: The question omits the named method and domain needed to interpret intermediate representation correctly.
+    - id: sqa-5c5e20dbf84c3f0b
+      reason: semantic_duplicate
+      rationale: The generic vector-similarity operation overlaps the reviewed Qdrant distance-metric coverage.
+    - id: sqa-9ec13a094bedbaf2
+      reason: weak_or_trivial
+      rationale: A context-free field datatype lookup is too narrow to support a meaningful pipeline comparison.
+    - id: sqa-bd90972847373159
+      reason: ambiguous_without_context
+      rationale: The vector-chunk tradeoff lacks the retrieval stage and configuration context needed for one defensible answer.
+  manual_retrieval_labels:
+    - question_id: gqa-001
+      relevant_chunk_ids:
+        - 4f33db24-e09d-5dd8-a598-9ecbeaceaa67
+    - question_id: gqa-004
+      relevant_chunk_ids:
+        - 4f9a351b-6185-5c66-8210-39e7f4f3bb6f
+        - d8f18495-b006-5720-b6e6-3ea7ac1827ef
+        - cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335
+    - question_id: gqa-005
+      relevant_chunk_ids:
+        - d4684ab1-2369-5f28-85aa-926a4f7c970c
+        - c4810e0a-65d1-544a-b36e-e533034be460
+    - question_id: gqa-007
+      relevant_chunk_ids:
+        - 83d9bb57-5787-5922-87b7-bae750a3fb47
+    - question_id: gqa-009
+      relevant_chunk_ids:
+        - b1f5d2b0-7b6f-5c8b-b25a-a876d1ebbebc
+        - 1f008dac-77da-5775-a672-e0f1622677eb
+    - question_id: gqa-010
+      relevant_chunk_ids:
+        - ea0f5abe-3107-544f-bc73-6571d519909a
+        - aa5665cd-f430-5f1e-a49f-05d2953d9a95
+        - 161dd7b4-71e3-579c-a3ad-55e4717d2cdd
+        - 7c43bcf7-1f9b-548c-b5c6-30c714ed3005
+    - question_id: gqa-011
+      relevant_chunk_ids:
+        - 5fac0b1d-2abd-55b8-a0d8-39df149c5c49
+        - 8793a7a9-7a3c-5156-96bc-0865d968fe11
+    - question_id: gqa-013
+      relevant_chunk_ids:
+        - 26ceff1b-d430-51c7-8e56-49dfdf9e593b
+        - 59eeabca-3375-5b9a-9180-71f0c38a8189
+    - question_id: gqa-014
+      relevant_chunk_ids:
+        - b974d384-0c75-58cb-b297-7423ac691b99
+    - question_id: gqa-016
+      relevant_chunk_ids:
+        - a8b07afa-f99c-53df-a53d-b09ae49fff4f
+        - 110eb9fe-7e39-55ce-8680-6536a229ea93
+        - ac5318b3-539c-5717-bcd1-451aaeca98f8
+    - question_id: gqa-018
+      relevant_chunk_ids:
+        - bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8
+    - question_id: gqa-021
+      relevant_chunk_ids:
+        - 5de07134-aa95-52e2-9348-7ddf755b49ec
+    - question_id: gqa-023
+      relevant_chunk_ids:
+        - 005035b2-c646-567f-9606-38891a29a23c
+    - question_id: gqa-024
+      relevant_chunk_ids:
+        - 1e1ee784-4222-58b0-a79e-5b0cf331deb3
+    - question_id: gqa-025
+      relevant_chunk_ids:
+        - 2218ce03-9b22-5ce9-8603-3b4414670adb
+
+acceptance:
+  golden:
+    minimum: 100
+    maximum: 125
+    expected: 100
+  retrieval_labels:
+    minimum: 50
+    maximum: 75
+    expected: 50
+  adversarial:
+    minimum: 25
+    maximum: 40
+    expected: 30
+  minimum_supported: 70
+  minimum_ambiguous: 5
+  minimum_unsupported: 20
+  minimum_hard_golden: 25
+  minimum_source_families: 3
+  minimum_adversarial_categories: 5
+  minimum_manual_retrieval_labels: 15

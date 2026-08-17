@@ -4,12 +4,14 @@ This repository is a portfolio-scale RAG engineering system, not a claim of prod
 
 ## Evaluation evidence
 
-- The current golden set contains 80 questions, retrieval evaluation uses 45 verified labels, refusal evaluation uses 12 manually authored unsupported questions, and generation judging covers a deterministic 10-question sample. Days 46–48 must strengthen and review these sets before the final benchmark.
+- The Day 46 final snapshots contain 100 reviewed golden questions, 50 retrieval-labeled questions, and 30 adversarial/unsupported prompts. The earlier 80/45/12 files remain immutable historical inputs for existing reports, and generation judging still covers only its deterministic 10-question Day 20 sample. Day 47 must run the five-way final benchmark on the new snapshots.
+- The final set is manually understandable and source-audited, but it is curated rather than sampled from real production traffic. Its 72 supported questions are documentation-heavy, and the intentional overlap between unsupported golden and adversarial prompts is useful for paired refusal evaluation but is not independent evidence.
 - Most questions are derived from the documentation corpus and usually have one labeled relevant chunk. This can favor lexical overlap and does not represent unbiased production traffic or complete relevance judgments.
 - Hit Rate, Recall, MRR, and nDCG measure retrieval evidence, not whether a generated answer is fully correct. The LLM judge is model-dependent and requires manual spot checks.
 - Day 41/42 router latency is deterministic replay of previously measured artifacts. It is useful for paired comparison but is not a simultaneous live load test.
 - The Day 44 gate is a five-case deterministic regression smoke test over in-memory Qdrant. Its perfect thresholds protect a known fixture, not generalization; it selects the executable dense pipeline rather than the registry's cross-encoder candidate and leaves the full comparative benchmark to Day 47.
 - The template gate can measure answer presence and answer-referenced citation coverage/precision, but not semantic faithfulness. Faithfulness is explicitly reported as unavailable rather than inferred from citation structure.
+- Day 45 CI intentionally excludes the ignored full corpus/index, live MLflow, external generation providers, cross-encoder model execution, Streamlit runtime tests, and Docker deployment. Those exclusions keep pull requests hermetic; passing CI is not evidence that the broader live integrations or final benchmark pass.
 
 ## Routing and refusal
 
@@ -52,4 +54,4 @@ These extensions may be valuable for a deployed product, but empty configs, pack
 
 ## Remaining required work
 
-The revised plan still requires Day 45 CI integration, final reviewed evaluation data and benchmark, manual failure analysis and regression cases, the compact engineering dashboard, clean-environment hardening, final documentation, and portfolio packaging.
+The revised plan still requires the final benchmark, manual failure analysis and regression cases, the compact engineering dashboard, clean-environment hardening, final documentation, and portfolio packaging.

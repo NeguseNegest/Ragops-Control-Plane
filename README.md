@@ -2,6 +2,7 @@
 
 ## Evaluation-Gated, Cost-Aware RAG Platform
 
+[![CI](https://github.com/NeguseNegest/Ragops-Control-Plane/actions/workflows/ci.yml/badge.svg)](https://github.com/NeguseNegest/Ragops-Control-Plane/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-schemas-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
@@ -14,7 +15,7 @@
 [![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, offline API CI, a full Week 5 integration review, and the Day 36–42 routing, refusal, per-query generation-cost, routed-versus-fixed evaluation, and router-stabilization path.
+RAGOps Control Plane is a work-in-progress platform for developing and evaluating Retrieval-Augmented Generation systems over technical documentation. The repository currently implements config-driven dense, BM25, RRF hybrid, and cross-encoder-reranked retrieval behind one runtime interface, strict four-way retrieval evaluation, LLM-as-judge evaluation, measured benchmark reports, MLflow retrieval experiment tracking, a validated pipeline registry, durable component-timed online request traces, a selectable production query endpoint, a compact automated evaluation gate, five-check pull-request CI, a full Week 5 integration review, and the Day 36–42 routing, refusal, per-query generation-cost, routed-versus-fixed evaluation, and router-stabilization path.
 
 ## Project Objective
 
@@ -36,7 +37,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 44. The current baseline includes:
+Implementation is complete through Day 46. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -54,7 +55,7 @@ Implementation is complete through Day 44. The current baseline includes:
 - Streamlit query interface with answers, citations, evidence, scores, and latency
 - local and Docker Qdrant configuration through `QDRANT_URL`
 - request validation, API error translation, and dashboard error handling
-- an 80-row golden QA set, 100 reviewed synthetic candidates, and 45 verified retrieval labels
+- immutable historical 80-question/45-label evaluation inputs plus reviewed final snapshots containing 100 golden questions, 50 retrieval labels, and 30 adversarial or unsupported prompts
 - deterministic retrieval metrics and a real dense-baseline evaluation CLI
 - a provenance-checked BM25 evaluation CLI, paired per-question comparison, wording-cohort analysis, and reproducible JSON/CSV/Markdown reports
 - a live hybrid evaluator with dense/BM25/fusion component timings, strict corpus and label parity checks, three-way paired outcomes, relevance-group analysis, and failure reporting
@@ -65,7 +66,7 @@ Implementation is complete through Day 44. The current baseline includes:
 - a monotonic trace context that captures embedding, dense search, BM25, RRF fusion, cross-encoder, and generation latency, retains partial timings on failure, and returns the timing shape through both online endpoints
 - a feedback table linked to traces, schema/version validation, a migration path, and a persistent Docker volume
 - a checked-in four-document vector fixture, deterministic query embeddings, in-memory Qdrant, temporary SQLite, and end-to-end `/health`, `/retrieve`, `/query`, and invalid-request integration tests
-- a lightweight GitHub Actions API job that lints the repository and runs the production request path without Docker, model downloads, external APIs, or the full ML dependency stack
+- five independent GitHub Actions checks for Ruff, 286 hermetic unit tests, 179 API/control-plane tests, the 9-test compact evaluation smoke suite, and the live nine-threshold evaluation gate, all without Docker, model downloads, external APIs, or the full ML dependency stack
 - a live HTTP evaluation runner that checks all 45 dense top-10 rankings against the offline baseline, verifies every returned SQLite trace, and revalidates the exact four-run MLflow evidence suite
 - a CPU-only API image with deployment-safe project-root resolution, an internal health check, a configurable host port, a persistent Hugging Face cache, and separate API/tracking/dashboard dependency boundaries
 - a strict `rule_router@0.2.0` draft design with FAST/STANDARD/CAREFUL/NO_ANSWER definitions, ordered threshold bands, route execution intent, calibration provenance, and pipeline-registry lifecycle guards
@@ -85,7 +86,7 @@ Current limitations:
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Explicit `/query` generation still relies on grounding instructions, but the NO_ANSWER branch on `/route` is policy-enforced and never calls a generation provider. This does not yet protect callers that bypass routing and invoke `/query` directly.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted; Day 41 aggregates a controlled reference-answer projection for comparison, but production costs are not budget-enforced, invoice-reconciled, or logged to MLflow. Day 44 adds an offline compact quality gate; Day 45 still needs to invoke it in GitHub Actions. Automatic non-refusal route execution remains required work. Semantic caching, canary simulation, automated failure mining, and a large monitoring stack are deliberately deferred to Future Work.
+- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted; Day 41 aggregates a controlled reference-answer projection for comparison, but production costs are not budget-enforced, invoice-reconciled, or logged to MLflow. The Day 44 compact gate now runs in GitHub Actions, but it remains a five-case deterministic smoke suite rather than the final benchmark. Automatic non-refusal route execution remains required work. Semantic caching, canary simulation, automated failure mining, and a large monitoring stack are deliberately deferred to Future Work.
 - The Day 35 API evaluation is a dense retrieval parity check using the deterministic template generator. It does not repeat external-provider generation judging or the expensive 45-question reranker benchmark through HTTP.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
@@ -331,6 +332,28 @@ make label-retrieval
 ```
 
 The helper ranks chunks only from the question's expected source, shows their text and IDs, and accepts one or more display numbers or exact chunk IDs. It saves after every decision and does not require Qdrant or an LLM API.
+
+### Finalize the reviewed evaluation dataset
+
+Day 46 preserves the earlier benchmark inputs as immutable historical evidence and builds a separate, reproducible final dataset family for Days 47 onward:
+
+| Final artifact | Reviewed contents |
+| --- | --- |
+| `data/eval/final_golden_qa.jsonl` | 100 questions: 72 supported, 5 ambiguous, and 23 unsupported; 35 are hard. |
+| `data/eval/final_retrieval_labels.jsonl` | 50 supported questions: 35 retained source-audited synthetic labels and 15 independent manual labels spanning FastAPI, MLflow, and Qdrant. |
+| `data/eval/final_adversarial_qa.jsonl` | 30 refusal cases across near-domain technology, high-stakes out-of-scope, instruction injection, false-premise, and general out-of-scope categories. |
+
+`configs/final_evaluation_dataset.yaml` records ten explicit exclusions with rationales, the 15 manually selected relevance decisions, count bounds, diversity requirements, reviewer identity, and every input/output path. The review removed context-free or semantically duplicated synthetic questions rather than padding the set. `data/eval/day46_additions.jsonl` contributes 12 difficult source-grounded supported questions and 18 new unsupported/adversarial questions.
+
+Rebuild the checked-in snapshots from the historical data, curation manifest, and local processed chunks, or validate that no output was edited outside the contract:
+
+```bash
+make finalize-evaluation-dataset
+make validate-final-evaluation-dataset
+make test-final-dataset
+```
+
+The full validation requires `data/processed/chunks.jsonl` because it verifies every source path and labeled chunk ID. The hermetic tests use miniature checked fixtures and also protect the committed 100/50/30 dimensions, metadata, category coverage, and artifact hashes in CI. The deterministic audit report is `reports/evaluations/final_dataset_review.json`.
 
 ### Compute deterministic retrieval metrics
 
@@ -581,7 +604,7 @@ Day 34 checks the real FastAPI, retrieval, generation, and trace-storage composi
 make test-api-ci PYTHON=.venv/bin/python
 ```
 
-The same target runs in `.github/workflows/ci.yml` with the deliberately small dependency set in `requirements-ci.txt`. Offline environment flags make an accidental model download fail instead of hiding a test dependency. See [`docs/ci.md`](docs/ci.md) for the fixture contract, coverage boundary, and workflow design.
+The `api` job runs the same target in `.github/workflows/ci.yml` with the deliberately small dependency set in `requirements-ci.txt`. Offline environment flags make an accidental model download fail instead of hiding a test dependency. See [`docs/ci.md`](docs/ci.md) for the fixture contract, coverage boundary, and workflow design.
 
 ### Run the compact evaluation gate
 
@@ -594,7 +617,21 @@ make test-eval-gate
 
 `configs/eval_gate.yaml` pins the selected `dense_baseline@1.0.0` config, router, four-record corpus, and a separate five-case dataset by SHA256. Three supported cases run the production dense retriever and template citation path; two unsupported cases must select the real `NO_ANSWER` policy. The command checks Recall@2, MRR, recall regression, answer presence, citation coverage/precision, refusal correctness, whole-case p95 latency, and runtime error count. It prints every comparison and exits `0` only when all nine pass.
 
-The checked thresholds require perfect deterministic quality on this deliberately tiny fixture and cap p95 at `100 ms`. Ten cold-process local calibration runs observed a maximum p95 of `1.272 ms`; the wider ceiling allows CI-runner variance without making latency unbounded. The focused suite deliberately permutes the three supported query embeddings through the real dense path and proves the resulting retrieval/citation regression exits as a failure. Template generation cannot establish semantic faithfulness, so the report marks that metric unavailable instead of inventing a score. Day 45 remains responsible for adding this already-executable command to GitHub Actions.
+The checked thresholds require perfect deterministic quality on this deliberately tiny fixture and cap p95 at `100 ms`. Ten cold-process local calibration runs observed a maximum p95 of `1.272 ms`; the wider ceiling allows CI-runner variance without making latency unbounded. The focused suite deliberately permutes the three supported query embeddings through the real dense path and proves the resulting retrieval/citation regression exits as a failure. Template generation cannot establish semantic faithfulness, so the report marks that metric unavailable instead of inventing a score. Day 45 runs both the focused smoke suite and the live gate as independent pull-request checks.
+
+### Reproduce the pull-request checks
+
+Every push, pull request, and manual workflow dispatch runs five independent Python 3.12 jobs:
+
+| Job | Local equivalent | Scope |
+| --- | --- | --- |
+| `lint` | `make lint` | Ruff over `src`, `tests`, `scripts`, and `dashboard`. |
+| `unit` | `make test-unit-ci PYTHON=.venv/bin/python` | 286 hermetic non-API unit, dataset-curation, and workflow-contract tests. |
+| `api` | `make test-api-ci PYTHON=.venv/bin/python` | 179 API, routing, generation, tracing, and serving-path tests. |
+| `evaluation-smoke` | `make test-evaluation-smoke` | Nine gate validation, real-smoke, degraded-pipeline, latency, error, and exit-code tests. |
+| `evaluation-gate` | `make eval-gate` | The actual five-case run and nine configured thresholds. |
+
+All jobs install only `requirements-ci.txt`, use pip caching keyed to that file, force the template provider and Hugging Face offline modes, require no secrets/services, have read-only repository permissions, and time out after ten minutes. The five jobs do not depend on one another, so a failure remains independently visible instead of causing later checks to be skipped. `tests/test_ci_workflow.py` protects this topology, command set, dependency/cache policy, offline environment, and badge URL from silent drift.
 
 ### Run the Week 5 integration review
 
@@ -756,4 +793,4 @@ These are architectural extensions, not partially implemented repository feature
 
 ## Next Milestone
 
-Proceed to Day 45: integrate lint, unit/API tests, the evaluation smoke path, and the Day 44 evaluation gate into the GitHub Actions pull-request workflow, then add the CI status badge.
+Proceed to Day 47: run the final dense, BM25, hybrid, hybrid-plus-reranker, and routed benchmark against the reviewed Day 46 snapshots, recording common quality, refusal, latency, and cost evidence without rewriting the historical benchmark artifacts.
