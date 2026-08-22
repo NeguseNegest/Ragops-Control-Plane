@@ -30,7 +30,7 @@ This is a local RAG control plane, not a production service.
 - SQLite and process-local caches do not support horizontal scaling.
 - There is no auth, rate limiting, redaction, retention automation, or distributed tracing.
 - `/health` does not check Qdrant or the generation provider.
-- A host dashboard cannot see traces stored only in Compose's named volume.
+- The Compose trace bind mount is local filesystem state and needs an explicit backup/retention policy.
 - Raw documentation and generated dense/BM25 indexes are not committed.
 
 ## Deferred

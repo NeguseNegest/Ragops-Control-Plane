@@ -43,7 +43,7 @@ class RetrieveResponse(BaseModel):
 
 
 class RouteRequest(BaseModel):
-    """Request body for the Day 38 decision-only routing endpoint."""
+    """Request body for the decision-only routing endpoint."""
 
     query: str = Field(..., description="The user query to probe and classify without executing the selected route.")
 
@@ -57,7 +57,7 @@ class RouteProbeChunkResponse(StrictResponseModel):
 
 
 class RouteRefusalResponse(StrictResponseModel):
-    """Deterministic Day 39 response for a NO_ANSWER decision."""
+    """Deterministic response for a NO_ANSWER decision."""
 
     answer: Literal[NO_ANSWER_RESPONSE]
     prompt_version: Literal[NO_ANSWER_PROMPT_VERSION]

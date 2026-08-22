@@ -64,7 +64,7 @@ make validate-trace-store
 make test-tracing
 ```
 
-Compose stores traces in the `ragops_trace_data` volume. A host-run dashboard cannot read that database unless it is made host-visible.
+Compose bind-mounts `data/traces`, so the host dashboard and validation commands read the same database as the API container.
 
 ## Operational limits
 

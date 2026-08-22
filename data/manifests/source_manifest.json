@@ -1,9 +1,17 @@
 [
   {
     "source_name": "Qdrant documentation",
-    "source_type": "llms_full_txt",
-    "url": "https://qdrant.tech/llms-full.txt",
-    "raw_path": "data/raw/qdrant/qdrant_llms_full.txt",
+    "source_type": "git_sparse_checkout",
+    "repo_url": "https://github.com/qdrant/landing_page",
+    "commit": "447d8c0413dd0e4d2037f514574f85d516584a1e",
+    "path_mappings": [
+      {
+        "source": "qdrant-landing/static/llms-full.txt",
+        "destination": "qdrant_llms_full.txt",
+        "kind": "file"
+      }
+    ],
+    "raw_path": "data/raw/qdrant",
     "retrieval_date": "2026-07-06",
     "license_notes": "Public documentation; verify redistribution terms before publishing raw corpus."
   },
@@ -12,9 +20,15 @@
     "source_type": "git_sparse_checkout",
     "repo_url": "https://github.com/fastapi/fastapi",
     "commit": "dd17e4f723a23854cfe4b9b6258e31efd86ea523",
-    "included_paths": [
-      "docs/en/docs",
-      "docs_src"
+    "path_mappings": [
+      {
+        "source": "docs/en/docs",
+        "destination": "docs"
+      },
+      {
+        "source": "docs_src",
+        "destination": "docs_src"
+      }
     ],
     "raw_path": "data/raw/fastapi",
     "retrieval_date": "2026-07-06",
@@ -25,8 +39,11 @@
     "source_type": "git_sparse_checkout",
     "repo_url": "https://github.com/mlflow/mlflow",
     "commit": "6dcba5418220557ca2256ac4252cb6b58aad89b3",
-    "included_paths": [
-      "docs"
+    "path_mappings": [
+      {
+        "source": "docs",
+        "destination": "docs"
+      }
     ],
     "raw_path": "data/raw/mlflow",
     "retrieval_date": "2026-07-06",

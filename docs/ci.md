@@ -5,9 +5,9 @@ GitHub Actions runs five independent jobs on pushes, pull requests, and manual d
 | Job | Command | Current scope |
 | --- | --- | --- |
 | `lint` | `python -m ruff check src tests scripts dashboard` | Python lint |
-| `unit` | `make test-unit-ci PYTHON=python` | 297 hermetic tests |
-| `api` | `make test-api-ci PYTHON=python` | 179 API/control-plane tests |
-| `evaluation-smoke` | `make test-evaluation-smoke EVAL_GATE_PYTHON=python` | 9 gate contract tests |
+| `unit` | `make test-unit-ci PYTHON=python` | Hermetic unit and artifact-contract suite |
+| `api` | `make test-api-ci PYTHON=python` | API/control-plane suite |
+| `evaluation-smoke` | `make test-evaluation-smoke EVAL_GATE_PYTHON=python` | Gate contract suite |
 | `evaluation-gate` | `make eval-gate EVAL_GATE_PYTHON=python` | Live compact gate |
 
 Jobs share `requirements-ci.txt`, Python 3.12, pip caching, read-only repository permissions, and a ten-minute timeout. They have no dependency edges, so one failure does not skip the others.

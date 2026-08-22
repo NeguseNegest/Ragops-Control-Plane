@@ -176,7 +176,7 @@ class PipelineRuntime:
             raise ValueError(f"Unsupported query config '{name}'. Choose one of: {supported}.") from error
 
     def initial_probe(self, query, clock=time.perf_counter):
-        """Run the Day 37 configured dense probe without selecting a final route."""
+        """Run the configured dense probe without selecting a final route."""
         definition = self.select(self.router_config.probe.pipeline_config)
 
         def retrieve(*, query, top_k, timings):
@@ -185,7 +185,7 @@ class PipelineRuntime:
         return run_initial_retrieval_probe(query, retrieve, top_k=self.router_config.probe.top_k, clock=clock)
 
     def route_query(self, query, clock=time.perf_counter):
-        """Run the configured initial probe and return the Day 38 route decision."""
+        """Run the configured initial probe and return the route decision."""
         return self.router.select_probe(self.initial_probe(query, clock=clock))
 
     def _qdrant_url(self, definition):

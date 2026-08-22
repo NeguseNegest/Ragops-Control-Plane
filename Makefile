@@ -2,6 +2,9 @@ PYTHON ?= python3.12
 VENV ?= .venv
 BIN := $(VENV)/bin
 PIP := $(BIN)/python -m pip
+ENV_FILE ?= $(CURDIR)/.env
+LOCAL_EVALUATION_DIR ?= data/processed/local_evaluation
+RUN_ENV = set -a; if [ -f "$(ENV_FILE)" ]; then . "$(ENV_FILE)"; fi; set +a;
 HYBRID_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 RERANK_QUERY ?= What operation is used to quantify the similarity between the query and document vectors?
 ROUTER_QUERY ?= What is FastAPI?
@@ -23,7 +26,7 @@ TRACE_DB_PATH ?= data/traces/ragops_traces.sqlite3
 API_URL ?= http://127.0.0.1:8000
 API_TRACE_DB_PATH ?= $(TRACE_DB_PATH)
 
-.PHONY: setup lint test test-unit-ci test-dashboard test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-evaluation-smoke test-eval-gate test-final-dataset test-final-benchmark test-failure-analysis test-routing-probe test-no-answer test-cost test-router-evaluation test-router-stabilization test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation eval-gate finalize-evaluation-dataset validate-final-evaluation-dataset validate-final-benchmark verify-final-benchmark evaluate-final-dense evaluate-final-bm25 evaluate-final-hybrid evaluate-final-reranker evaluate-final-retrieval evaluate-final-routed judge-final-answers aggregate-final-benchmark final-benchmark analyze-failures validate-failure-analysis validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry validate-router-config validate-no-answer evaluate-no-answer replay-no-answer validate-model-costs validate-router-evaluation evaluate-router validate-router-tuning tune-router init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api probe-query route-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-unit-ci test-dashboard test-source-fetch test-operations test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-evaluation-smoke test-eval-gate test-final-dataset test-final-benchmark test-failure-analysis test-routing-probe test-no-answer test-cost test-router-evaluation test-router-stabilization test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation eval-gate finalize-evaluation-dataset validate-final-evaluation-dataset validate-final-benchmark verify-final-benchmark evaluate-final-dense evaluate-final-bm25 evaluate-final-hybrid evaluate-final-reranker evaluate-final-retrieval evaluate-final-routed judge-final-answers aggregate-final-benchmark final-benchmark analyze-failures validate-failure-analysis validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry validate-router-config validate-no-answer evaluate-no-answer replay-no-answer validate-model-costs validate-router-evaluation evaluate-router validate-router-tuning tune-router init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate evaluate-api probe-query route-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index build-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up fetch-sources validate-sources ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -37,10 +40,16 @@ test:
 	$(BIN)/python -m pytest
 
 test-unit-ci:
-	PYTHONPATH=src $(PYTHON) -m pytest tests/test_bm25.py tests/test_bm25_evaluation.py tests/test_chunking.py tests/test_citations.py tests/test_ci_workflow.py tests/test_evaluation_runner.py tests/test_failure_analysis.py tests/test_final_benchmark.py tests/test_final_dataset.py tests/test_hybrid.py tests/test_hybrid_evaluation.py tests/test_indexing.py tests/test_ingestion.py tests/test_llm_judge.py tests/test_mlflow_tracking.py tests/test_pipeline_registry.py tests/test_reranker_evaluation.py tests/test_reranking.py tests/test_retrieval_labels.py tests/test_retrieval_metrics.py tests/test_retriever_interface.py tests/test_synthetic_qa.py
+	PYTHONPATH=src $(PYTHON) -m pytest tests/test_bm25.py tests/test_bm25_evaluation.py tests/test_chunking.py tests/test_citations.py tests/test_ci_workflow.py tests/test_evaluation_runner.py tests/test_failure_analysis.py tests/test_final_benchmark.py tests/test_final_dataset.py tests/test_hybrid.py tests/test_hybrid_evaluation.py tests/test_indexing.py tests/test_ingestion.py tests/test_llm_judge.py tests/test_mlflow_tracking.py tests/test_operations.py tests/test_pipeline_registry.py tests/test_reranker_evaluation.py tests/test_reranking.py tests/test_retrieval_labels.py tests/test_retrieval_metrics.py tests/test_retriever_interface.py tests/test_source_fetch.py tests/test_synthetic_qa.py
 
 test-dashboard:
 	PYTHONPATH=src $(BIN)/python -m pytest tests/test_dashboard.py
+
+test-source-fetch:
+	PYTHONPATH=src $(BIN)/python -m pytest tests/test_source_fetch.py
+
+test-operations:
+	PYTHONPATH=src $(BIN)/python -m pytest tests/test_operations.py tests/test_source_fetch.py
 
 test-mlflow:
 	$(BIN)/python -m pytest tests/test_mlflow_tracking.py
@@ -167,10 +176,10 @@ validate-mlflow:
 	PYTHONPATH=src $(BIN)/python scripts/log_retrieval_runs.py --config $(MLFLOW_CONFIG) --validate-only
 
 log-retrieval-runs:
-	PYTHONPATH=src $(BIN)/python scripts/log_retrieval_runs.py --config $(MLFLOW_CONFIG)
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/log_retrieval_runs.py --config $(MLFLOW_CONFIG)
 
 verify-retrieval-runs:
-	PYTHONPATH=src $(BIN)/python scripts/log_retrieval_runs.py --config $(MLFLOW_CONFIG) --verify-only
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/log_retrieval_runs.py --config $(MLFLOW_CONFIG) --verify-only
 
 validate-pipeline-registry:
 	PYTHONPATH=src $(BIN)/python scripts/build_pipeline_registry.py --config $(PIPELINE_REGISTRY_CONFIG) --validate-only
@@ -206,10 +215,10 @@ tune-router:
 	PYTHONPATH=src $(BIN)/python scripts/tune_router.py --config $(ROUTER_TUNING_CONFIG) --overwrite
 
 init-trace-store:
-	PYTHONPATH=src $(BIN)/python scripts/init_trace_store.py --db-path $(TRACE_DB_PATH)
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/init_trace_store.py --db-path "$${RAGOPS_TRACE_DB_PATH:-$(TRACE_DB_PATH)}"
 
 validate-trace-store:
-	PYTHONPATH=src $(BIN)/python scripts/init_trace_store.py --db-path $(TRACE_DB_PATH) --validate-only
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/init_trace_store.py --db-path "$${RAGOPS_TRACE_DB_PATH:-$(TRACE_DB_PATH)}" --validate-only
 
 validate-dense-evaluation:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml --validate-only
@@ -217,14 +226,17 @@ validate-dense-evaluation:
 evaluate-dense:
 	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/dense_baseline.yaml
 
+evaluate:
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/day47/dense.yaml --output-dir $(LOCAL_EVALUATION_DIR)
+
 evaluate-api:
-	PYTHONPATH=src $(BIN)/python scripts/evaluate_api.py --api-url $(API_URL) --trace-db-path $(API_TRACE_DB_PATH) --mlflow-config $(MLFLOW_CONFIG) --overwrite
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/evaluate_api.py --api-url "$${RAGOPS_API_URL:-$(API_URL)}" --trace-db-path "$${RAGOPS_TRACE_DB_PATH:-$(API_TRACE_DB_PATH)}" --mlflow-config $(MLFLOW_CONFIG) --overwrite
 
 probe-query:
-	PYTHONPATH=src $(BIN)/python scripts/probe_query.py --query "$(ROUTER_QUERY)"
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/probe_query.py --query "$(ROUTER_QUERY)"
 
 route-query:
-	PYTHONPATH=src $(BIN)/python scripts/route_query.py --query "$(ROUTER_QUERY)"
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/route_query.py --query "$(ROUTER_QUERY)"
 
 validate-generation-judge:
 	PYTHONPATH=src $(BIN)/python scripts/judge_answers.py --config configs/generation_judge.yaml --validate-only
@@ -283,6 +295,12 @@ services-up:
 docker-up:
 	docker compose up --build
 
+fetch-sources:
+	PYTHONPATH=src $(BIN)/python scripts/fetch_sources.py
+
+validate-sources:
+	PYTHONPATH=src $(BIN)/python scripts/fetch_sources.py --check-local
+
 ingest-dry-run:
 	PYTHONPATH=src $(BIN)/python scripts/ingest.py --dry-run
 
@@ -290,10 +308,13 @@ ingest:
 	PYTHONPATH=src $(BIN)/python scripts/ingest.py
 
 index:
-	PYTHONPATH=src $(BIN)/python scripts/build_index.py
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/build_index.py
 
 index-recreate:
-	PYTHONPATH=src $(BIN)/python scripts/build_index.py --recreate
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/python scripts/build_index.py --recreate
+
+build-index: index
+	PYTHONPATH=src $(BIN)/python scripts/build_bm25_index.py --config configs/bm25_baseline.yaml
 
 generate-synthetic-qa:
 	PYTHONPATH=src $(BIN)/python scripts/generate_synthetic_qa.py
@@ -311,10 +332,10 @@ validate-retrieval-labels:
 	PYTHONPATH=src $(BIN)/python scripts/label_retrieval.py --validate-only
 
 serve:
-	PYTHONPATH=src $(BIN)/uvicorn ragops.app:app --reload
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/uvicorn ragops.app:app --host "$${API_HOST:-127.0.0.1}" --port "$${API_PORT:-8000}" --reload
 
 dashboard:
-	PYTHONPATH=src $(BIN)/streamlit run dashboard/app.py
+	@$(RUN_ENV) PYTHONPATH=src $(BIN)/streamlit run dashboard/app.py --server.port "$${DASHBOARD_PORT:-8501}"
 
 clean:
 	rm -rf .pytest_cache .ruff_cache build dist *.egg-info

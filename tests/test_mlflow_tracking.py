@@ -158,6 +158,29 @@ def test_checked_in_mlflow_config_prepares_all_four_validated_runs():
     assert prepared[-1]["tags"]["ragops_pipeline_id"] == "hybrid_rrf_cross_encoder@1.0.0"
 
 
+def test_pipeline_validation_treats_relocated_project_paths_as_equal(tmp_path):
+    configured = {
+        "retriever": {
+            "type": "bm25",
+            "top_k": 10,
+            "index_path": str(tmp_path / "data/processed/bm25_index.json.gz"),
+        }
+    }
+    recorded = {
+        "retriever": {
+            "type": "bm25",
+            "top_k": 10,
+            "index_path": "/old/worktree/data/processed/bm25_index.json.gz",
+        }
+    }
+
+    tracking._validate_pipeline_settings("bm25", configured, recorded, tmp_path)
+
+    recorded["retriever"]["index_path"] = "/old/worktree/data/processed/different.json.gz"
+    with pytest.raises(ValueError, match="retriever configuration"):
+        tracking._validate_pipeline_settings("bm25", configured, recorded, tmp_path)
+
+
 def test_tracking_uri_uses_environment_override(monkeypatch, tmp_path):
     config = make_tracking_config(tmp_path)
 

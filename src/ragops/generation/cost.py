@@ -218,7 +218,7 @@ def configured_model_cost_path(path=None, project_root=None):
 
 
 def load_model_cost_table(path=None, project_root=None):
-    """Load the strict Day 40 model cost table."""
+    """Load the strict model cost table."""
     path = configured_model_cost_path(path, project_root=project_root)
     if not path.is_file():
         raise FileNotFoundError(f"Model cost table does not exist: {path}")

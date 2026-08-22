@@ -171,9 +171,32 @@ def _pipeline_sections(pipeline):
     return ("dense", "bm25", "fusion", "reranker")
 
 
-def _validate_pipeline_settings(pipeline, configured, recorded):
+def _portable_project_value(value, project_root, key=None):
+    """Normalize project-local paths so recorded runs survive a repo move."""
+    if isinstance(value, Mapping):
+        return {name: _portable_project_value(item, project_root, key=name) for name, item in value.items()}
+    if isinstance(value, list):
+        return [_portable_project_value(item, project_root) for item in value]
+    if not isinstance(value, str) or not (key == "directory" or (key and key.endswith("_path"))):
+        return value
+
+    path = Path(value)
+    if not path.is_absolute():
+        return path.as_posix()
+    try:
+        return path.relative_to(project_root).as_posix()
+    except ValueError:
+        for anchor in ("configs", "data", "reports"):
+            if anchor in path.parts:
+                return Path(*path.parts[path.parts.index(anchor) :]).as_posix()
+    return path.as_posix()
+
+
+def _validate_pipeline_settings(pipeline, configured, recorded, project_root):
     for section in _pipeline_sections(pipeline):
-        if configured.get(section) != recorded.get(section):
+        configured_section = _portable_project_value(configured.get(section), project_root)
+        recorded_section = _portable_project_value(recorded.get(section), project_root)
+        if configured_section != recorded_section:
             raise ValueError(f"Recorded {pipeline} report does not match the current {section} configuration.")
 
 
@@ -411,7 +434,7 @@ def prepare_configured_run(run, project_root):
     _validate_report(report, run.pipeline, expected_run_name=pipeline_config.name)
     recorded_configuration = report["configuration"]
     configured = pipeline_config.model_dump(mode="json")
-    _validate_pipeline_settings(run.pipeline, configured, recorded_configuration)
+    _validate_pipeline_settings(run.pipeline, configured, recorded_configuration, project_root)
     if configured["evaluation"]["k_values"] != report["metrics"]["k_values"]:
         raise ValueError(f"Recorded {run.pipeline} report does not use the configured metric cutoffs.")
     return prepare_retrieval_run(

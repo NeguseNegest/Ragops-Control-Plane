@@ -186,9 +186,9 @@ The details are in [docs/tracing.md](docs/tracing.md), [docs/cost_estimation.md]
 I split CI into five independent GitHub Actions jobs so a retrieval regression does not hide behind a generic test result:
 
 1. Ruff linting;
-2. 297 hermetic unit tests;
-3. 179 offline API/control-plane tests;
-4. a 9-test evaluation smoke suite; and
+2. the hermetic unit suite;
+3. the offline API/control-plane suite;
+4. the evaluation-gate smoke suite; and
 5. the live compact evaluation gate.
 
 The gate uses a checked-in four-document corpus, deterministic three-dimensional embeddings, in-memory Qdrant, the offline template generator, and five supported/unsupported cases. It enforces nine thresholds covering Recall@k, regression versus baseline, MRR, answer presence, citation coverage, citation precision, refusal correctness, p95 latency, and error count. It makes no external provider calls and needs no Docker service.
@@ -205,7 +205,7 @@ This compact gate is a fast regression guard, not a substitute for the 50-questi
 
 ### 1. Verify the control plane offline
 
-Python 3.11–3.13 is supported; I use Python 3.12. This path exercises the code and evaluation gate without Docker, model downloads, a corpus, or API keys.
+Python 3.11 and 3.12 are supported; I use Python 3.12. This path exercises the code and evaluation gate without Docker, model downloads, a corpus, or API keys.
 
 ```bash
 cp .env.example .env
@@ -217,24 +217,15 @@ make eval-gate
 
 ### 2. Run the full local stack
 
-The raw third-party documentation and generated indexes are intentionally not committed. First, place the pinned source snapshots at the paths recorded in [`data/manifests/source_manifest.json`](data/manifests/source_manifest.json):
-
-```text
-data/raw/fastapi/docs
-data/raw/fastapi/docs_src
-data/raw/mlflow/docs
-data/raw/qdrant/qdrant_llms_full.txt
-```
-
-Then build the local artifacts and start the services:
+The raw documentation and generated indexes are intentionally not committed. The source fetcher checks out all three corpora at the commits in [`source_manifest.json`](data/manifests/source_manifest.json).
 
 ```bash
-make services-up
+make fetch-sources
+docker compose up -d --build
 make ingest-dry-run
 make ingest
-make index
-make build-bm25-index
-docker compose up -d --build api
+make build-index
+make evaluate
 make dashboard
 ```
 
@@ -260,6 +251,8 @@ docker compose up -d --build --force-recreate api
 ```
 
 `openai` with `OPENAI_API_KEY` is supported as well. I never commit provider keys, and the public cost fields remain estimates rather than billing records. See [docs/api.md](docs/api.md) for request/response examples and failure semantics.
+
+The complete clean-setup, environment, MLflow, trace, and troubleshooting commands are in [docs/operations.md](docs/operations.md).
 
 ## Repository structure
 
@@ -319,6 +312,7 @@ I am intentionally leaving semantic caching, a large monitoring stack, and autom
 | Token and price provenance | [Cost estimation](docs/cost_estimation.md) |
 | Pipeline lifecycle and aliases | [Pipeline registry](docs/pipeline_registry.md) |
 | CI jobs and evaluation gate | [CI](docs/ci.md) |
+| Clean setup and runtime operations | [Operations](docs/operations.md) |
 | Honest system limits | [Limitations](docs/limitations.md) |
 
 ## License

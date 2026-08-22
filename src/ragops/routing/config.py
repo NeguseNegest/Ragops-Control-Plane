@@ -25,7 +25,7 @@ class StrictRouterModel(BaseModel):
 
 
 class InitialProbeConfig(StrictRouterModel):
-    """Cheap corpus-confidence probe shared by the design and Day 37 runtime."""
+    """Cheap corpus-confidence probe used by the runtime router."""
 
     pipeline_config: Literal["dense_baseline"] = "dense_baseline"
     top_k: int = Field(default=2, ge=2, le=5)
@@ -168,7 +168,7 @@ class RouterCalibrationConfig(StrictRouterModel):
 
 
 class RouterConfig(StrictRouterModel):
-    """Versioned Day 36 router policy and Day 37 probe contract."""
+    """Versioned router policy and probe contract."""
 
     schema_version: Literal[1] = ROUTER_CONFIG_SCHEMA_VERSION
     name: str = Field(min_length=1)

@@ -116,7 +116,7 @@ class RetrievalConfidenceFeatures(StrictFeatureModel):
 
 
 class InitialRetrievalFeatures(StrictFeatureModel):
-    """The complete Day 37 input contract for the future rule-based router."""
+    """The complete input contract for the rule-based router."""
 
     schema_version: Literal[1] = FEATURE_SCHEMA_VERSION
     query_length: QueryLengthFeatures

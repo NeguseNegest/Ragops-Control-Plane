@@ -56,7 +56,7 @@ def main():
         print(f"{action.capitalize()} MLflow run '{result['run_name']}': {result['run_id']}")
     verified = verify_prepared_runs(prepared_runs, config)
     print(
-        f"Day 29 acceptance verified: {len(verified)} retrieval runs in experiment '{config.experiment_name}' "
+        f"MLflow acceptance verified: {len(verified)} retrieval runs in experiment '{config.experiment_name}' "
         f"at {configured_tracking_uri(config)}."
     )
 

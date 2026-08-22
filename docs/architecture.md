@@ -107,4 +107,4 @@ All four implement `retrieve(query, top_k, timings)` through `common_v1`.
 - SQLite and in-process caches are local, single-node choices.
 - The raw corpus and generated indexes are not committed.
 
-See [API](api.md), [routing](routing.md), [tracing](tracing.md), and [evaluation](evaluation.md).
+See [API](api.md), [routing](routing.md), [tracing](tracing.md), [evaluation](evaluation.md), and [operations](operations.md).

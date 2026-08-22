@@ -7,21 +7,22 @@ name = "ragops-control-plane"
 version = "0.1.0"
 description = "Evaluation-gated, cost-aware control plane for production-style RAG systems."
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.13"
 license = { text = "Apache-2.0" }
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi>=0.115.0,<1.0",
     "google-genai>=2.13.0,<3.0",
     "numpy>=1.26,<2.0",
     "openai>=2.47.0,<3.0",
     "pydantic>=2.8.0",
     "PyYAML>=6.0,<7.0",
-    "qdrant-client>=1.10.0",
-    "rank-bm25>=0.2.2",
-    "sentence-transformers>=3.0.0",
+    "qdrant-client>=1.10.0,<2.0",
+    "rank-bm25>=0.2.2,<1.0",
+    "requests>=2.32.0,<3.0",
+    "sentence-transformers>=3.0.0,<6.0",
     "torch>=2.2,<2.3",
     "transformers>=4.41,<5.0",
-    "uvicorn[standard]>=0.30.0",
+    "uvicorn[standard]>=0.30.0,<1.0",
 ]
 
 [project.optional-dependencies]
@@ -29,15 +30,13 @@ tracking = [
     "mlflow>=3.14.0,<4.0",
 ]
 dashboard = [
-    "requests>=2.32.0",
-    "streamlit>=1.58.0",
+    "streamlit>=1.58.0,<1.59.0",
 ]
 dev = [
     "mlflow>=3.14.0,<4.0",
     "pytest>=8.2.0",
-    "requests>=2.32.0",
     "ruff>=0.5.0",
-    "streamlit>=1.58.0",
+    "streamlit>=1.58.0,<1.59.0",
 ]
 
 [tool.setuptools.packages.find]

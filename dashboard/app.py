@@ -175,7 +175,7 @@ def _load_json_object(path, label):
 
 
 def load_final_benchmark(path):
-    """Load the completed five-pipeline Day 47 benchmark."""
+    """Load the completed five-pipeline benchmark."""
     benchmark = _load_json_object(path, "Final benchmark")
     pipelines = benchmark.get("pipelines")
     if benchmark.get("benchmark_id") != "final_benchmark@1.0.0" or benchmark.get("status") != "evaluated":
@@ -259,12 +259,12 @@ def load_routed_summary(path):
 
 
 def load_failure_examples(config_path):
-    """Re-verify and return the complete curated Day 48 failure inventory."""
+    """Re-verify and return the curated failure inventory."""
     try:
         config = load_failure_analysis_config(config_path, project_root=PROJECT_ROOT)
         analysis = build_failure_analysis(config)
     except Exception as error:
-        raise DashboardDataError(f"Unable to verify Day 48 failure examples: {error}") from error
+        raise DashboardDataError(f"Unable to verify failure examples: {error}") from error
     return analysis["cases"]
 
 
@@ -461,7 +461,7 @@ def _format_benchmark_rows(rows):
 def render_benchmark(benchmark):
     rows = benchmark_rows(benchmark)
     st.subheader("Final benchmark")
-    st.caption("Day 47: 50 paired retrieval questions and 10 cross-provider answer judgments per pipeline.")
+    st.caption("Final benchmark: 50 paired retrieval questions and 10 cross-provider answer judgments per pipeline.")
     st.dataframe(
         _format_benchmark_rows(rows),
         width="stretch",
@@ -544,7 +544,7 @@ def render_failures(config_path):
     except DashboardDataError as error:
         st.warning(str(error))
         return
-    st.caption(f"Day 48 verified {len(failures)} measured failures; choose one to inspect its evidence and proposed fix.")
+    st.caption(f"{len(failures)} measured failures were verified; choose one to inspect its evidence and proposed fix.")
     labels = {case["id"]: _failure_label(case) for case in failures}
     selected_id = st.selectbox("Failure example", list(labels), format_func=labels.__getitem__)
     selected = next(case for case in failures if case["id"] == selected_id)
