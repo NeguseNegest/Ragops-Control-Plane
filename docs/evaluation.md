@@ -2,7 +2,7 @@
 
 ## Scope
 
-The implemented evaluation stack has six distinct layers:
+The implemented evaluation stack has eight distinct layers:
 
 1. Retrieval evaluation (Days 17–19, 23, 25, 27, the Day 28 refactor, Day 29 tracking, and the Day 30 registry) compares dense Qdrant, persisted BM25, live RRF hybrid, and cross-encoder-reranked rankings with verified relevance labels; computes Recall@k, depth-bounded MRR, Hit Rate@k, and binary nDCG@k; records the runs in MLflow; and binds those evidence bundles to versioned pipeline identities.
 2. Generation evaluation (Day 20) generates answers from retrieved evidence, asks an independent provider to score those answers, and requires a manual spot-check of every acceptance record.
@@ -10,8 +10,10 @@ The implemented evaluation stack has six distinct layers:
 4. Router evaluation (Day 41) replays the same supported questions through always-FAST, always-CAREFUL, and routed strategies, combines that evidence with reviewed unsupported refusal outcomes, and compares quality, serially composed retrieval latency, and a controlled Day 40 generation-cost projection.
 5. Router stabilization (Day 42) evaluates a predeclared CAREFUL-gap grid on a deterministic tuning/validation split, enforces refusal/validation/latency/cost constraints, and publishes a complete route distribution and transition audit.
 6. The automated evaluation gate (Day 44) executes a SHA-pinned five-case regression suite through the real dense retriever, rule router, and template citation path; calculates deterministic quality, refusal, latency, and error metrics; and returns a shell-enforceable pass/fail decision.
+7. The final benchmark (Day 47) pairs five pipeline strategies across 50 retrieval labels, 30 adversarial prompts, the same 10-question semantic sample per pipeline, measured latency, controlled generation-cost projection, ablations, and five provenance-verified MLflow runs.
+8. Failure and regression analysis (Day 48) verifies 15 selected failures against frozen benchmark evidence and promotes 14 deterministic cases into the reviewed regression dataset without claiming that their proposed fixes already exist.
 
-Day 20 is an acceptance workflow for 10 answers, not the final benchmark. Day 21 records the first dense benchmark and failure analysis, Day 23 adds BM25, Day 25 measures the RRF hybrid candidate, Day 26 verifies the reranked pipeline, Day 27 measures its quality and latency tradeoff, Day 28 moves every retrieval candidate behind the same config-driven interface, Day 29 tracks all four retrieval runs, Day 30 registers their versions and promotion roles without changing their measurements, Day 35 proves the dense results survive the complete online HTTP and tracing composition, Day 39 adds measured no-answer behavior without claiming that a small authored sample is production calibration, Day 41 makes the router's actual tradeoff explicit, Day 42 hardens and explains that policy without promoting it, and Day 44 adds fast local regression enforcement without replacing the larger Day 47 benchmark.
+The early 10-answer workflow proves that cross-provider judging works; it is not the central result. The central comparison is [`final_benchmark@1.0.0`](../reports/final_benchmark.md), and the compact CI gate remains a fast deterministic regression guard rather than a replacement for that larger provider-backed benchmark. The sections below retain the historical contracts so every current claim can still be traced to the artifact that introduced it.
 
 ## Day 44 automated evaluation gate
 

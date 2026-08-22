@@ -2,136 +2,64 @@
 
 ## Current Scope
 
-RAGOps Control Plane currently provides selectable dense, RRF hybrid, and cross-encoder-reranked RAG query paths plus standalone BM25 retrieval over local FastAPI, MLflow, and Qdrant documentation. Its implemented workflows are:
+RAGOps Control Plane is a local, evidence-driven RAG system over pinned FastAPI, MLflow, and Qdrant documentation. It has three connected planes:
 
-- An offline workflow that cleans and chunks documentation, then builds both a dense Qdrant index and a portable BM25 index.
-- An online workflow that explicitly selects one of three validated configs, retrieves chunks, builds citations, calls the selected template, OpenAI, or Gemini generation client, and exposes the result through FastAPI. Streamlit currently uses the default dense selection.
-- An offline evaluation workflow that generates and reviews QA data, validates retrieval relevance labels, compares dense, persisted BM25, and live RRF hybrid rankings, and applies cross-provider LLM judging to generated answers.
-- Offline hybrid and reranked CLIs that retrieve independent dense and BM25 candidate pools, fuse ranks without normalizing incompatible raw scores, and optionally apply a cross-encoder.
-- A deterministic pipeline-registry workflow that binds versioned configs to validated evaluation evidence and guarded baseline/candidate/production aliases.
-- An online observability workflow that measures request components with a monotonic trace context and atomically stores each accepted retrieval/query attempt, its stage latencies, and its ranked evidence in SQLite. The earlier schema also retains a tested feedback record model, but no feedback API is required or claimed.
-- A production query contract that returns route/config provenance, trace IDs, debug diagnostics, citations/evidence, timing, provider usage, and an honest generation-cost state.
-- An offline API reliability workflow that exercises the production FastAPI composition against a checked-in small corpus, in-memory Qdrant, deterministic embeddings, and temporary SQLite in GitHub Actions.
-- A five-job GitHub Actions workflow that independently exposes lint, hermetic unit, offline API, evaluation-smoke, and live compact-gate results under one cached minimal dependency boundary.
-- A live integration-review workflow that evaluates all verified dense questions through HTTP, requires offline/API ranking parity, cross-checks response traces in SQLite, and verifies the complete retrieval evidence suite in MLflow.
-- A validated draft router-design workflow that binds ordered FAST/STANDARD/CAREFUL/NO_ANSWER thresholds to versioned feature inputs, calibration evidence, execution intent, and eligible pipeline lifecycle states.
-- A routing workflow that performs the configured dense probe (currently top two), emits schema-versioned confidence/query features, deterministically selects FAST/STANDARD/CAREFUL/NO_ANSWER with stable reasons, and exposes `/route`; NO_ANSWER returns a deterministic corpus-scoped refusal while the other routes remain decision-only.
-- A no-answer evaluation workflow that calibrates a strict score threshold from five unsupported questions, checks it on seven held-out unsupported questions, replays 45 supported-question scores for false-refusal measurement, and writes complete JSON/CSV evidence.
-- A paired router-evaluation workflow that validates and replays fixed FAST, fixed CAREFUL, and routed evidence across supported quality, refusal correctness, measured-artifact latency, and controlled generation-cost projections.
-- A router-stabilization workflow that archives the prior policy, evaluates a constrained CAREFUL-gap grid on a deterministic tuning/validation split, and emits route-distribution and transition evidence.
-- A generation-cost workflow that prefers provider usage, deterministically estimates missing prompt/answer tokens, selects exact model rates from a versioned table or explicit override, and returns/persists one provenance-complete cost record.
-- A compact evaluation-gate workflow that executes hash-pinned supported and unsupported cases through in-memory Qdrant, the production dense retriever, the real router, and template citation generation before enforcing nine shell-visible thresholds.
+- **Indexing:** deterministic loading, cleaning, chunking, MiniLM embedding, Qdrant dense indexing, and provenance-checked BM25 indexing.
+- **Serving:** FastAPI, a four-way draft router, selectable dense/hybrid/reranked query pipelines, citation-grounded template/OpenAI/Gemini generation, SQLite traces, cost provenance, and a two-tab Streamlit client.
+- **Evaluation:** reviewed golden/adversarial/regression datasets, paired retrieval and answer-quality evaluation, failure analysis, MLflow tracking, a versioned pipeline registry, and a hermetic GitHub Actions gate.
 
-Dense, BM25, RRF hybrid, and cross-encoder retrieval evaluation, the Day 20 LLM-as-judge acceptance workflow, the Day 21 benchmark report, the Day 28 common-interface refactor, Day 29 MLflow retrieval tracking, the Day 30 pipeline registry, the Day 31 SQLite trace store, the Day 32 trace timing context, the Day 33 production query endpoint, the Day 34 API CI suite, the Day 35 full integration review, the Day 36 router design, the Day 37 initial retrieval probe, the Day 38 deterministic selector, the Day 39 no-answer/refusal evaluation, Day 40 per-request generation-cost accounting, the Day 41 routed-versus-fixed tradeoff evaluation, Day 42 router stabilization, the Day 44 compact evaluation gate, and Day 45 five-check CI integration are implemented. Automatic FAST/STANDARD/CAREFUL execution remains required work. Semantic caching, canary simulation, automated failure mining, and a separate monitoring platform are explicitly deferred.
+The dashboard composes the decision-only `/route` endpoint with an explicit `/query` request for FAST, STANDARD, or CAREFUL. NO_ANSWER stops after `/route` without an LLM call. The backend does not yet enforce automatic non-refusal route dispatch, and `/route` itself is not persisted in SQLite. Those are intentional, documented boundaries rather than implied production features.
 
 ## System Diagram
 
 ```mermaid
-flowchart LR
-    subgraph Offline[Offline ingestion and indexing]
-        Raw["data/raw\nFastAPI, MLflow, Qdrant"] --> Load[Load and clean]
-        Load --> Chunk[Deterministic chunking]
-        Chunk --> Embed[MiniLM embeddings]
-        Embed --> JSONL["data/processed/chunks.jsonl"]
-        JSONL --> Index[Qdrant index builder]
-        Index --> Qdrant[(Qdrant rag_chunks)]
-        JSONL --> BM25Build[Technical tokenizer and BM25 builder]
-        BM25Build --> BM25Index[(bm25_index.json.gz)]
+flowchart TB
+    subgraph Indexing["Offline indexing"]
+        Source["Pinned FastAPI, MLflow, and Qdrant docs"] --> Ingest["Document ingestion"]
+        Ingest --> Chunk["Deterministic chunking"]
+        Chunk --> Embed["MiniLM embedding generation"]
+        Embed --> Qdrant[("Qdrant dense index")]
+        Chunk --> BM25[("BM25 sparse index")]
     end
 
-    subgraph Online[Online query path]
-        User[Browser user] --> Streamlit[Streamlit :8501]
-        Streamlit -->|"POST /query"| API[FastAPI :8000]
-        API --> ConfigSelect[Select dense / hybrid / reranked config]
-        ConfigSelect --> QueryEmbed[Embed query]
-        QueryEmbed -->|Cosine search| Qdrant
-        ConfigSelect -->|hybrid / reranked| BM25Index
-        Qdrant --> OnlineFusion[Optional RRF]
-        BM25Index --> OnlineFusion
-        OnlineFusion --> OnlineRerank[Optional cross-encoder]
-        OnlineRerank --> Retrieved[Ranked chunks]
-        Retrieved --> Citations[Citations and prompt]
-        Citations --> Generator["Configured generator\ntemplate / OpenAI / Gemini"]
-        Generator --> API
-        Generator --> Cost["Usage or token heuristic\n+ versioned model rates"]
-        Cost --> API
-        API -->|"atomic trace + component timings"| TraceDB[(SQLite trace store)]
-        Cost -->|"identical cost provenance"| TraceDB
-        API -->|"JSON + trace / route / cost / timings"| Streamlit
+    subgraph Serving["Online serving"]
+        User["User"] --> Dashboard["Streamlit"]
+        Dashboard -->|"1. POST /route"| FastAPI["FastAPI"]
+        FastAPI --> Probe["Dense top-2 probe"]
+        Probe --> Router["FAST / STANDARD / CAREFUL / NO_ANSWER router"]
+        Router -->|"Decision + reason"| Dashboard
+        Router -->|"NO_ANSWER"| Refusal["Deterministic refusal"]
+        Dashboard -->|"2. POST /query + explicit config"| FastAPI
+
+        Qdrant --> Dense["Dense retrieval"]
+        BM25 --> Sparse["BM25 retrieval"]
+        Dense --> RRF["Reciprocal Rank Fusion"]
+        Sparse --> RRF
+        RRF --> Rerank["Optional cross-encoder reranking"]
+
+        FastAPI --> Select{"Selected API retrieval path"}
+        Dense --> Select
+        RRF --> Select
+        Rerank --> Select
+        Select --> Evidence["Ranked chunks + citations"]
+        Evidence --> Generate["Grounded template / OpenAI / Gemini generation"]
+        Generate --> FastAPI
+        Refusal --> FastAPI
+        FastAPI -->|"/retrieve and /query only"| Trace[("SQLite trace store")]
+        FastAPI --> Dashboard
     end
 
-    subgraph RoutingProbe[Day 36-39 routing and refusal path]
-        RouterConfig["routed.yaml\nDay 36 draft policy"] --> ProbeDense
-        ProbeQuery[Query] --> Lexical[Length + lexical features]
-        ProbeQuery --> ProbeDense[Dense top 2]
-        ProbeDense --> Confidence[Top score + score gap]
-        Lexical --> RouterFeatures[InitialRetrievalFeatures v1]
-        Confidence --> RouterFeatures
-        RouterConfig --> Router[Deterministic rule evaluator]
-        RouterFeatures --> Router
-        Router --> RouteDecision[Route + reasons + execution intent]
-        RouteDecision -->|"FAST / STANDARD / CAREFUL; no dispatch"| API
-        RouteDecision -->|"NO_ANSWER"| Refusal[Deterministic corpus-scoped refusal]
-        Refusal -->|"POST /route; no LLM or citations"| API
-    end
-
-    subgraph Hybrid[Offline hybrid CLI]
-        HybridConfig[hybrid.yaml] --> HybridCLI[Hybrid query CLI]
-        HybridCLI -->|"dense top 20"| Qdrant
-        HybridCLI -->|"BM25 top 20"| BM25Index
-        Qdrant --> RRF[Reciprocal Rank Fusion]
-        BM25Index --> RRF
-        RRF --> HybridTop10[Deduplicated top 10]
-    end
-
-    subgraph Evaluation[Offline retrieval evaluation]
-        Golden[golden_qa.jsonl] --> Labels[retrieval_labels.jsonl]
-        DenseConfig[dense_baseline.yaml] --> DenseRunner[Dense runner]
-        BM25Config[bm25_baseline.yaml] --> BM25Runner[BM25 runner]
-        HybridConfig --> HybridRunner[Hybrid evaluator]
-        Labels --> DenseRunner
-        Labels --> BM25Runner
-        Labels --> HybridRunner
-        DenseRunner -->|"45 dense queries"| Qdrant
-        BM25Index --> BM25Runner
-        Qdrant --> HybridRunner
-        BM25Index --> HybridRunner
-        DenseRunner --> Metrics["Recall / MRR / Hit Rate / nDCG"]
-        BM25Runner --> Metrics
-        HybridRunner --> Metrics
-        Metrics --> Reports["JSON + CSV reports"]
-        Reports --> Paired["Three-way ranks + cohorts + failures"]
-        Paired --> Comparison["Comparison JSON + Markdown"]
-        Reports --> MLflow[(MLflow retrieval experiment)]
-        Comparison --> MLflow
-        Labels --> APIEval[Live API evaluator]
-        APIEval -->|"45 POST /query requests"| API
-        APIEval -->|"exact ranking parity"| Reports
-        APIEval -->|"trace verification"| TraceDB
-        APIEval -->|"evidence verification"| MLflow
-        Unsupported[12 reviewed unsupported questions] --> NoAnswerEval[No-answer evaluator]
-        Reports -->|"45 supported top-two scores"| NoAnswerEval
-        NoAnswerEval --> RefusalReports[Refusal JSON + CSV]
-    end
-
-    subgraph Registry[Pipeline registry]
-        VersionedConfigs["Versioned retrieval YAMLs"] --> RegistryBuilder[Registry builder and validator]
-        Comparison --> RegistryBuilder
-        MLflowCatalog["configs/mlflow.yaml"] --> RegistryBuilder
-        RegistryBuilder --> RegistryJSON["reports/pipeline_registry.json"]
-        RegistryJSON --> Aliases["baseline / candidate / production"]
-    end
-
-    subgraph GenerationEvaluation[Offline generation evaluation]
-        JudgeConfig[generation_judge.yaml] --> Sample["10-question stratified sample"]
-        Golden --> Sample
-        Sample -->|"retrieve top 5"| Qdrant
-        Qdrant --> EvalGenerator[OpenAI generator]
-        EvalGenerator --> EvalJudge[Gemini judge]
-        EvalJudge --> JudgeReports["Judgments JSONL + summary JSON"]
-        JudgeReports --> SpotCheck[Manual spot-check]
+    subgraph Evaluation["Evaluation and promotion evidence"]
+        Data["Golden, adversarial, and regression datasets"] --> Framework["Evaluation framework"]
+        Framework --> Results["Benchmark, ablation, and failure reports"]
+        Framework --> MLflow["MLflow"]
+        Results --> Registry["Versioned pipeline registry"]
+        Framework --> Gate["Nine-threshold evaluation gate"]
+        Gate --> Actions["GitHub Actions"]
     end
 ```
+
+The arrows into `Selected API retrieval path` show the three `/query` choices: dense, fused hybrid, and fused-plus-reranked. BM25 is independently executable through the common retriever/evaluation interface, but it is not exposed as a standalone `/query` config. The router returns execution intent to the client; it does not secretly sit inside `/query`.
 
 ## Component Responsibilities
 
@@ -165,10 +93,10 @@ flowchart LR
 | Judgment reviewer | `scripts/review_judgments.py` | Display each question, answer, evidence, and automatic rationale; atomically record reviewer agreement or disagreement. |
 | API | `src/ragops/app.py` | Expose health, retrieval, routing/refusal, and production query endpoints; select configs; translate stage-aware errors; return trace/route/debug/cost/timing data; enforce the deterministic NO_ANSWER response on `/route`; and persist matching `/retrieve` and `/query` traces before returning. |
 | API integration suite | `tests/test_api_integration.py`, `configs/ci_small.yaml` | Seed in-memory Qdrant from a checked-in corpus, inject deterministic query embeddings, use isolated SQLite state, and verify complete HTTP/storage behavior without external services. |
-| CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt`, `tests/test_ci_workflow.py` | Independently run Ruff, 291 unit tests, 179 API/control-plane tests, nine compact-evaluation smoke tests, and the live threshold gate on Python 3.12; cache the minimal dependency boundary and regression-test the workflow contract itself. |
+| CI workflow | `.github/workflows/ci.yml`, `requirements-ci.txt`, `tests/test_ci_workflow.py` | Independently run Ruff, 297 unit tests, 179 API/control-plane tests, nine compact-evaluation smoke tests, and the live threshold gate on Python 3.12; cache the minimal dependency boundary and regression-test the workflow contract itself. |
 | Live API evaluator | `src/ragops/evaluation/api_runner.py`, `scripts/evaluate_api.py` | Evaluate verified labels through HTTP, validate the complete response contract, compare exact rankings with offline evidence, cross-check SQLite rows, and verify live MLflow evidence. |
 | API container | `Dockerfile`, `requirements-api.txt`, `docker-compose.yml` | Build a CPU-only serving image with cached runtime dependencies, deployment-root configuration, configurable host port, health probing, a persistent model-cache volume, and no tracking/dashboard packages. |
-| Dashboard | `dashboard/app.py` | Call `POST /query` over HTTP and display the answer, citations, chunks, scores, and latency. |
+| Dashboard | `dashboard/app.py` | Compose decision-only `/route` with explicit `/query`, label retrieval versus reranker scores, and present live results beside frozen benchmark/route/failure evidence and read-only recent local traces in exactly two primary tabs. |
 
 ## Offline Data Flow
 
@@ -203,6 +131,14 @@ The `traces` row owns request/pipeline provenance, whole-request latency, option
 Day 32 creates one `TraceContext` per accepted request. Dense retrieval records query embedding separately from Qdrant search/result normalization. BM25, RRF fusion, and cross-encoder implementations write their own stages through the existing common timing sink, and `/query` wraps prompt construction/provider execution as generation. `finally` paths retain timing for stages that fail. Successful responses expose a stable `component_latencies` object; non-applicable stages are null. SQLite schema v4 retains that snapshot and adds nullable cost columns; v2-to-v3 and v3-to-v4 migrations preserve existing evidence without inventing historical costs.
 
 The trace path defaults to `data/traces/ragops_traces.sqlite3`; Compose uses the persistent `ragops_trace_data` volume. `/retrieve` provenance defaults to `dense_baseline@1.0.0` and can be explicitly set with `RAGOPS_PIPELINE_NAME` and `RAGOPS_PIPELINE_VERSION`. `/query` instead records the selected config's validated name/version. Neither behavior makes the Day 30 registry alias dynamically configure the API default.
+
+## Compact Dashboard Boundary
+
+Day 49 keeps Streamlit as a presentation and orchestration layer, not a second retrieval implementation. The Query Playground first calls decision-only `POST /route`. For NO_ANSWER it renders the deterministic refusal and stops, so there is no generation charge or `/query` trace. For FAST, STANDARD, and CAREFUL it caps the requested depth at the decision's `maximum_top_k` and calls `POST /query` with the exact `pipeline_config`. It rejects a response whose executed config differs from that intent. The displayed total is router-probe server time plus query-pipeline server time; it does not pretend to include browser/network latency. Because the backend still performs explicit config selection, this dashboard composition is not evidence that `/query` automatically dispatches routes or reuses the FAST probe.
+
+The result view distinguishes score semantics. Dense, BM25, and RRF results label `chunk.score` as the retrieval score. Reranked results label `_reranker.candidate_score` as the pre-rerank RRF score and `chunk.score` as the final cross-encoder score, while preserving candidate rank and dense/BM25 RRF source ranks. The page also exposes citations, trace ID, component/debug evidence, and zero/estimated/unavailable cost provenance.
+
+The Engineering tab reads three evidence classes without creating new evaluations: the completed `final_benchmark@1.0.0`, the routed report's 50-question distribution/latency summary, and a freshly verified reconstruction of the Day 48 failure contract. It presents the five-way table, Recall@5-versus-p95 comparison, route counts, routed p50/p95, routed projected average cost, the supported-query NO_ANSWER rate, and a selector over all 15 reviewed failures. Recent traces are a separate live/local view: Streamlit validates and reads up to 20 newest rows without initializing or migrating SQLite. A host dashboard cannot see traces stored only inside Compose's named volume unless the operator makes that database host-visible; the frozen engineering evidence remains available either way.
 
 Day 24 combines the existing indexes at query time:
 
@@ -464,7 +400,7 @@ The policy is stable in the Day 42 engineering sense: configuration is versioned
 8. The generation layer builds a context-only prompt and sends it to the process-selected `RAGOPS_LLM_PROVIDER` client. OpenAI and Gemini SDK token usage is retained when present; otherwise Day 40 estimates the exact prompt and answer with the versioned UTF-8-byte heuristic.
 9. Cost accounting selects an exact provider/model rate from `generation_model_costs@1.0.0` unless a complete environment rate pair overrides it. Unknown models remain unavailable rather than inheriting another model's rate.
 10. FastAPI atomically persists the terminal trace, including the complete cost/provenance for successful queries, then returns the identical cost with its trace ID, route/config, answer, citations, chunks, and latency breakdown. Debug mode adds non-sensitive config depths, lifecycle status, generation identity, and resource cache-hit flags.
-11. Streamlit renders the default dense response. It does not yet expose config/debug controls or connect directly to retrieval resources.
+11. Streamlit first calls `/route`; for FAST, STANDARD, or CAREFUL it caps the requested depth and submits the exact selected config to `/query` with debug evidence enabled. For NO_ANSWER it renders the deterministic refusal and stops without a generation call or query trace.
 
 `POST /route` is a separate routing surface. It validates the query, runs the configured top-two dense probe, extracts schema-v1 features, and applies the ordered rule policy. FAST, STANDARD, and CAREFUL return a decision without dispatch. NO_ANSWER additionally returns the exact `no_answer_v1` refusal, with no generation-provider call, citations, or used evidence. The endpoint remains untraced because it does not run or persist a final `/query` pipeline.
 
@@ -494,6 +430,9 @@ Generation configuration is resolved once when `create_app()` initializes its cl
 | `RAGOPS_LLM_INPUT_USD_PER_MILLION_TOKENS` | none | Optional input-token rate override; must be paired with the output rate. |
 | `RAGOPS_LLM_OUTPUT_USD_PER_MILLION_TOKENS` | none | Optional output-token rate override; the pair takes precedence over the table. |
 | `RAGOPS_TRACE_DB_PATH` | `data/traces/ragops_traces.sqlite3` | Host path for the SQLite trace database; Compose supplies its persistent container path. |
+| `RAGOPS_FINAL_BENCHMARK_PATH` | `reports/evaluations/final_benchmark.json` | Completed five-pipeline benchmark read by the Engineering tab. |
+| `RAGOPS_ROUTED_REPORT_PATH` | `reports/evaluations/final_routed.json` | Supported route counts and routed latency summary read by the Engineering tab. |
+| `RAGOPS_FAILURE_CONFIG_PATH` | `configs/failure_analysis.yaml` | Day 48 contract re-verified before failure examples are shown. |
 | `RAGOPS_PROJECT_ROOT` | process working directory | Root used to resolve checked-in configs and local artifacts; Compose pins `/app`. |
 | `RAGOPS_API_PORT` | `8000` | Host port published by Compose; the container continues to listen on 8000. |
 | `RAGOPS_PIPELINE_NAME` | `dense_baseline` | Dense-only `/retrieve` trace identity; `/query` uses its selected config. |
@@ -516,11 +455,11 @@ Both provider credentials may be configured simultaneously, but the online API u
 
 ## Current Limitations
 
-- `/route` returns a deterministic rule-based decision and enforces NO_ANSWER refusal, but `/query` selection is still explicit and does not dispatch FAST/STANDARD/CAREFUL from that decision. The rejected `hybrid_rrf` config remains executable for controlled comparison and exposes that status in debug mode; selection is not promotion.
+- `/route` returns a deterministic rule-based decision and enforces NO_ANSWER refusal, but `/query` selection is still explicit and does not dispatch FAST/STANDARD/CAREFUL from that decision. The Day 49 dashboard coordinates the two endpoints for its own requests; direct API callers can still bypass routing. The rejected `hybrid_rrf` config remains executable for controlled comparison and exposes that status in debug mode; selection is not promotion.
 - The `production` registry alias documents the selected online version but does not dynamically configure or deploy the API; deployment integration is intentionally not claimed by Day 30.
-- The cross-encoder has the highest measured MRR@5 on the current labels, but its warmed stage averages about 4.27 seconds per query. It is available only through explicit config selection and should remain non-default until latency is reduced or routing limits its use.
+- The cross-encoder has the highest measured MRR@5 on the final labels, but the final benchmark records 7.67 seconds p95 retrieval latency including cold starts. It is available only through explicit config selection and should remain non-default until latency is reduced or routing limits its use.
 - The offline `template` provider returns a fixed placeholder response. OpenAI and Gemini clients are implemented, but the API selects only one provider at process startup and has no application-level model routing, fallback, retry policy, or provider comparison in the online path.
-- The `/route` surface classifies low-score queries and enforces a deterministic refusal, but callers can still bypass it by invoking `/query` directly. The score-only threshold refused 12/12 reviewed unsupported examples while falsely refusing 9/45 supported examples; the router therefore remains `draft`. The runtime does not verify generated claims or citation use, and structured citations describe all retrieved context rather than necessarily only evidence referenced by the answer.
+- The `/route` surface classifies low-score queries and enforces a deterministic refusal, but callers can still bypass it by invoking `/query` directly. In the final benchmark, the router correctly refused 25/30 adversarial queries but also refused 7/50 supported retrieval questions; it therefore remains `draft`. The runtime does not verify generated claims or citation use, and structured citations describe all retrieved context rather than necessarily only evidence referenced by the answer.
 - Day 20 generation scores come from one judge model over 10 questions, and Day 47 adds the same-size paired sample for each of five pipelines. Neither has independent human sign-off; they are not substitutes for larger samples, multiple judges, calibrated human labels, or statistical uncertainty estimates.
 - Per-request generation cost is returned and persisted, and Day 47 aggregates a controlled five-pipeline reference-answer projection. It remains an estimate: the fallback byte heuristic is not a provider tokenizer, table rates can change, and standard rates exclude judge calls, caching, tools, service tiers, infrastructure, media, credits, taxes, and negotiated pricing. Cost is not budget-enforced or invoice-reconciled.
 - The corpus and generated embeddings are local artifacts and are not distributed in Git.
@@ -529,16 +468,9 @@ Both provider credentials may be configured simultaneously, but the online API u
 - `GET /health` reports process status and version; it does not probe Qdrant or an external generation provider.
 - MLflow tracks the historical retrieval evaluations and five final Day 47 bundles containing retrieval, semantic-judge, refusal, latency, and projected generation-cost metrics. Online request traces and promotion decisions are not logged there; online traces live in SQLite.
 - The Week 5 HTTP evaluation checks dense ranking parity and service integration. It does not treat template answers as generation-quality evidence or rerun the full hybrid/reranker benchmark through the online path.
-- Automatic non-refusal route execution is not implemented. Days 36–42 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, an offline fixed-versus-routed tradeoff report, and threshold stabilization. Days 44–45 enforce compact offline thresholds locally and in GitHub Actions, but the gate does not claim online/full-corpus or cross-encoder benchmark enforcement.
+- Automatic non-refusal route execution inside the backend is not implemented. Days 36–42 supply a draft policy, route inputs, decisions, deterministic refusal, refusal-correctness evidence, durable per-query cost, an offline fixed-versus-routed tradeoff report, and threshold stabilization. Day 49 adds explicit client-side route/query composition for the dashboard only. Days 44–45 enforce compact offline thresholds locally and in GitHub Actions, but the gate does not claim online/full-corpus or cross-encoder benchmark enforcement.
 - Feedback HTTP collection, semantic caching, canary simulation, automated failure mining, and a separate monitoring stack are deliberately outside the condensed required scope. The existing tested SQLite feedback model is retained as completed schema work, without implying an endpoint or future milestone.
 
-## Condensed Finishing Scope
+## Documentation Boundary
 
-Day 43 removes empty placeholder files rather than allowing filenames to imply implementations. Required remaining work is created together with code, tests, and evidence:
-
-- Day 47: completed final five-way retrieval, answer-quality, refusal, latency, cost, ablation, and verified MLflow evidence
-- Day 48: completed deterministic 15-case failure analysis and promoted 14 evidence-guarded regression cases
-- Day 49: two-tab query/engineering dashboard
-- Days 50–52: architecture and README, clean-environment hardening, and portfolio packaging
-
-Deferred extensions are recorded in README Future Work and [`limitations.md`](limitations.md), not represented by empty configs, packages, scripts, workflows, tests, or topic pages.
+The [README](../README.md) is the short reviewer path: purpose, complete architecture, final benchmark, one live query, evaluation method, routing, observability, CI, setup, and limits. This document retains the deeper component and data-flow contracts. Deferred extensions are recorded in README Future Work and [`limitations.md`](limitations.md), not represented by empty configs, packages, scripts, workflows, tests, or topic pages.

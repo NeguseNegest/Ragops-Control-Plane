@@ -1,6 +1,6 @@
 # Limitations and Deferred Scope
 
-This repository is a portfolio-scale RAG engineering system, not a claim of production readiness. The limitations below define the boundary between measured implementation, remaining work in the condensed 52-day plan, and optional Future Work.
+This repository is a portfolio-scale RAG engineering system, not a claim of production readiness. The limitations below separate measured implementation from reproducibility/packaging work and optional Future Work.
 
 ## Evaluation evidence
 
@@ -17,14 +17,14 @@ This repository is a portfolio-scale RAG engineering system, not a claim of prod
 
 ## Routing and refusal
 
-- `rule_router@0.2.0` is deterministic and explainable but remains `draft`. It refused all 12 reviewed unsupported questions while falsely refusing 9 of 45 supported questions.
+- `rule_router@0.2.0` is deterministic and explainable but remains `draft`. The earlier calibration artifact refused all 12 reviewed unsupported questions while falsely refusing 9 of 45 supported questions. The broader final benchmark correctly refused 25/30 adversarial questions and falsely refused 7/50 supported retrieval questions.
 - Only two supported evaluation questions select FAST, so that route has insufficient evidence for a broad quality claim.
-- `/route` executes the probe and enforces NO_ANSWER refusal. `/query` still requires explicit pipeline selection and does not automatically dispatch FAST, STANDARD, or CAREFUL.
+- `/route` executes the probe and enforces NO_ANSWER refusal. `/query` still requires explicit pipeline selection and does not automatically dispatch FAST, STANDARD, or CAREFUL. The Day 49 Query Playground composes the two endpoints for dashboard requests, but this client-side orchestration does not protect direct `/query` callers or reuse the FAST probe.
 - Raw dense scores and score gaps are corpus/model/index-specific signals, not calibrated probabilities or general semantic-scope guarantees.
 
 ## Latency and cost
 
-- The cross-encoder has the strongest recorded top-five ranking quality but adds material latency; warmed reranker latency is approximately 4.27 seconds per query in the current artifact.
+- The cross-encoder has the strongest recorded top-five ranking quality but adds material latency; the final benchmark records 7.67 seconds p95 retrieval latency including cold starts, while an earlier warmed run averaged approximately 4.27 seconds in the reranker stage alone.
 - Recorded latency includes cold-start and cross-process effects in several historical reports. Results are suitable for disclosed comparisons, not service-level objectives.
 - Provider usage is preferred when available, but fallback token counts use a UTF-8-byte heuristic. Checked rates can change and exclude cache discounts, tools, service tiers, media, credits, taxes, and negotiated pricing.
 - Day 47 cost/query is a controlled token projection using the same reference-answer basis for every pipeline. It excludes judge calls, local embedding/sparse/reranking compute, infrastructure, caching, credits, and taxes; it is not an invoice or a production budget.
@@ -34,6 +34,7 @@ This repository is a portfolio-scale RAG engineering system, not a claim of prod
 - The local template generator returns a deterministic placeholder; OpenAI and Gemini clients require external credentials and network availability.
 - The API selects one generation provider per process and does not implement provider fallback, retry orchestration, or application-level model routing.
 - SQLite is appropriate for local query traces but does not provide distributed writes, retention automation, encryption, redaction, or full-text trace search.
+- The Engineering tab reads the configured host-visible SQLite file. When FastAPI runs in Docker's named trace volume and Streamlit runs on the host, container-only traces do not appear at the default host path; the frozen Day 47/48 benchmark and failure evidence is unaffected.
 - The existing feedback table and repository methods are tested schema work. No feedback HTTP API is required or claimed.
 - `GET /health` reports process status; it does not prove that Qdrant or an external generation provider is healthy.
 - The raw corpus, embeddings, and BM25 index are local generated artifacts rather than committed repository data. Clean-environment reproduction therefore depends on documented ingestion and index-building steps.
@@ -56,4 +57,4 @@ These extensions may be valuable for a deployed product, but empty configs, pack
 
 ## Remaining required work
 
-The revised plan still requires the compact engineering dashboard, clean-environment hardening, final documentation, and portfolio packaging.
+The final architecture and reviewer README are complete. The remaining planned work is clean-environment hardening followed by demo/portfolio packaging; neither is claimed complete here.

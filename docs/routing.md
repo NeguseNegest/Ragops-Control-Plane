@@ -302,6 +302,8 @@ make test-router-stabilization
 
 The JSON report contains every candidate, constraint check, source hash, route reason, transition, and per-question distribution row. The CSV contains exactly 57 rows. The concise result is [`../reports/week6_router_stabilization.md`](../reports/week6_router_stabilization.md). This makes the router deterministic, regression-tested, and explainable for Day 42; it does not turn a small offline result into production approval.
 
-## Remaining Work
+## Runtime Boundary and Next Policy Work
 
-Day 43 removes abandoned-scope placeholders and stale roadmap references; semantic caching is explicitly deferred. Later routing execution work must connect non-refusal decisions to final retrieval/generation, cap requested output depth, reuse FAST evidence, and persist routing provenance in traces. `/query` remains explicitly selected; `/route` enforces NO_ANSWER refusals but is not yet a general routed query endpoint.
+The Streamlit Query Playground now connects non-refusal decisions to final retrieval/generation by composing two public calls. It caps the requested output depth, submits the selected config explicitly, and displays route evidence alongside the resulting `/query` trace. This is client orchestration, not automatic backend dispatch: `/query` remains explicitly selected, `/route` enforces NO_ANSWER refusals but is not a general routed query endpoint, and FAST evidence is retrieved again rather than reused.
+
+A production-oriented follow-up should move that orchestration into the backend, reuse the FAST probe, persist routing provenance in the final trace, and prevent direct callers from bypassing refusal policy. Broader calibration should also set an explicit false-refusal budget before the router leaves `draft` status. Semantic caching remains deliberately deferred.
