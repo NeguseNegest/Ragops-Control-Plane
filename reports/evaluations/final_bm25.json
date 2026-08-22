@@ -1,0 +1,2698 @@
+{
+  "configuration": {
+    "evaluation": {
+      "dense_baseline_path": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_dense.json",
+      "k_values": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "labels_path": "/Users/hej/Ragops-Control-Plane/data/eval/final_retrieval_labels.jsonl",
+      "minimum_labels": 50
+    },
+    "input": {
+      "chunks_path": "/Users/hej/Ragops-Control-Plane/data/processed/chunks.jsonl"
+    },
+    "name": "final_bm25",
+    "output": {
+      "comparison_path": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_bm25_vs_dense.json",
+      "directory": "/Users/hej/Ragops-Control-Plane/reports/evaluations",
+      "report_path": "/Users/hej/Ragops-Control-Plane/reports/day47_bm25_vs_dense.md"
+    },
+    "retriever": {
+      "b": 0.75,
+      "epsilon": 0.25,
+      "index_path": "/Users/hej/Ragops-Control-Plane/data/processed/bm25_index.json.gz",
+      "k1": 1.5,
+      "tokenizer": "technical_v1",
+      "top_k": 10,
+      "type": "bm25"
+    },
+    "retriever_interface": "common_v1",
+    "status": "evaluated",
+    "version": "1.0.0"
+  },
+  "index": {
+    "document_count": 13476,
+    "parameters": {
+      "b": 0.75,
+      "epsilon": 0.25,
+      "k1": 1.5
+    },
+    "schema_version": 1,
+    "skipped_document_count": 5,
+    "source_record_count": 13481,
+    "source_sha256": "61d97c037bfedda6d4c6ce66127392bc490435d2f475945c845fd28dc450fe50",
+    "tokenizer": "technical_v1"
+  },
+  "latency_ms": {
+    "average": 69.18484612251632,
+    "maximum": 122.15796095551923,
+    "minimum": 40.96157697495073,
+    "total": 3459.242306125816
+  },
+  "metrics": {
+    "hit_rate_at_k": {
+      "1": 0.4,
+      "10": 0.84,
+      "3": 0.74,
+      "5": 0.82
+    },
+    "k_values": [
+      1,
+      3,
+      5,
+      10
+    ],
+    "mrr": 0.5770000000000001,
+    "ndcg_at_k": {
+      "1": 0.4,
+      "10": 0.6358617674318647,
+      "3": 0.5875817012229905,
+      "5": 0.6164132989292259
+    },
+    "question_count": 50,
+    "recall_at_k": {
+      "1": 0.4,
+      "10": 0.8266666666666667,
+      "3": 0.7066666666666667,
+      "5": 0.7766666666666667
+    }
+  },
+  "questions": [
+    {
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 63.216918031685054,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What does FastAPI read from the request body when you declare a Python type?",
+      "question_id": "sqa-22853a3ab950cd44",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "retrieved_chunk_ids": [
+        "c4cb1afc-6ac5-5604-afad-ec0787949717",
+        "13ef7f2b-1f00-5309-bd90-b6e3e44bfab2",
+        "5f40b17f-c30f-55a7-bee3-0e8cafd40476",
+        "e1fc917b-9df3-5c3f-9efe-3e64e59ea1f6",
+        "2c53b7cd-2251-5310-b53d-7f9e40015e8b",
+        "66668676-7d9d-5a33-8e89-f70c52c3732b",
+        "8adf0188-dba4-53da-a697-0a6b793833dd",
+        "05aecfc3-18c2-5e28-8b74-1c3da37b0747",
+        "92600bf2-1ae3-5e18-932b-8e59ce679331",
+        "599b482a-07e9-5fe2-9dff-bd6b2266815f"
+      ],
+      "retrieved_scores": [
+        31.514569346809957,
+        29.80257483015716,
+        28.162016194126867,
+        27.64127925563769,
+        27.18290916987057,
+        26.779995257685556,
+        26.76492672901012,
+        26.529585678712568,
+        26.456489098570586,
+        26.086315993865387
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 86.20630600489676,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.43067655807339306,
+        "3": 0.0,
+        "5": 0.43067655807339306
+      },
+      "question": "Which nested field key is used in the HTTP, Python, TypeScript, Rust, and Java examples to specify the sightseeing condition?",
+      "question_id": "sqa-8111f18ad4679ac4",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.25,
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "retrieved_chunk_ids": [
+        "411f6fed-1a9c-5665-b00d-7394b430c0ca",
+        "7fa20fa6-bb3b-5f2a-833b-662137689ec1",
+        "499dbeb0-8037-5f8f-ba32-c3ba8fbf5c94",
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255",
+        "19c1767f-1ff3-522b-8183-2c5b2a5523b2",
+        "4b6bb16f-7332-5928-9ee9-5a8540e9512c",
+        "795394f8-df4d-5328-8d88-78039822a7f1",
+        "7e9e7236-ca01-5866-8733-4673a8333d42",
+        "0335d15d-860c-5117-91cf-b896cb0c6776",
+        "22563e60-daa2-562e-adb3-6b4d142db01f"
+      ],
+      "retrieved_scores": [
+        37.997945275582566,
+        35.01939123503313,
+        34.88381236468254,
+        34.12201133763669,
+        34.10946726944961,
+        33.416576978070616,
+        33.164281765269976,
+        32.44983246540891,
+        30.708916654681257,
+        30.551330274637095
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 50.40605197427794,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What HTTP endpoint is shown for scrolling points in a collection?",
+      "question_id": "sqa-54a24f6e54a73e24",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "retrieved_chunk_ids": [
+        "8c9b1887-ef96-5c34-b8bd-7e6d0b12e98c",
+        "fb14cabd-52d6-5ae8-8716-c706c5ca2353",
+        "ddcdadfd-ad0e-5cbe-b42b-f58de32d8aac",
+        "c72bc2ac-0745-5119-96df-a5802d9fc7f2",
+        "5fb533a6-31f8-5176-8165-cedd1b31ec87",
+        "0fa6be00-57b0-55f3-819c-d938923e712d",
+        "a467348d-83c8-5f22-a5dc-b747b55852b5",
+        "dd53b56a-72c6-5f25-a750-7ced1e430245",
+        "08854892-758b-52d6-a1a2-15e5efc7f0cf",
+        "6a8bac32-1dac-5130-a4c1-c0cee2235b7f"
+      ],
+      "retrieved_scores": [
+        21.638661551324674,
+        16.81387451593703,
+        15.974215710159934,
+        14.884525181489717,
+        14.556530671949396,
+        14.512777256911711,
+        14.381001970822066,
+        14.113759220453401,
+        13.98555173106168,
+        13.355214947443569
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 40.96157697495073,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Name two advantages of using UploadFile over bytes.",
+      "question_id": "sqa-2312659ece1beeb0",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "3116313a-8dec-515e-aa1d-a35bd1565231",
+        "614533a6-0f83-5906-8314-6b4f6b0fb05e",
+        "185355c1-193b-5f69-aa76-5b40b18708ed",
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "4b8a61d0-9727-5b59-8752-8394e1b5fa19",
+        "d2f8f689-09c3-5851-8ab9-942b4a8fb4fc",
+        "c331df7d-496a-579f-8ab3-3341624a50b5",
+        "5e87f58c-b8ab-5217-9f53-b3bedea8d639",
+        "fed849b2-9c59-5da7-be70-e8e4df8c046f"
+      ],
+      "retrieved_scores": [
+        22.930340774727647,
+        19.774903115869314,
+        19.248356676283358,
+        18.012786293256465,
+        17.78558488642484,
+        17.67673485915885,
+        17.561236039891707,
+        16.948244634340206,
+        16.797915615309314,
+        16.74316767202698
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 72.29832804296166,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What happens to a file once its in-memory size limit is exceeded when using UploadFile?",
+      "question_id": "sqa-8f550fc0f0c97fdf",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "64a5efd5-f239-52f7-8f45-3499bb80353b",
+        "51942adb-7c2c-5053-a107-86b6fc80b278",
+        "512b3487-1ba0-56bc-92df-dfd20e7f6243",
+        "24d066c9-6a5e-5589-abce-75cd279a5c86",
+        "ecdb64c6-51d2-53e4-8f91-8b28ca5d4bc1",
+        "c88cc0ba-1dae-52f4-a8d8-71aaba58d713",
+        "b1985c60-7321-5f01-8ae0-560bb8b9b88d",
+        "5e37e922-7da9-51d3-b7e3-6c3cd58623c9"
+      ],
+      "retrieved_scores": [
+        30.096522370520237,
+        24.591265577483718,
+        22.992022496611654,
+        22.856398434616594,
+        22.856398434616594,
+        21.904280235326492,
+        21.48725675675993,
+        20.929877393058717,
+        20.816031218232844,
+        20.107888017172748
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 75.11314400471747,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What Python object does UploadFile expose that can be passed to libraries expecting a file-like object?",
+      "question_id": "sqa-220fbcfa80439038",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "retrieved_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac",
+        "6bdeef3c-0776-5f50-bfef-c3d1c305c610",
+        "5e37e922-7da9-51d3-b7e3-6c3cd58623c9",
+        "122cea44-99a6-5c21-8b59-8958588d48dd",
+        "5ffff84a-b6cd-54e6-bc0d-bb16f367324a",
+        "6b9e8ca1-895d-557b-9b02-1b2d77bd89f3",
+        "672d0175-8419-5772-8a57-6d1254534444",
+        "2bfa365a-ecf6-5a19-a949-6dc0231233aa",
+        "f3f918d9-bec7-5c61-91bb-6f04034f3905",
+        "365f3e7a-bbdf-5154-af90-79da8360bceb"
+      ],
+      "retrieved_scores": [
+        46.32024516164699,
+        38.87300947302153,
+        29.34199765760023,
+        27.940479760837107,
+        26.797320469629554,
+        25.785528640990698,
+        23.959133132623933,
+        23.86236351738684,
+        23.529186684830446,
+        23.418814187983322
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 61.91565498011187,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.5,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "question": "What file format does MLflow use for saving models from a variety of tools?",
+      "question_id": "sqa-7f4b9c901bcac8d2",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.3333333333333333,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "05701a59-154f-5880-8ad6-03c5b868a610",
+        "bfd25439-477b-51c7-a2a0-cc786bf90af2",
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "2d168fe0-00e0-56ef-af29-5bb39e14758d",
+        "139b3133-b022-5a7c-b0fd-30422e93ad55",
+        "e8fbb621-b6b5-514d-afa7-86dad192161d",
+        "c0710e1f-733f-5b35-b87f-343f9e47a652",
+        "5a1db8b2-0211-5399-8fcd-9b02e836def7",
+        "c3b8e76c-29ae-5520-9245-3b60f1a4b5d0",
+        "222f9491-6b96-5c3f-a8af-8e4a4627b21e"
+      ],
+      "retrieved_scores": [
+        26.322305615831244,
+        24.781175740128514,
+        22.842882451643987,
+        18.656532912539618,
+        18.645973872901486,
+        18.61371654318424,
+        18.450889474886466,
+        18.315956161939965,
+        18.162142954251387,
+        17.742952684180846
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 56.043343036435544,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.38685280723454163,
+        "3": 0.0,
+        "5": 0.38685280723454163
+      },
+      "question": "Which MLflow flavor can log scikit-learn models as artifacts for serving?",
+      "question_id": "sqa-806e7d79beff73b8",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.2,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "b99ec21b-03fa-5b59-b38f-a660312b281b",
+        "3cb6bae9-18d9-59e4-b690-032dc5c0ca09",
+        "83615bb6-8e08-5605-b82b-658468970ccd",
+        "0059cb42-7790-5a9a-a5e5-bc3f0d2acbf6",
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "2ede11b6-532f-5820-b06a-99fd394ff85c",
+        "8f5e0a92-9a25-5380-8e76-d9bcfb2c1462",
+        "340a7a12-017b-5c84-9e42-26cdfb3c730b",
+        "f6e11a6f-4727-55eb-ba10-ed617249513d",
+        "984379ef-f865-5118-b606-6b4c1b9f6c57"
+      ],
+      "retrieved_scores": [
+        35.807117586125344,
+        32.90754113515996,
+        32.11677891281485,
+        31.507624246294057,
+        31.189995396818986,
+        30.528768249715487,
+        29.093122406562234,
+        28.793536771453265,
+        28.323497784280697,
+        28.174688274170016
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 67.51959398388863,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.5,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "question": "What is the exact MLflow command to serve a model located at runs:/<RUN_ID>/model?",
+      "question_id": "sqa-43e609692540e39f",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.3333333333333333,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "218b080d-67c5-5a10-b251-e9367028cdc9",
+        "758e32db-c55b-5f14-bef6-a205b10c9b64",
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "f3a1d80a-53ab-587c-a11f-528171608a27",
+        "3e359e76-43f1-5f9d-bf88-29f5d9079fba",
+        "4816bc2e-ac37-5cc4-ad2b-897b09bdd7fa",
+        "e0fbbec5-ed91-50f2-8b04-4882521629e2",
+        "c1254843-43f4-5c3a-ace7-95f72f60d741",
+        "b160cf40-1baf-5c2a-bb66-25987670d139",
+        "57818c0c-a7ae-5561-99a0-cc62c8d0d3b1"
+      ],
+      "retrieved_scores": [
+        33.691550470426094,
+        32.27270956891658,
+        32.228219942067454,
+        31.349553421445588,
+        31.335703129496444,
+        29.95369930106734,
+        29.25399898116879,
+        28.551376275188613,
+        28.546821214783396,
+        27.582824824039513
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 69.98769601341337,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What does an MLmodel file declare about each model to enable serving it as a Python function?",
+      "question_id": "sqa-fe6afefa50c92384",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "retrieved_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37",
+        "ce08fa6e-2a0d-5941-a768-721f1d318900",
+        "340a7a12-017b-5c84-9e42-26cdfb3c730b",
+        "2bfa365a-ecf6-5a19-a949-6dc0231233aa",
+        "78e179b9-0e01-59fb-9c1c-d3427375a526",
+        "dbe09aa4-6925-52d2-a65f-abac53855a8a",
+        "9b8cce66-ff93-53cf-8de8-1d18f9c90e7f",
+        "a7e2b51d-48b7-5ec2-b5ec-f4e9db333053",
+        "a3fd47c7-496e-5e10-aa7a-26e2dc5bebf4",
+        "5f01e541-3c52-5b87-a1b5-c3930a8b9602"
+      ],
+      "retrieved_scores": [
+        28.201572697414562,
+        24.698080028974303,
+        20.641089826986168,
+        20.590311832051082,
+        20.39329809660967,
+        20.325571233168947,
+        19.916445104750952,
+        19.84498948244354,
+        18.267777867621284,
+        18.229567206063926
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 60.90411701006815,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What HTTP method and path are used to observe the cluster state after synchronization?",
+      "question_id": "sqa-ebcd24ac3da514b9",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "6dc03388-cb65-5ba4-bc45-947108709ffc"
+      ],
+      "retrieved_chunk_ids": [
+        "6dc03388-cb65-5ba4-bc45-947108709ffc",
+        "b8c22f35-8b2f-5ca5-b8d6-7de53306d380",
+        "bef2b7a6-d93c-557c-8e6d-1201d490d06a",
+        "efb4fbec-351e-52c2-a1cd-d2ac5a4ae693",
+        "0a460019-81a0-54e5-89ff-a771a8284926",
+        "775ee192-94ae-592d-9ebf-9bc2be0ca6ac",
+        "7daf6bbb-72e4-59d4-8a5c-e6ce49a2ec9e",
+        "fa989a81-c214-5354-a099-a438bbc1ef60",
+        "2dc0eedd-3ddd-5d22-a565-4160d2a7f307",
+        "82ad9a1e-2018-5a9f-b30f-d4bb3191915e"
+      ],
+      "retrieved_scores": [
+        26.81878310780268,
+        22.294945246235766,
+        22.190039182311313,
+        22.15481278240607,
+        20.661977097112732,
+        19.84696742164701,
+        19.522765260523116,
+        19.438041972311275,
+        19.166893215794477,
+        18.833114755357553
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 52.874473039992154,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.5,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "question": "What warning is given about handling a plain password in this section?",
+      "question_id": "sqa-50e37593177ea153",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.3333333333333333,
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "retrieved_chunk_ids": [
+        "36e413de-f1dc-58fc-9615-be592f70206b",
+        "a0af44e5-dcce-5aa5-b360-753d6c3a3f7f",
+        "60e1a507-5db2-5497-b074-bfa41ae03129",
+        "bc300f0a-cb5d-5071-9712-49e0c956737a",
+        "c20af783-e8a4-572f-a88c-16f59674cd23",
+        "4714b175-e682-5899-ad5e-c66d34f54486",
+        "90a5c7da-34e6-5f22-af60-535d6fed6ccd",
+        "95c890e1-df81-5ba5-9445-0cea00a9423f",
+        "bb82dda8-11f6-5d96-a119-875fbb379eb1",
+        "5f40b17f-c30f-55a7-bee3-0e8cafd40476"
+      ],
+      "retrieved_scores": [
+        18.60395976209404,
+        16.71469831196935,
+        16.19377431218388,
+        15.479603558732325,
+        14.715893601402723,
+        14.147069662671147,
+        14.098387351227252,
+        14.031910539983375,
+        13.95551337848372,
+        12.909488373091726
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 55.12307700701058,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Which library should be installed to use EmailStr according to the document?",
+      "question_id": "sqa-dc321a1b57e8d142",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "retrieved_chunk_ids": [
+        "5b738697-fe92-5c16-aaeb-cef6fb745989",
+        "cfc39ba2-d28e-526e-80d9-6f184a69427f",
+        "2bc64e43-1774-5478-9b89-732a71d6f0d5",
+        "6a5ce0a0-9383-579d-9e6e-9a6784fa90f5",
+        "2d602118-de34-5677-89f5-417aaf67a52a",
+        "3ac098da-2a8d-5da7-be51-3ba7ee79a021",
+        "e02c9390-9a7f-5285-9219-b1147cd1881d",
+        "0f480c7d-3630-530e-bb5a-9d73a49d9b13",
+        "faea17ff-d13a-5512-a42f-2be1d19ce065",
+        "e2a2b7e2-ed97-56d6-b91b-9c4dcb2a7a8c"
+      ],
+      "retrieved_scores": [
+        17.51621247475245,
+        16.91736408062429,
+        16.596012769846116,
+        16.551372223214216,
+        16.17427391189233,
+        15.939403420753361,
+        15.82257278084584,
+        15.762361841105903,
+        15.353382078786728,
+        15.35050015151249
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/api_reference/source/rest-api.rst",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 60.45735697261989,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What happens to the request_preview size and where is the full request stored?",
+      "question_id": "sqa-1333a2c4d6953cf4",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "c584436b-b86e-5e08-9299-696550b4562e"
+      ],
+      "retrieved_chunk_ids": [
+        "c584436b-b86e-5e08-9299-696550b4562e",
+        "9491e057-f317-5544-9bb0-105cf1381cd9",
+        "68332e95-fd7c-50a8-81b6-bb49f01778cb",
+        "f6b40d34-05a3-5ce5-879b-b3fa437e7e5d",
+        "648600e6-79c5-5e94-8079-c8d2c57c0cd9",
+        "9298649d-294b-5074-9211-dbb94614d18e",
+        "1daf3465-36dd-5ee5-b386-b0e15ed2cef7",
+        "e2349418-0900-51e7-b846-c3ab1a5e0494",
+        "4714b175-e682-5899-ad5e-c66d34f54486",
+        "1c81d306-e41b-58c2-b73d-54bc1e3487c0"
+      ],
+      "retrieved_scores": [
+        29.251703545953962,
+        26.253460970082713,
+        25.324263169999377,
+        24.983469707657292,
+        23.07254221393095,
+        21.717195617227482,
+        21.6447676779937,
+        21.551866066987596,
+        21.135598834091745,
+        20.85177752548202
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 55.81820901716128,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which distance measures are given as examples for calculating similarity between embeddings?",
+      "question_id": "sqa-c550d812bb5272e0",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9"
+      ],
+      "retrieved_chunk_ids": [
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9",
+        "7c94056f-8d01-5a97-adf2-f17a860507a2",
+        "8dbf31a0-cab9-5667-8ca5-93a743589a7f",
+        "f8797a03-c620-5aa5-bde2-f6a6797d5023",
+        "b07e39b4-2309-55a9-9112-70bf2945e41f",
+        "fdd484af-d95a-5b94-ad87-8fab81190fcd",
+        "5d639a14-667f-54de-80fc-5aec049f4005",
+        "c355df8c-50e6-5be9-8b10-cd7d32c29de8",
+        "f134b1b5-e75c-54fb-8c48-c26af66034ae",
+        "6a8bac32-1dac-5130-a4c1-c0cee2235b7f"
+      ],
+      "retrieved_scores": [
+        27.380872702751976,
+        24.356667064099323,
+        23.55941773909931,
+        22.47258042556535,
+        20.806613720719806,
+        20.39494604451179,
+        20.11813205243485,
+        19.47174000334529,
+        18.83551739354836,
+        18.43183824674273
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model/dependencies/index.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 89.83661298407242,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which file contains the information required to restore the model environment using virtualenv, and what three things does it specify?",
+      "question_id": "sqa-c00b9f531d2e5586",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95"
+      ],
+      "retrieved_chunk_ids": [
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95",
+        "cefb93a1-ab11-59a9-9dde-9c3f343362c0",
+        "cc422a33-2737-50db-8c0e-0671e45403f8",
+        "447e035c-b674-533f-8465-23e472ef2d66",
+        "fa2168b9-d5b2-5bd3-8930-190db4cf819b",
+        "048fe627-c7ce-5902-892b-c81fad23331c",
+        "ce08fa6e-2a0d-5941-a768-721f1d318900",
+        "0059cb42-7790-5a9a-a5e5-bc3f0d2acbf6",
+        "8916fc5a-0d29-5bbb-b9af-d6b97e6e6136",
+        "277bc793-5d2e-5e2a-815d-4aab795dfe19"
+      ],
+      "retrieved_scores": [
+        40.88085628010327,
+        29.48304766578719,
+        28.98523687468629,
+        28.21266877125438,
+        26.737464115634815,
+        26.680338751081038,
+        26.424378578796468,
+        26.091579135388407,
+        25.40530090509714,
+        25.119532703038377
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 78.30644503701478,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Which standards can be used to establish a secure authentication setup in FastAPI according to the tutorial recap?",
+      "question_id": "sqa-ade53f89f8629636",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "retrieved_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "dd9f2a99-e8a0-5b8b-886d-2dbd383c4611",
+        "36a7a06f-13f6-5054-bdcd-66b869a38a4e",
+        "5aac4bc2-3a9e-5b94-bc13-11cd18898ba7",
+        "3b67deb6-c826-5cfc-a2e8-fc2e14d307bf",
+        "92600bf2-1ae3-5e18-932b-8e59ce679331",
+        "c769d35c-5c06-58be-9e3c-7565e45c6741",
+        "6d43ca41-9634-526a-8383-2397ce372bdc",
+        "97156242-4cd6-5d12-b641-6eb502132704",
+        "de7bbdf4-2c69-5a33-bf1a-0f72d44b4e55"
+      ],
+      "retrieved_scores": [
+        30.277426652959193,
+        24.719990918482406,
+        23.98695014424551,
+        22.787627239650377,
+        22.368104697478476,
+        21.03994181249216,
+        20.008590169985347,
+        19.852369780602494,
+        19.127880007201266,
+        18.59709189211149
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 68.7928959960118,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.3562071871080222,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Which specific third-party packages are mentioned as easily usable with FastAPI for security handling?",
+      "question_id": "sqa-52abd01126658d4e",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.16666666666666666,
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "retrieved_chunk_ids": [
+        "85a35f65-e0c8-5ab1-9987-a46b0ac3653c",
+        "e586036e-7837-5424-ba5e-50072471a4d9",
+        "668234a1-01d1-5154-9f11-1688797cbf23",
+        "f89df01c-27a3-5d5f-9bbc-1bdc41697eb3",
+        "abef568e-c5f1-5749-a53d-3bb81c724b29",
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "83d47957-4e2f-539c-8bbd-21a071308122",
+        "f31bb982-ff0c-555b-a80e-4bfbb78c6957",
+        "cad126de-9337-5851-aae7-e4b31deee316",
+        "0389146e-5896-5aa1-9bbb-87a5516f79dc"
+      ],
+      "retrieved_scores": [
+        38.58753139501445,
+        34.890921374224504,
+        28.516805654251662,
+        28.224920223295157,
+        26.334834150529204,
+        25.55123270184068,
+        24.785954020520442,
+        22.50776196368546,
+        22.395284108517604,
+        21.970306682207564
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 122.15796095551923,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What mechanism is used to implement a fine-grained permission system in FastAPI?",
+      "question_id": "sqa-9bbefdf430f9c31f",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "retrieved_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86",
+        "0fad9d69-6727-5168-8c26-0874c352fa3f",
+        "85e1be68-3eea-5105-ba28-77985fc7193f",
+        "8ac0416c-6ab9-5f15-b142-8c0f8bcaa664",
+        "b524dc77-bacc-506d-bd44-64ecc1422fb2",
+        "a8ae22a1-6d1b-55ca-a2f8-412af948103e",
+        "6b33672f-5768-550d-a2f3-2f17dfbb12b8",
+        "3446dcb8-d89e-5eb5-babb-2100b81633a1",
+        "48aa416b-4c66-5a2f-a2a8-d89a257de2d7",
+        "0c0f5e1b-df40-5bb3-964c-3d48dbadbd58"
+      ],
+      "retrieved_scores": [
+        30.364320037063944,
+        30.31278532359758,
+        28.3888457674826,
+        26.27302703409548,
+        24.60291342096665,
+        21.50905987992788,
+        20.955753135883718,
+        20.054331643957386,
+        19.28589337941319,
+        17.70895360317206
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 71.46504503907636,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.5,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "question": "How does MLflow determine the input and output schema when logging a PythonModel that includes type hints?",
+      "question_id": "sqa-5c5e1373d68176f8",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.3333333333333333,
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "retrieved_chunk_ids": [
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "70bbe55a-8991-5310-9c38-65e359003b33",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "dc529618-f85d-527a-a466-a5b8bd14bf9d",
+        "3e359e76-43f1-5f9d-bf88-29f5d9079fba",
+        "68a0fec6-a385-51d6-92c4-12263e163b49",
+        "c8cf8814-d883-5faa-af92-223a57b7cfa0"
+      ],
+      "retrieved_scores": [
+        41.13075105606025,
+        41.05297851814213,
+        40.86855895583548,
+        37.00766944809372,
+        33.577194252062995,
+        33.48693909399656,
+        32.81079595247198,
+        32.58077974906389,
+        31.706601235154057,
+        30.765376796583677
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 70.2147469855845,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What occurs if an explicit signature parameter is provided when logging a PythonModel with type hints?",
+      "question_id": "sqa-4d1f9fc474b0154c",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "retrieved_chunk_ids": [
+        "14d4ab16-1a76-5eeb-8b5c-476d187b0b6e",
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "70bbe55a-8991-5310-9c38-65e359003b33",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "8608c0b7-a5de-58df-bee0-9dc3406bd8cf",
+        "1927aea8-b856-5224-b26f-a6e4e7eb1b8f",
+        "2052b6c0-03db-5627-a2bc-7c8ff3abe47a"
+      ],
+      "retrieved_scores": [
+        38.247988203894145,
+        35.7718760105428,
+        33.987843090578274,
+        32.169035187597146,
+        28.053361516345156,
+        27.57503088732681,
+        27.427298880433952,
+        25.58790571001901,
+        24.488764784822077,
+        24.291294426119695
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 75.0728280399926,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "Where must pydantic model type hints be defined to use pydantic objects as inputs for an MLflow PythonModel?",
+      "question_id": "sqa-ceaead1685abb224",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "retrieved_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef",
+        "5cd12d1e-4a6f-5027-9e10-381aafbf553c",
+        "19272148-a92a-5307-bac2-286f6e079393",
+        "645f6db6-3f2e-53bd-bf6a-0ec0a74e4363",
+        "096edd22-507c-52c1-96c2-016f31daddf3",
+        "055a9d79-9114-5102-a6e5-b19ced1866f2",
+        "22c7a6c4-153c-5e29-b5a9-fb0814d85dba",
+        "c8cf8814-d883-5faa-af92-223a57b7cfa0",
+        "3e359e76-43f1-5f9d-bf88-29f5d9079fba",
+        "0d547996-8cfc-55c0-a5f1-cdb5c5b959b2"
+      ],
+      "retrieved_scores": [
+        44.51201974529309,
+        37.04161645469201,
+        35.15356081137451,
+        34.622953447076995,
+        32.63639703028824,
+        31.830510475499807,
+        31.08999068883793,
+        31.033838787960043,
+        30.613552607590737,
+        29.553270207396938
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 63.55434900615364,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What initial methods can be used to retrieve a subset of documents before applying a reranker?",
+      "question_id": "sqa-673de786b69493ab",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "retrieved_chunk_ids": [
+        "3e0f8687-4bf1-5ad3-ad63-e5492e034cd9",
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "8f73f8f2-2e94-500a-bc1a-eb0b2eef61be",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "97e5d9a3-70bc-5d4c-b60d-09f83e01f6b4",
+        "7d51e744-dbf6-52a2-a3fa-b2cfc50ea5b1",
+        "3fc01525-90f5-558f-8fae-ab1324cf8de9",
+        "7abd4f4c-4c26-511f-aa04-28c3285b8813",
+        "92c1b0ad-4ab4-5c1a-a748-932271d35a75",
+        "32f96027-5a31-5c3c-b402-a3012523f98c"
+      ],
+      "retrieved_scores": [
+        26.648390462292234,
+        24.073292934965586,
+        21.910752782004774,
+        21.417067180391808,
+        21.20108213321016,
+        20.606506424540086,
+        20.445153740530884,
+        19.553974853182005,
+        18.776275703506293,
+        18.710762222438497
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 52.821596967987716,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What primary trade-off do rerankers make when evaluating document relevance?",
+      "question_id": "sqa-7d97ec3c52aa5853",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "retrieved_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "b990f7d2-3a5e-5ff2-8646-a85d489103d8",
+        "15673683-80fd-5359-a305-48eb90b58215",
+        "1afd75d3-e880-5431-b272-b198f3e85016",
+        "5e8ad48b-a476-5ec2-a642-9ce995272c1f",
+        "4c1debda-2376-5d8e-8012-7dd26bcd90dd",
+        "62659c17-50bc-52f5-9a7f-59e150f73436",
+        "032924e7-ca64-50b5-829f-d05dc418bc38",
+        "92c1b0ad-4ab4-5c1a-a748-932271d35a75",
+        "bab9e7ea-88e9-5fbe-9121-80e4ee56fc0a"
+      ],
+      "retrieved_scores": [
+        28.640341869279958,
+        25.426694519039458,
+        24.210807312616655,
+        24.048886795698415,
+        21.843746392778776,
+        16.30560765421557,
+        15.965991732535208,
+        15.404117394728752,
+        15.374071023764536,
+        14.939794215718067
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 52.87535802926868,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What is the primary function of a reranker in document search?",
+      "question_id": "sqa-580f65fefad3cf3a",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "retrieved_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca",
+        "680f7f7a-1447-555c-8099-b15329ad1fe1",
+        "84f3b941-f6eb-5fb4-bdb6-0d216185916a",
+        "81e35986-281c-5627-8ef4-921116afdeb6",
+        "6c9db370-b94f-5840-a08b-7a40b13ceb8f",
+        "653654ae-9a76-5150-be82-75522390f75d",
+        "72552496-7453-5f26-9b0f-988ed5366f11",
+        "92c1b0ad-4ab4-5c1a-a748-932271d35a75",
+        "3ac098da-2a8d-5da7-be51-3ba7ee79a021",
+        "4edf40ec-cec9-5b82-ac73-9e2eaff88478"
+      ],
+      "retrieved_scores": [
+        23.135308837281002,
+        21.147326500524702,
+        20.139523751426914,
+        19.826071137179845,
+        19.546185644628558,
+        18.611497308501427,
+        18.45193890184847,
+        18.37624542055177,
+        18.27216214733376,
+        18.131278254491047
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 59.195343987084925,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "Which methods can be used to serve static frontend applications in FastAPI?",
+      "question_id": "sqa-bd0d27f9ade799b8",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+      ],
+      "retrieved_chunk_ids": [
+        "5cbf76e0-dd89-52e6-8283-de8aa692fe4f",
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf",
+        "72889e38-2815-500f-9b8c-2493ece89f47",
+        "f73fe22c-65c5-5717-8522-f1d569be1f79",
+        "8b67d17a-3a35-5d51-872c-1ac1e35410ce",
+        "04de8728-b061-5bf0-b649-663001c5e97d",
+        "601a1e58-27cf-5ccb-9126-342f71d7b6dd",
+        "5c7a028e-0bc3-55ac-bd3c-1d41cf083c9e",
+        "90d2e6e3-a49d-5922-b530-4dad188f7754",
+        "a1c6e173-f2d3-592c-ba48-dffe26c31534"
+      ],
+      "retrieved_scores": [
+        28.397119937616704,
+        27.953948997916385,
+        26.53590728566425,
+        22.228859400837226,
+        21.907267165086623,
+        21.86433006388514,
+        19.879083622107448,
+        19.30740739992421,
+        18.193664032835414,
+        17.775727837600982
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 63.04049299797043,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "In what order does FastAPI evaluate incoming requests when serving static frontend files alongside API routes?",
+      "question_id": "sqa-4cb482f1f218af58",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+      ],
+      "retrieved_chunk_ids": [
+        "90d2e6e3-a49d-5922-b530-4dad188f7754",
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf",
+        "72889e38-2815-500f-9b8c-2493ece89f47",
+        "5c7a028e-0bc3-55ac-bd3c-1d41cf083c9e",
+        "53b3a37e-3fea-5794-9183-4dfa62ff7bc9",
+        "5cbf76e0-dd89-52e6-8283-de8aa692fe4f",
+        "c4807d08-b366-53e2-9d76-766f052be2da",
+        "601a1e58-27cf-5ccb-9126-342f71d7b6dd",
+        "ad4cf575-a41b-520f-90fc-4b34cb556ab5",
+        "895b1163-2112-5c15-9ab0-c4a32f5e60ef"
+      ],
+      "retrieved_scores": [
+        29.248025622122235,
+        27.14349645558293,
+        26.811692015972426,
+        24.109464280576855,
+        23.351050249664155,
+        20.626481533097774,
+        20.363159472349523,
+        20.24033368184055,
+        19.67993809597696,
+        19.194297737606554
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 77.93066499289125,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "In which section of the MLflow Run details page can a user find and select the model folder to register?",
+      "question_id": "sqa-0962a7db4ec6c78a",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "retrieved_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "dab53288-de1a-569e-9508-25434c829ffb",
+        "823e8e92-95ff-517f-848b-d2cbc87e5a90",
+        "f4993241-7607-5c78-95a5-9709ae929105",
+        "096edc62-cb27-5d99-ab2a-e50459b89e54",
+        "009da956-db4b-5669-bbe7-6e1e30584215",
+        "27656be0-0741-51fc-bc93-37e317d32b32",
+        "2b3e2b94-bf2f-58cc-a0ad-3dac31e764b0",
+        "6cb9eb27-856e-5d96-96e9-5a3eaeef9ae2",
+        "d2916104-e3ae-5a65-a9cd-3de5f15359ce"
+      ],
+      "retrieved_scores": [
+        50.785115561292244,
+        49.40968888002769,
+        42.70857561918538,
+        38.11663109828683,
+        33.24046255127154,
+        32.7328999343377,
+        31.498112570986336,
+        28.814376302650654,
+        27.95770469770881,
+        27.59621860587306
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 58.960073976777494,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What options are available in the Model dropdown menu on the model registration form?",
+      "question_id": "sqa-a8ee8614cd6dc87b",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "retrieved_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "dab53288-de1a-569e-9508-25434c829ffb",
+        "d9232055-4ada-50de-8857-dea956f43735",
+        "d428e2ee-b5f5-5f21-961a-f82afb0dd0e3",
+        "682a68dd-3109-5de9-8f3d-ee0adc33d28e",
+        "4c90d258-f258-566e-a832-176945929e5f",
+        "1c704b87-58d2-5fa4-beeb-029295381af8",
+        "fec167f7-5eaf-57ce-9501-1a33a71461eb",
+        "860610c6-b16f-5ee4-8fcf-7236e743458d",
+        "57294843-61ec-53bb-b8c8-490192562687"
+      ],
+      "retrieved_scores": [
+        33.72978941931751,
+        33.480310284309255,
+        32.19216753462207,
+        22.476657083283754,
+        22.46755975519286,
+        22.252969134630117,
+        22.246443148548373,
+        21.809554320158348,
+        21.728496300466023,
+        21.608712913462128
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 64.6146810031496,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What occurs when a user chooses the \"Create New Model\" option in the Model dropdown menu?",
+      "question_id": "sqa-7622236114712036",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "retrieved_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4",
+        "dab53288-de1a-569e-9508-25434c829ffb",
+        "d9232055-4ada-50de-8857-dea956f43735",
+        "1af08ff2-dafe-5dc9-ad78-9f33ae7ee24d",
+        "c03fc9f6-aa69-5356-9f5a-38be577500a3",
+        "5c5cc2e2-8c83-5097-9eae-8fda9aec0e3d",
+        "c992be44-a214-510c-b781-f6e2bcd146e4",
+        "ad9afb54-0ab8-522a-8f0e-40f40de3798f",
+        "e31a31c4-f4b9-5726-9023-46438bad3a4f",
+        "4c90d258-f258-566e-a832-176945929e5f"
+      ],
+      "retrieved_scores": [
+        33.18494387772528,
+        32.03437489709618,
+        28.195691766597037,
+        27.36650814942169,
+        25.804413727007237,
+        24.837312186853357,
+        24.510320627688753,
+        23.634605963142796,
+        23.455460899817677,
+        23.267950844829443
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 72.18274002661929,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "Which parameter in a Qdrant query allows retrieving a vector using a point ID located in a different collection?",
+      "question_id": "sqa-6055940f3e30c975",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "d37849c9-2d35-550a-88af-f84edd4d3191"
+      ],
+      "retrieved_chunk_ids": [
+        "0d11a14b-2d86-5f26-873e-c9b7afa61c15",
+        "d37849c9-2d35-550a-88af-f84edd4d3191",
+        "012e155c-7b2a-54c4-8839-978b0a739ca4",
+        "9a0bd9e7-4c4c-5c01-8b59-b7e3ba837c34",
+        "a467348d-83c8-5f22-a5dc-b747b55852b5",
+        "817ac724-cd52-5e2e-a447-d34e36f62ac5",
+        "0a2a7a0b-32f9-53e5-96a6-c6c8b50e9c2b",
+        "f6cffe37-3452-5c7b-a724-8ed781e3c646",
+        "6c206963-631b-5f66-93ab-13d329b5d33e",
+        "11bb8871-4448-505e-b8b0-d30f12bf7625"
+      ],
+      "retrieved_scores": [
+        31.92123427920735,
+        31.72959222105347,
+        28.23864699389698,
+        28.07803407093562,
+        27.768870766150023,
+        26.184978700044763,
+        24.77995629035412,
+        24.777711360342717,
+        24.769016318532415,
+        24.207058321231997
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 66.13444501999766,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What two primary properties are required inside the lookup_from configuration when referencing a point in another collection?",
+      "question_id": "sqa-d20c9187fa7725e6",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "d37849c9-2d35-550a-88af-f84edd4d3191"
+      ],
+      "retrieved_chunk_ids": [
+        "8dbf31a0-cab9-5667-8ca5-93a743589a7f",
+        "d37849c9-2d35-550a-88af-f84edd4d3191",
+        "7036baf4-9ce4-5cbb-bc29-a86da3352064",
+        "f5e032f2-4362-5793-a19e-2eee4c5b523c",
+        "ce5f9f9b-8634-51c3-8e27-7b0967a3eea4",
+        "a467348d-83c8-5f22-a5dc-b747b55852b5",
+        "b5c34eb4-86b4-598d-8307-3b0efd79f506",
+        "a7be3e5b-7501-5265-a1e3-74359847e92c",
+        "ae57d3f1-d73f-58a9-98ff-b34306917136",
+        "d19b9831-2975-516e-90a0-26c148162906"
+      ],
+      "retrieved_scores": [
+        23.377365677899732,
+        23.059672774517416,
+        22.40269180865701,
+        22.13218918300369,
+        21.217489321825333,
+        20.258024879054812,
+        20.126204862866683,
+        19.613250774267836,
+        19.294824962272806,
+        18.85566117332649
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/cookie-param-models.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 50.831325992476195,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.38685280723454163,
+        "3": 0.0,
+        "5": 0.38685280723454163
+      },
+      "question": "How can extra cookies be forbidden in a FastAPI cookie parameter model?",
+      "question_id": "sqa-8397e93659723d06",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.2,
+      "relevant_chunk_ids": [
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+      ],
+      "retrieved_chunk_ids": [
+        "8e795ac3-b7d7-5fee-bc21-fa265ac04b54",
+        "0bc9232d-3b2c-5be7-9687-2e9cee497d79",
+        "59ab7197-a8dc-5dec-909d-fedc11a60340",
+        "2d2f4a0b-8116-5bba-a0e9-e07064f3460b",
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a",
+        "58ac3b23-a727-5051-9229-399cb201be40",
+        "fcabdafe-e84d-580b-a55e-f98f23c4802d",
+        "5eb7f761-c4a4-5652-925f-c29367c6c525",
+        "b52089a1-3179-5adf-819a-5725a70ca030",
+        "43ed82bd-bed8-5c1e-a482-fd01a73d85c5"
+      ],
+      "retrieved_scores": [
+        28.9251198247746,
+        28.497660870075855,
+        27.93995241710478,
+        27.860431536708646,
+        27.443179538368494,
+        26.362269431170596,
+        25.685221609870354,
+        24.15971193047206,
+        23.40494779608227,
+        22.952698294282015
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/self-hosting/security/role-based-access-control.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 76.23144699027762,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What is the main difference between the legacy permission model and the role-based permission model in MLflow?",
+      "question_id": "sqa-a6c95a648b8cccd8",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add"
+      ],
+      "retrieved_chunk_ids": [
+        "4e6171cf-add8-5ffe-b5e4-e8a3925b3355",
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add",
+        "1e527474-b18f-5f11-904f-78728fbdb284",
+        "d62b3cd0-6841-5a2f-8c12-fbaa03980e0e",
+        "0edb8ec5-8ef6-5819-9958-2b29edb8dfed",
+        "f6128078-a6cc-5126-978f-9f8f669128cb",
+        "1c9b409c-1f13-598d-833b-c158c753656b",
+        "ef95ae22-423b-52be-9f15-344d6e063735",
+        "a42b4b0a-63e0-5a29-b961-dc5bdfd24d7f",
+        "58b504c4-e8b9-564c-8468-6de87f3bfa61"
+      ],
+      "retrieved_scores": [
+        54.47141358709928,
+        50.24610712996226,
+        47.13178551897192,
+        40.23668585184303,
+        37.64744791223337,
+        36.89925672867545,
+        35.31239529028538,
+        35.256626658373015,
+        35.112210525143844,
+        34.74247114127674
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/how-to/separate-openapi-schemas.md",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 79.64452501619235,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "How does OpenAPI represent an output response field that is always present even if its value is null?",
+      "question_id": "sqa-9663384ed9b2a6ce",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666"
+      ],
+      "retrieved_chunk_ids": [
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666",
+        "580289f2-16e0-55de-985e-e56614722357",
+        "a6920dd4-b847-59ea-b154-df4e9274b18a",
+        "6dd85a2e-06d1-5948-9bc4-4ed5e9afab0f",
+        "70bcbcfa-4b4c-5a57-a844-3c78064e3806",
+        "04cd1b39-c3b8-5a71-a0c6-a64771950e23",
+        "5e61b136-c338-5b55-a946-336793d9b2ce",
+        "b400cf82-b7a6-5c85-8d62-8de83ef517d5",
+        "5a95bf80-c5b9-5f08-a80b-21528074f5e9",
+        "1431d621-1e6f-5d35-8195-2ae53cb8a3a3"
+      ],
+      "retrieved_scores": [
+        39.88861758410887,
+        26.111724176908115,
+        22.360230534473907,
+        21.803615141036538,
+        21.098959398582817,
+        20.863186302307298,
+        20.279215534261056,
+        20.262712936730196,
+        19.75262816514359,
+        19.749582147902043
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/first-steps.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 106.10118898330256,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "After saving a minimal FastAPI application as main.py, which command starts the development server, and where can I open the interactive API documentation?",
+      "question_id": "gqa-001",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "4f33db24-e09d-5dd8-a598-9ecbeaceaa67"
+      ],
+      "retrieved_chunk_ids": [
+        "cc345476-03d1-5765-b010-8d3229eb5808",
+        "4589425c-bf82-50be-9b71-6513760016f5",
+        "4ef54066-268b-5f69-ba87-5ab885ac5757",
+        "a3b21281-7330-56d8-81dd-91f2bf39e9ee",
+        "85b999d6-c5aa-5fa6-b5d4-7348e42dc94a",
+        "15bf2542-0a41-51af-bb12-5825528f3d8b",
+        "6fc967d1-d540-5f46-84d9-a78e1dd722ae",
+        "08f8c8f7-3488-56ad-9db7-216b54e397eb",
+        "2fa31809-0d01-5c6e-8769-ffd5a17bc24f",
+        "12af9b60-43f4-53ca-9b01-6a4c2eed88bf"
+      ],
+      "retrieved_scores": [
+        42.918949633768,
+        41.04416885708744,
+        39.35298901597436,
+        39.35298901597436,
+        36.56467808499285,
+        33.28511024570565,
+        32.408224870010706,
+        32.198279014730694,
+        32.07988917206804,
+        32.07988917206804
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 70.87227300507948,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "How do I declare a JSON request body in FastAPI, and what does FastAPI do with it?",
+      "question_id": "gqa-004",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "4f9a351b-6185-5c66-8210-39e7f4f3bb6f",
+        "d8f18495-b006-5720-b6e6-3ea7ac1827ef",
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "retrieved_chunk_ids": [
+        "05aecfc3-18c2-5e28-8b74-1c3da37b0747",
+        "d4684ab1-2369-5f28-85aa-926a4f7c970c",
+        "2c53b7cd-2251-5310-b53d-7f9e40015e8b",
+        "e53fa547-44b7-5bf4-931b-28d80fb82729",
+        "945871a5-3449-5533-a20c-e5720405d9e9",
+        "c4cb1afc-6ac5-5604-afad-ec0787949717",
+        "c6e2c6ae-8aa2-5c5a-b18b-2bac20cc9e7c",
+        "64d41a0f-f7c5-53ba-94f5-54f322aa1407",
+        "a0d87638-e00b-5025-bc2d-586dfa13cadd",
+        "0469cb86-8744-570e-9267-245abf04b4b4"
+      ],
+      "retrieved_scores": [
+        31.505135400410875,
+        27.86816421619454,
+        27.35230822582844,
+        27.20297670723351,
+        26.612658565224457,
+        26.036448646943587,
+        25.374248580873754,
+        25.313700846475864,
+        24.881631422144952,
+        24.65119133508838
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/dependencies/index.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 1.0
+      },
+      "latency_ms": 63.12284100567922,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.430624116386567,
+        "3": 0.0,
+        "5": 0.23719771276929622
+      },
+      "question": "How should a callable dependency be passed to FastAPI's Depends, and who invokes it?",
+      "question_id": "gqa-005",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.0,
+        "5": 0.5
+      },
+      "reciprocal_rank": 0.2,
+      "relevant_chunk_ids": [
+        "d4684ab1-2369-5f28-85aa-926a4f7c970c",
+        "c4810e0a-65d1-544a-b36e-e533034be460"
+      ],
+      "retrieved_chunk_ids": [
+        "2bfa365a-ecf6-5a19-a949-6dc0231233aa",
+        "cae7bc16-cee9-5807-a046-7782ece77c7b",
+        "4114bb7d-be6a-505a-994f-45bd45ef597d",
+        "2555d494-5d63-52f1-a89a-c0b4ff730120",
+        "d4684ab1-2369-5f28-85aa-926a4f7c970c",
+        "26a642ee-af1e-58e0-85c4-e380b5950a3e",
+        "5db1516a-03cf-5b0e-a6c7-3720744bdb60",
+        "c4810e0a-65d1-544a-b36e-e533034be460",
+        "f401b43f-76dd-56f4-b1b1-3dea1fc4ba57",
+        "d066ec58-3733-538f-b56b-3b7ea88550f4"
+      ],
+      "retrieved_scores": [
+        27.82373982111116,
+        24.107913966651132,
+        21.782583005996273,
+        21.735109670876717,
+        20.4398211657281,
+        19.990276933481418,
+        19.7283591884397,
+        19.322722489139966,
+        19.232902822603265,
+        19.023716085933895
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/background-tasks.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 71.89894403563812,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "When should I use FastAPI BackgroundTasks, and when should I consider a tool such as Celery instead?",
+      "question_id": "gqa-007",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "83d9bb57-5787-5922-87b7-bae750a3fb47"
+      ],
+      "retrieved_chunk_ids": [
+        "325605e9-1171-5f1e-b80f-7a9d9def4a54",
+        "bd1e9b9f-5155-57c9-ae4f-bb0708af6ae4",
+        "60f2cfb6-1a81-5dba-abc8-2fab2f180de2",
+        "811ac72b-e0cf-5360-9ddf-602f784d7bde",
+        "9f23b285-94fb-5bdf-a4c4-2953170ee59d",
+        "0469cb86-8744-570e-9267-245abf04b4b4",
+        "8a032986-1b1c-5299-bae4-6df2599f54ed",
+        "863aa191-cf0b-5770-a62f-942cf4f90110",
+        "45c114a1-6d23-5b57-aba8-67332784beb6",
+        "6addf38c-7f5d-56e5-b177-90930cda4382"
+      ],
+      "retrieved_scores": [
+        25.29109940226214,
+        23.02142106900908,
+        22.64416903044098,
+        22.580035721261563,
+        22.12964299445665,
+        22.05820364468684,
+        21.97921576909345,
+        21.969393708348633,
+        21.260407193619535,
+        21.050429523002343
+      ]
+    },
+    {
+      "expected_source": "fastapi/docs/tutorial/cors.md",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 68.23649996658787,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.5912352048230277,
+        "3": 0.38685280723454163,
+        "5": 0.38685280723454163
+      },
+      "question": "Can I use a wildcard CORS origin in FastAPI when requests include cookies or Authorization headers?",
+      "question_id": "gqa-009",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "b1f5d2b0-7b6f-5c8b-b25a-a876d1ebbebc",
+        "1f008dac-77da-5775-a672-e0f1622677eb"
+      ],
+      "retrieved_chunk_ids": [
+        "66b112ac-5335-587e-a9c9-0267505f096f",
+        "1f008dac-77da-5775-a672-e0f1622677eb",
+        "7e589263-e909-5774-b305-5d79a1313d5c",
+        "13fa2407-519f-53a7-ba74-1b992f4599d8",
+        "d783a249-a3e1-5294-ab35-8af4c81400ab",
+        "2bbe6772-3c33-5d82-b41a-4e337deb91dd",
+        "b1f5d2b0-7b6f-5c8b-b25a-a876d1ebbebc",
+        "2b14475a-b45d-5690-a3d3-001efec57616",
+        "d5a5f3a8-b6c4-515a-b7e8-314ab8b0b597",
+        "2a188a7d-f37e-5acd-8582-061f86a87045"
+      ],
+      "retrieved_scores": [
+        48.62259008845501,
+        36.015809744335364,
+        35.24884736004858,
+        35.12504017457372,
+        28.702501047977623,
+        27.14935262069241,
+        26.824169307142057,
+        26.050780536895132,
+        25.41150760047229,
+        22.33899872236321
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/quickstart/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 95.5997999990359,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "Which MLflow calls does the tracking quickstart use to manually record hyperparameters, a scikit-learn model, an accuracy metric, and a descriptive tag?",
+      "question_id": "gqa-010",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "ea0f5abe-3107-544f-bc73-6571d519909a",
+        "aa5665cd-f430-5f1e-a49f-05d2953d9a95",
+        "161dd7b4-71e3-579c-a3ad-55e4717d2cdd",
+        "7c43bcf7-1f9b-548c-b5c6-30c714ed3005"
+      ],
+      "retrieved_chunk_ids": [
+        "13a70741-61ee-5de9-a399-81bb8a7b8be4",
+        "e0fbbec5-ed91-50f2-8b04-4882521629e2",
+        "38853941-8e33-5e53-9333-63a6b9b3940a",
+        "f7e1bb07-43e1-555e-8dce-cdcda034fed9",
+        "5a1db8b2-0211-5399-8fcd-9b02e836def7",
+        "606ee9c5-ca81-5b1e-ac23-051ba42ca203",
+        "0059cb42-7790-5a9a-a5e5-bc3f0d2acbf6",
+        "340a7a12-017b-5c84-9e42-26cdfb3c730b",
+        "bed19093-74b5-5a7e-98ef-aa106f282ecf",
+        "b8357677-44a6-59d6-96d0-6d1492790db0"
+      ],
+      "retrieved_scores": [
+        36.04598255311251,
+        35.94151052307363,
+        35.70057943724154,
+        32.84988747641812,
+        31.824221687409885,
+        30.900095168304627,
+        30.602585697458434,
+        30.468100065622583,
+        30.387608874516832,
+        29.21578143675107
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "latency_ms": 54.797329008579254,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "question": "What is the difference between MLflow's backend store and artifact store?",
+      "question_id": "gqa-011",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "relevant_chunk_ids": [
+        "5fac0b1d-2abd-55b8-a0d8-39df149c5c49",
+        "8793a7a9-7a3c-5156-96bc-0865d968fe11"
+      ],
+      "retrieved_chunk_ids": [
+        "90fa4213-edeb-5605-9ae9-b2d3ea45221c",
+        "5ba03100-c1e8-5f78-b8e1-1bd3cbd35755",
+        "cccb4b9c-1b46-566e-822a-470babc627c7",
+        "f3d1d9fc-304e-565b-8ddf-9e61856fe9f7",
+        "181f59d8-d6b8-5d1a-910d-86cb67874080",
+        "54dda765-f78d-5df9-9e3f-045307845385",
+        "f460beed-f66c-5dda-8bd4-f572ea2fb1be",
+        "5c04becc-7cbc-5eae-9d46-0722a7bc91f4",
+        "bf82d369-4ef9-51fa-ab4f-c703d33569a1",
+        "31f0f470-868d-567c-a5ad-b4bd3f227d4e"
+      ],
+      "retrieved_scores": [
+        32.612699355485496,
+        31.93853202085348,
+        30.6226053692219,
+        30.615686395043568,
+        29.91612539593893,
+        29.189533107571627,
+        28.91032009593937,
+        28.811929194460504,
+        28.791659362901804,
+        28.791659362901804
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/autolog/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 86.66521904524416,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6052602440527057,
+        "3": 0.38685280723454163,
+        "5": 0.38685280723454163
+      },
+      "question": "How can I enable MLflow autologging only for PyTorch, or disable it for scikit-learn while keeping generic autologging enabled?",
+      "question_id": "gqa-013",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "26ceff1b-d430-51c7-8e56-49dfdf9e593b",
+        "59eeabca-3375-5b9a-9180-71f0c38a8189"
+      ],
+      "retrieved_chunk_ids": [
+        "3cb6bae9-18d9-59e4-b690-032dc5c0ca09",
+        "59eeabca-3375-5b9a-9180-71f0c38a8189",
+        "ae59fae7-109b-52ae-ac81-3c65ac1b5dc9",
+        "3d7a60e0-d4c2-5240-bbe9-6af133a78434",
+        "6bc84a59-08fd-5ea6-ba5d-990d25fcbaab",
+        "26ceff1b-d430-51c7-8e56-49dfdf9e593b",
+        "faea17ff-d13a-5512-a42f-2be1d19ce065",
+        "2106633b-7286-57d0-a91b-4cb8fb071aac",
+        "0059cb42-7790-5a9a-a5e5-bc3f0d2acbf6",
+        "531294d3-fdbe-5f9d-b0c9-589979dcec63"
+      ],
+      "retrieved_scores": [
+        87.08307459683799,
+        53.730799229244504,
+        47.60745044855726,
+        47.60745044855726,
+        43.36434387228034,
+        37.83536277546287,
+        36.63019714994978,
+        34.49979053741446,
+        33.214958388946975,
+        32.51928037972436
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 71.14882598398253,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What is an MLflow model alias, and how can a champion alias change which model version production loads?",
+      "question_id": "gqa-014",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "b974d384-0c75-58cb-b297-7423ac691b99"
+      ],
+      "retrieved_chunk_ids": [
+        "faec7f14-4c46-5dfa-9184-f53a93cab9d9",
+        "b974d384-0c75-58cb-b297-7423ac691b99",
+        "ce411c4f-0749-5c29-b59f-dec0a23238f7",
+        "0a4e89cd-a753-50a6-b928-97735046234f",
+        "d5b1a274-1a90-5ee8-b01f-1a815e70a0c8",
+        "4947e007-4550-515e-971e-1747b0a4835a",
+        "7890d366-c073-51c7-b08f-c47fe4284d9e",
+        "53e313c6-7e8d-59ba-a266-c143a505d790",
+        "2cc9f17f-fada-5c89-8009-3b7217ad7259",
+        "8744f830-3fd0-563c-8d78-90f978c7c71d"
+      ],
+      "retrieved_scores": [
+        43.27111854711935,
+        42.945156031673676,
+        40.34476011738412,
+        40.236527688862374,
+        40.226544659985024,
+        39.71712318148391,
+        39.22543292093738,
+        38.903608017742954,
+        38.77959626656433,
+        38.442194833404294
+      ]
+    },
+    {
+      "expected_source": "mlflow/docs/docs/classic-ml/dataset/index.mdx",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 80.92701196437702,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.2960819109658652,
+        "3": 0.2960819109658652,
+        "5": 0.2960819109658652
+      },
+      "question": "How do I create and log a pandas training dataset with MLflow while retaining its source and training context?",
+      "question_id": "gqa-016",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 0.3333333333333333,
+        "3": 0.3333333333333333,
+        "5": 0.3333333333333333
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "a8b07afa-f99c-53df-a53d-b09ae49fff4f",
+        "110eb9fe-7e39-55ce-8680-6536a229ea93",
+        "ac5318b3-539c-5717-bcd1-451aaeca98f8"
+      ],
+      "retrieved_chunk_ids": [
+        "a00902e2-2388-5efe-a5f4-bf7e4a0c7818",
+        "110eb9fe-7e39-55ce-8680-6536a229ea93",
+        "ee66cf6a-bec2-5883-a35e-8e24bd37c598",
+        "8875c3e6-482b-51f8-a4cc-7fb195faade8",
+        "f0aaa046-3854-5d57-bf11-8b5c4e60f6cc",
+        "92d8e583-a502-5356-8abd-bb5e1d2a5ed7",
+        "8f39ce60-1f4c-58b7-ab9b-45dec10e842e",
+        "84821220-d6c9-51e4-b11d-f220fd8c6d90",
+        "e08d5200-c79b-5d12-8c90-53c592560c9a",
+        "5b4901c8-326d-5af5-9eb7-da139d53f78a"
+      ],
+      "retrieved_scores": [
+        30.74268723509752,
+        30.154399654269596,
+        29.63782184567573,
+        29.562536429670423,
+        28.20185809255254,
+        27.105307483653412,
+        25.583934460686674,
+        25.583934460686674,
+        25.05187699864626,
+        24.981894284277182
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 61.153126996941864,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "What dimensionality and distance-metric constraints apply to vectors in one Qdrant collection?",
+      "question_id": "gqa-018",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8"
+      ],
+      "retrieved_chunk_ids": [
+        "d19b9831-2975-516e-90a0-26c148162906",
+        "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8",
+        "f134b1b5-e75c-54fb-8c48-c26af66034ae",
+        "8dbf31a0-cab9-5667-8ca5-93a743589a7f",
+        "fb97779f-6e5a-5ecc-8a0a-5a1d4db3b671",
+        "0c3b2227-8baa-5c6c-af49-2722d629664e",
+        "dde94859-ee8d-5910-b703-8495d9787b27",
+        "c72bc2ac-0745-5119-96df-a5802d9fc7f2",
+        "400d6369-9247-5c76-8235-8b982d4821a2",
+        "e53ea1b2-329e-5de3-97f1-b6f519f18728"
+      ],
+      "retrieved_scores": [
+        30.026229370945014,
+        29.932326803602276,
+        29.400624403125036,
+        25.346115480343794,
+        24.492610180974907,
+        24.472584424867165,
+        23.64932869687195,
+        23.177940739453632,
+        22.8442261375163,
+        22.5281965177332
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 80.35562600707635,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "When a Qdrant filter is applied to an array-valued payload field, when does the filter succeed?",
+      "question_id": "gqa-021",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "5de07134-aa95-52e2-9348-7ddf755b49ec"
+      ],
+      "retrieved_chunk_ids": [
+        "5de07134-aa95-52e2-9348-7ddf755b49ec",
+        "411f6fed-1a9c-5665-b00d-7394b430c0ca",
+        "1b57931f-c38f-5d43-b2ec-16b3f631f95b",
+        "3dc57a44-03b9-55d1-ad3e-c51bfa05445f",
+        "aee1981f-2378-5a19-81d0-90fb0f0f0dd4",
+        "2e46f4fa-04b5-5f9a-8999-923108f2f744",
+        "c3a0e183-915b-5a03-a964-dd579746b5ba",
+        "22563e60-daa2-562e-adb3-6b4d142db01f",
+        "b41b0e68-c003-5294-a509-4b951bf70dcf",
+        "b4e771cf-d553-5eb1-870b-a6b22ba49f82"
+      ],
+      "retrieved_scores": [
+        36.237533767980125,
+        34.042384030445206,
+        30.77951621539127,
+        30.75291764088389,
+        30.569059033444884,
+        28.838825747870978,
+        28.58938311047201,
+        28.255641183733907,
+        28.151747900130193,
+        28.01996968568554
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 75.25510498089716,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "What does Qdrant's prefetch parameter do in a hybrid or multi-stage Query API request?",
+      "question_id": "gqa-023",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "005035b2-c646-567f-9606-38891a29a23c"
+      ],
+      "retrieved_chunk_ids": [
+        "005035b2-c646-567f-9606-38891a29a23c",
+        "59b5586c-fa4e-5188-9c73-2f09d28b3483",
+        "a2a1b209-5ecf-5097-b198-422944951735",
+        "b9a300ae-64f2-5836-b7da-89dfdeaa6779",
+        "a1f4d724-9aef-5eef-940a-c5de0fb3cfb7",
+        "b6f1f7c8-582b-5456-92ec-72a5a1a740db",
+        "971d71f0-6066-5a60-91c4-7c55bf873a5f",
+        "50fd1ab7-c552-53f1-be66-ffd1c7b2b921",
+        "5f8f26a4-f81a-55f3-ac55-f60b9e9f57aa",
+        "8a674d8a-1e6c-534e-a974-bf4978b50420"
+      ],
+      "retrieved_scores": [
+        47.0738732232879,
+        29.469925525735256,
+        25.724230305883356,
+        25.39123508455311,
+        25.112033495282002,
+        24.87256463385925,
+        23.198343236067046,
+        22.69751519667728,
+        20.90539758172033,
+        20.730506114888534
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 65.73505001142621,
+      "ndcg_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "question": "How do Qdrant's RRF and DBSF fusion methods combine results from multiple queries?",
+      "question_id": "gqa-024",
+      "recall_at_k": {
+        "1": 1.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "relevant_chunk_ids": [
+        "1e1ee784-4222-58b0-a79e-5b0cf331deb3"
+      ],
+      "retrieved_chunk_ids": [
+        "1e1ee784-4222-58b0-a79e-5b0cf331deb3",
+        "71b6b0b3-3659-5fd4-b602-ec3c04292d30",
+        "c28801aa-7ed9-5437-afaf-6d7c248825ca",
+        "46b91cb9-c836-5d33-82b6-46155466114e",
+        "123a4f70-e8a4-5c49-a443-ddd28b605724",
+        "5722d193-8ac3-5e65-a030-64b5411f4be8",
+        "68167c9d-8aea-5d41-aa1e-778e3b46aac6",
+        "0447fbcf-795b-50e9-a378-2f69f3a8d32e",
+        "b70625c2-a1b1-543b-a9d3-4cdb0e11fb86",
+        "4a7ceba3-91cc-510e-b040-1770c8f11f67"
+      ],
+      "retrieved_scores": [
+        43.2581894673151,
+        41.93415003703481,
+        30.37881782534527,
+        28.445163244254115,
+        27.513531798360393,
+        23.592745322493236,
+        22.9486006762281,
+        22.570469375889985,
+        22.385878476596034,
+        22.155831709056752
+      ]
+    },
+    {
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hit_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "latency_ms": 64.66403999365866,
+      "ndcg_at_k": {
+        "1": 0.0,
+        "10": 0.6309297535714575,
+        "3": 0.6309297535714575,
+        "5": 0.6309297535714575
+      },
+      "question": "For Qdrant multitenancy, when is one payload-partitioned collection preferred over multiple collections?",
+      "question_id": "gqa-025",
+      "recall_at_k": {
+        "1": 0.0,
+        "10": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "relevant_chunk_ids": [
+        "2218ce03-9b22-5ce9-8603-3b4414670adb"
+      ],
+      "retrieved_chunk_ids": [
+        "d3c88201-5116-5c6c-8480-79a32d28698b",
+        "2218ce03-9b22-5ce9-8603-3b4414670adb",
+        "7c848a20-b02d-51cd-b834-757e34f6a586",
+        "644e1a5f-6728-57e6-8711-cdebb4599b5c",
+        "c72bc2ac-0745-5119-96df-a5802d9fc7f2",
+        "b7b4eb49-a679-54f0-9dba-f5e0373251b5",
+        "8d1d853b-5160-5530-87a2-3ed4e87911e7",
+        "09facb1d-8b08-557a-a219-2ee56992355a",
+        "957e9893-304f-5e56-ab3e-d06a3ccda2a6",
+        "ed03558d-613b-5cb2-84cb-33f6cd70607a"
+      ],
+      "retrieved_scores": [
+        34.5631969515346,
+        31.457881424990376,
+        30.57326076277632,
+        25.240474933603014,
+        24.157703745971165,
+        23.756133377809082,
+        23.361482369990625,
+        22.43003703065142,
+        20.88218728012332,
+        20.83610659439062
+      ]
+    }
+  ],
+  "run_name": "final_bm25",
+  "schema_version": 1
+}

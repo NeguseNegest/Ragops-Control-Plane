@@ -47,6 +47,7 @@ data/processed/*
 !data/processed/.gitkeep
 data/traces/*
 !data/traces/.gitkeep
+data/mlflow_day47/
 mlruns/
 mlartifacts/
 qdrant_storage/

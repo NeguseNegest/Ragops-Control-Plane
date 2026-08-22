@@ -1,0 +1,691 @@
+{
+  "bm25_report_path": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_bm25.json",
+  "bm25_run_name": "final_bm25",
+  "comparison_name": "bm25_vs_dense",
+  "dense_report_path": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_dense.json",
+  "dense_run_name": "final_dense",
+  "k_values": [
+    1,
+    3,
+    5,
+    10
+  ],
+  "latency_ms": {
+    "bm25": {
+      "average": 69.18484612251632,
+      "maximum": 122.15796095551923,
+      "minimum": 40.96157697495073,
+      "total": 3459.242306125816
+    },
+    "dense": {
+      "average": 965.4665863804985,
+      "maximum": 42239.72039401997,
+      "minimum": 40.733179019298404,
+      "total": 48273.329319024924
+    }
+  },
+  "metrics": {
+    "hit_rate_at_k": {
+      "1": {
+        "bm25": 0.4,
+        "delta": 0.06,
+        "dense": 0.34
+      },
+      "10": {
+        "bm25": 0.84,
+        "delta": 0.15999999999999992,
+        "dense": 0.68
+      },
+      "3": {
+        "bm25": 0.74,
+        "delta": 0.27999999999999997,
+        "dense": 0.46
+      },
+      "5": {
+        "bm25": 0.82,
+        "delta": 0.2799999999999999,
+        "dense": 0.54
+      }
+    },
+    "mrr": {
+      "bm25": 0.5770000000000001,
+      "delta": 0.15433333333333343,
+      "dense": 0.42266666666666663
+    },
+    "ndcg_at_k": {
+      "1": {
+        "bm25": 0.4,
+        "delta": 0.06,
+        "dense": 0.34
+      },
+      "10": {
+        "bm25": 0.6358617674318647,
+        "delta": 0.16880407922936375,
+        "dense": 0.467057688202501
+      },
+      "3": {
+        "bm25": 0.5875817012229905,
+        "delta": 0.19944605970345164,
+        "dense": 0.38813564151953883
+      },
+      "5": {
+        "bm25": 0.6164132989292259,
+        "delta": 0.19470000778059265,
+        "dense": 0.42171329114863326
+      }
+    },
+    "recall_at_k": {
+      "1": {
+        "bm25": 0.4,
+        "delta": 0.07333333333333336,
+        "dense": 0.32666666666666666
+      },
+      "10": {
+        "bm25": 0.8266666666666667,
+        "delta": 0.17999999999999994,
+        "dense": 0.6466666666666667
+      },
+      "3": {
+        "bm25": 0.7066666666666667,
+        "delta": 0.28,
+        "dense": 0.42666666666666664
+      },
+      "5": {
+        "bm25": 0.7766666666666667,
+        "delta": 0.27000000000000013,
+        "dense": 0.5066666666666666
+      }
+    }
+  },
+  "query_type_method": "Deterministic wording cohorts: exact references first, then behavioral/procedural wording, otherwise conceptual/descriptive.",
+  "query_types": {
+    "behavioral/procedural": {
+      "bm25_mrr": 0.5025641025641026,
+      "bm25_wins": 4,
+      "dense_mrr": 0.5566239316239316,
+      "dense_wins": 4,
+      "mrr_delta": -0.05405982905982909,
+      "question_count": 13,
+      "ties": 5
+    },
+    "conceptual/descriptive": {
+      "bm25_mrr": 0.6681818181818181,
+      "bm25_wins": 13,
+      "dense_mrr": 0.4080808080808081,
+      "dense_wins": 4,
+      "mrr_delta": 0.26010101010101,
+      "question_count": 22,
+      "ties": 5
+    },
+    "exact-reference": {
+      "bm25_mrr": 0.5077777777777778,
+      "bm25_wins": 8,
+      "dense_mrr": 0.32796296296296296,
+      "dense_wins": 1,
+      "mrr_delta": 0.17981481481481482,
+      "question_count": 15,
+      "ties": 6
+    }
+  },
+  "question_count": 50,
+  "questions": [
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "query_type": "conceptual/descriptive",
+      "question": "What does FastAPI read from the request body when you declare a Python type?",
+      "question_id": "sqa-22853a3ab950cd44",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 4,
+      "bm25_reciprocal_rank": 0.25,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "Which nested field key is used in the HTTP, Python, TypeScript, Rust, and Java examples to specify the sightseeing condition?",
+      "question_id": "sqa-8111f18ad4679ac4",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "What HTTP endpoint is shown for scrolling points in a collection?",
+      "question_id": "sqa-54a24f6e54a73e24",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "query_type": "conceptual/descriptive",
+      "question": "Name two advantages of using UploadFile over bytes.",
+      "question_id": "sqa-2312659ece1beeb0",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "query_type": "behavioral/procedural",
+      "question": "What happens to a file once its in-memory size limit is exceeded when using UploadFile?",
+      "question_id": "sqa-8f550fc0f0c97fdf",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 2,
+      "dense_reciprocal_rank": 0.5,
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "query_type": "conceptual/descriptive",
+      "question": "What Python object does UploadFile expose that can be passed to libraries expecting a file-like object?",
+      "question_id": "sqa-220fbcfa80439038",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": 9,
+      "dense_reciprocal_rank": 0.1111111111111111,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "query_type": "exact-reference",
+      "question": "What file format does MLflow use for saving models from a variety of tools?",
+      "question_id": "sqa-7f4b9c901bcac8d2",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 5,
+      "bm25_reciprocal_rank": 0.2,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "Which MLflow flavor can log scikit-learn models as artifacts for serving?",
+      "question_id": "sqa-806e7d79beff73b8",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "query_type": "exact-reference",
+      "question": "What is the exact MLflow command to serve a model located at runs:/<RUN_ID>/model?",
+      "question_id": "sqa-43e609692540e39f",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "What does an MLmodel file declare about each model to enable serving it as a Python function?",
+      "question_id": "sqa-fe6afefa50c92384",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "What HTTP method and path are used to observe the cluster state after synchronization?",
+      "question_id": "sqa-ebcd24ac3da514b9",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "query_type": "conceptual/descriptive",
+      "question": "What warning is given about handling a plain password in this section?",
+      "question_id": "sqa-50e37593177ea153",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "query_type": "exact-reference",
+      "question": "Which library should be installed to use EmailStr according to the document?",
+      "question_id": "sqa-dc321a1b57e8d142",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/api_reference/source/rest-api.rst",
+      "query_type": "exact-reference",
+      "question": "What happens to the request_preview size and where is the full request stored?",
+      "question_id": "sqa-1333a2c4d6953cf4",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "conceptual/descriptive",
+      "question": "Which distance measures are given as examples for calculating similarity between embeddings?",
+      "question_id": "sqa-c550d812bb5272e0",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/dependencies/index.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "Which file contains the information required to restore the model environment using virtualenv, and what three things does it specify?",
+      "question_id": "sqa-c00b9f531d2e5586",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 5,
+      "dense_reciprocal_rank": 0.2,
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "query_type": "conceptual/descriptive",
+      "question": "Which standards can be used to establish a secure authentication setup in FastAPI according to the tutorial recap?",
+      "question_id": "sqa-ade53f89f8629636",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 6,
+      "bm25_reciprocal_rank": 0.16666666666666666,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "query_type": "conceptual/descriptive",
+      "question": "Which specific third-party packages are mentioned as easily usable with FastAPI for security handling?",
+      "question_id": "sqa-52abd01126658d4e",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "query_type": "conceptual/descriptive",
+      "question": "What mechanism is used to implement a fine-grained permission system in FastAPI?",
+      "question_id": "sqa-9bbefdf430f9c31f",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "query_type": "behavioral/procedural",
+      "question": "How does MLflow determine the input and output schema when logging a PythonModel that includes type hints?",
+      "question_id": "sqa-5c5e1373d68176f8",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "query_type": "exact-reference",
+      "question": "What occurs if an explicit signature parameter is provided when logging a PythonModel with type hints?",
+      "question_id": "sqa-4d1f9fc474b0154c",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "Where must pydantic model type hints be defined to use pydantic objects as inputs for an MLflow PythonModel?",
+      "question_id": "sqa-ceaead1685abb224",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 4,
+      "dense_reciprocal_rank": 0.25,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "conceptual/descriptive",
+      "question": "What initial methods can be used to retrieve a subset of documents before applying a reranker?",
+      "question_id": "sqa-673de786b69493ab",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "behavioral/procedural",
+      "question": "What primary trade-off do rerankers make when evaluating document relevance?",
+      "question_id": "sqa-7d97ec3c52aa5853",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "conceptual/descriptive",
+      "question": "What is the primary function of a reranker in document search?",
+      "question_id": "sqa-580f65fefad3cf3a",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "query_type": "conceptual/descriptive",
+      "question": "Which methods can be used to serve static frontend applications in FastAPI?",
+      "question_id": "sqa-bd0d27f9ade799b8",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 6,
+      "dense_reciprocal_rank": 0.16666666666666666,
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "query_type": "behavioral/procedural",
+      "question": "In what order does FastAPI evaluate incoming requests when serving static frontend files alongside API routes?",
+      "question_id": "sqa-4cb482f1f218af58",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 4,
+      "dense_reciprocal_rank": 0.25,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "In which section of the MLflow Run details page can a user find and select the model folder to register?",
+      "question_id": "sqa-0962a7db4ec6c78a",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 9,
+      "dense_reciprocal_rank": 0.1111111111111111,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "What options are available in the Model dropdown menu on the model registration form?",
+      "question_id": "sqa-a8ee8614cd6dc87b",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "query_type": "behavioral/procedural",
+      "question": "What occurs when a user chooses the \"Create New Model\" option in the Model dropdown menu?",
+      "question_id": "sqa-7622236114712036",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 4,
+      "dense_reciprocal_rank": 0.25,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "Which parameter in a Qdrant query allows retrieving a vector using a point ID located in a different collection?",
+      "question_id": "sqa-6055940f3e30c975",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 8,
+      "dense_reciprocal_rank": 0.125,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "What two primary properties are required inside the lookup_from configuration when referencing a point in another collection?",
+      "question_id": "sqa-d20c9187fa7725e6",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 5,
+      "bm25_reciprocal_rank": 0.2,
+      "dense_rank": 10,
+      "dense_reciprocal_rank": 0.1,
+      "expected_source": "fastapi/docs/tutorial/cookie-param-models.md",
+      "query_type": "exact-reference",
+      "question": "How can extra cookies be forbidden in a FastAPI cookie parameter model?",
+      "question_id": "sqa-8397e93659723d06",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 8,
+      "dense_reciprocal_rank": 0.125,
+      "expected_source": "mlflow/docs/docs/self-hosting/security/role-based-access-control.mdx",
+      "query_type": "behavioral/procedural",
+      "question": "What is the main difference between the legacy permission model and the role-based permission model in MLflow?",
+      "question_id": "sqa-a6c95a648b8cccd8",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/how-to/separate-openapi-schemas.md",
+      "query_type": "exact-reference",
+      "question": "How does OpenAPI represent an output response field that is always present even if its value is null?",
+      "question_id": "sqa-9663384ed9b2a6ce",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/first-steps.md",
+      "query_type": "exact-reference",
+      "question": "After saving a minimal FastAPI application as main.py, which command starts the development server, and where can I open the interactive API documentation?",
+      "question_id": "gqa-001",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "query_type": "behavioral/procedural",
+      "question": "How do I declare a JSON request body in FastAPI, and what does FastAPI do with it?",
+      "question_id": "gqa-004",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 5,
+      "bm25_reciprocal_rank": 0.2,
+      "dense_rank": 9,
+      "dense_reciprocal_rank": 0.1111111111111111,
+      "expected_source": "fastapi/docs/tutorial/dependencies/index.md",
+      "query_type": "behavioral/procedural",
+      "question": "How should a callable dependency be passed to FastAPI's Depends, and who invokes it?",
+      "question_id": "gqa-005",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/background-tasks.md",
+      "query_type": "behavioral/procedural",
+      "question": "When should I use FastAPI BackgroundTasks, and when should I consider a tool such as Celery instead?",
+      "question_id": "gqa-007",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "fastapi/docs/tutorial/cors.md",
+      "query_type": "conceptual/descriptive",
+      "question": "Can I use a wildcard CORS origin in FastAPI when requests include cookies or Authorization headers?",
+      "question_id": "gqa-009",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/quickstart/index.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "Which MLflow calls does the tracking quickstart use to manually record hyperparameters, a scikit-learn model, an accuracy metric, and a descriptive tag?",
+      "question_id": "gqa-010",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/index.mdx",
+      "query_type": "behavioral/procedural",
+      "question": "What is the difference between MLflow's backend store and artifact store?",
+      "question_id": "gqa-011",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 2,
+      "dense_reciprocal_rank": 0.5,
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/autolog/index.mdx",
+      "query_type": "behavioral/procedural",
+      "question": "How can I enable MLflow autologging only for PyTorch, or disable it for scikit-learn while keeping generic autologging enabled?",
+      "question_id": "gqa-013",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/index.mdx",
+      "query_type": "conceptual/descriptive",
+      "question": "What is an MLflow model alias, and how can a champion alias change which model version production loads?",
+      "question_id": "gqa-014",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/dataset/index.mdx",
+      "query_type": "behavioral/procedural",
+      "question": "How do I create and log a pandas training dataset with MLflow while retaining its source and training context?",
+      "question_id": "gqa-016",
+      "winner": "dense"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "conceptual/descriptive",
+      "question": "What dimensionality and distance-metric constraints apply to vectors in one Qdrant collection?",
+      "question_id": "gqa-018",
+      "winner": "bm25"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "When a Qdrant filter is applied to an array-valued payload field, when does the filter succeed?",
+      "question_id": "gqa-021",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "exact-reference",
+      "question": "What does Qdrant's prefetch parameter do in a hybrid or multi-stage Query API request?",
+      "question_id": "gqa-023",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "behavioral/procedural",
+      "question": "How do Qdrant's RRF and DBSF fusion methods combine results from multiple queries?",
+      "question_id": "gqa-024",
+      "winner": "tie"
+    },
+    {
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "query_type": "conceptual/descriptive",
+      "question": "For Qdrant multitenancy, when is one payload-partitioned collection preferred over multiple collections?",
+      "question_id": "gqa-025",
+      "winner": "dense"
+    }
+  ],
+  "schema_version": 1,
+  "wins": {
+    "bm25": 25,
+    "bm25_recovered_dense_miss": 10,
+    "dense": 9,
+    "dense_recovered_bm25_miss": 2,
+    "tie": 16
+  }
+}

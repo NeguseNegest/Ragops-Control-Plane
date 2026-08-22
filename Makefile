@@ -15,11 +15,15 @@ ROUTER_TUNING_CONFIG ?= configs/router_tuning.yaml
 EVAL_GATE_CONFIG ?= configs/eval_gate.yaml
 EVAL_GATE_PYTHON ?= $(BIN)/python
 FINAL_DATASET_CONFIG ?= configs/final_evaluation_dataset.yaml
+FINAL_BENCHMARK_CONFIG ?= configs/final_benchmark.yaml
+FAILURE_ANALYSIS_CONFIG ?= configs/failure_analysis.yaml
+FINAL_MLFLOW_URI ?=
+FINAL_MLFLOW_URI_FLAG = $(if $(strip $(FINAL_MLFLOW_URI)),--mlflow-uri $(FINAL_MLFLOW_URI),)
 TRACE_DB_PATH ?= data/traces/ragops_traces.sqlite3
 API_URL ?= http://127.0.0.1:8000
 API_TRACE_DB_PATH ?= $(TRACE_DB_PATH)
 
-.PHONY: setup lint test test-unit-ci test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-evaluation-smoke test-eval-gate test-final-dataset test-routing-probe test-no-answer test-cost test-router-evaluation test-router-stabilization test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation eval-gate finalize-evaluation-dataset validate-final-evaluation-dataset validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry validate-router-config validate-no-answer evaluate-no-answer replay-no-answer validate-model-costs validate-router-evaluation evaluate-router validate-router-tuning tune-router init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api probe-query route-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
+.PHONY: setup lint test test-unit-ci test-mlflow test-pipeline-registry test-tracing test-query-endpoint test-api-ci test-api-evaluation test-evaluation-smoke test-eval-gate test-final-dataset test-final-benchmark test-failure-analysis test-routing-probe test-no-answer test-cost test-router-evaluation test-router-stabilization test-retrieval-interface test-retrieval-metrics test-llm-judge test-bm25 test-bm25-evaluation test-hybrid test-hybrid-evaluation test-reranker test-reranker-evaluation eval-gate finalize-evaluation-dataset validate-final-evaluation-dataset validate-final-benchmark verify-final-benchmark evaluate-final-dense evaluate-final-bm25 evaluate-final-hybrid evaluate-final-reranker evaluate-final-retrieval evaluate-final-routed judge-final-answers aggregate-final-benchmark final-benchmark analyze-failures validate-failure-analysis validate-mlflow log-retrieval-runs verify-retrieval-runs validate-pipeline-registry build-pipeline-registry validate-router-config validate-no-answer evaluate-no-answer replay-no-answer validate-model-costs validate-router-evaluation evaluate-router validate-router-tuning tune-router init-trace-store validate-trace-store validate-dense-evaluation evaluate-dense evaluate-api probe-query route-query validate-generation-judge judge-answers review-judgments validate-day20 validate-bm25-config build-bm25-index validate-bm25-index validate-bm25-evaluation evaluate-bm25 validate-hybrid retrieve-hybrid validate-hybrid-evaluation evaluate-hybrid validate-hybrid-rerank retrieve-hybrid-rerank validate-reranker-evaluation evaluate-reranker services-up docker-up ingest-dry-run ingest index index-recreate generate-synthetic-qa review-synthetic-qa bootstrap-retrieval-labels label-retrieval validate-retrieval-labels serve dashboard clean
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -33,7 +37,7 @@ test:
 	$(BIN)/python -m pytest
 
 test-unit-ci:
-	PYTHONPATH=src $(PYTHON) -m pytest tests/test_bm25.py tests/test_bm25_evaluation.py tests/test_chunking.py tests/test_citations.py tests/test_ci_workflow.py tests/test_evaluation_runner.py tests/test_final_dataset.py tests/test_hybrid.py tests/test_hybrid_evaluation.py tests/test_indexing.py tests/test_ingestion.py tests/test_llm_judge.py tests/test_mlflow_tracking.py tests/test_pipeline_registry.py tests/test_reranker_evaluation.py tests/test_reranking.py tests/test_retrieval_labels.py tests/test_retrieval_metrics.py tests/test_retriever_interface.py tests/test_synthetic_qa.py
+	PYTHONPATH=src $(PYTHON) -m pytest tests/test_bm25.py tests/test_bm25_evaluation.py tests/test_chunking.py tests/test_citations.py tests/test_ci_workflow.py tests/test_evaluation_runner.py tests/test_failure_analysis.py tests/test_final_benchmark.py tests/test_final_dataset.py tests/test_hybrid.py tests/test_hybrid_evaluation.py tests/test_indexing.py tests/test_ingestion.py tests/test_llm_judge.py tests/test_mlflow_tracking.py tests/test_pipeline_registry.py tests/test_reranker_evaluation.py tests/test_reranking.py tests/test_retrieval_labels.py tests/test_retrieval_metrics.py tests/test_retriever_interface.py tests/test_synthetic_qa.py
 
 test-mlflow:
 	$(BIN)/python -m pytest tests/test_mlflow_tracking.py
@@ -64,11 +68,55 @@ eval-gate:
 test-final-dataset:
 	PYTHONPATH=src $(BIN)/python -m pytest tests/test_final_dataset.py
 
+test-final-benchmark:
+	PYTHONPATH=src $(BIN)/python -m pytest tests/test_final_benchmark.py
+
+test-failure-analysis:
+	PYTHONPATH=src $(BIN)/python -m pytest tests/test_failure_analysis.py
+
 finalize-evaluation-dataset:
 	PYTHONPATH=src $(BIN)/python scripts/finalize_evaluation_dataset.py --config $(FINAL_DATASET_CONFIG) --write --overwrite
 
 validate-final-evaluation-dataset:
 	PYTHONPATH=src $(BIN)/python scripts/finalize_evaluation_dataset.py --config $(FINAL_DATASET_CONFIG)
+
+validate-final-benchmark:
+	PYTHONPATH=src $(BIN)/python scripts/final_benchmark.py --config $(FINAL_BENCHMARK_CONFIG) --validate-only
+
+verify-final-benchmark:
+	PYTHONPATH=src $(BIN)/python scripts/final_benchmark.py --config $(FINAL_BENCHMARK_CONFIG) --verify-only $(FINAL_MLFLOW_URI_FLAG)
+
+evaluate-final-dense:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate.py --config configs/day47/dense.yaml
+
+evaluate-final-bm25:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_bm25.py --config configs/day47/bm25.yaml --overwrite
+
+evaluate-final-hybrid:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_hybrid.py --config configs/day47/hybrid.yaml --overwrite
+
+evaluate-final-reranker:
+	PYTHONPATH=src $(BIN)/python scripts/evaluate_reranker.py --config configs/day47/reranked.yaml --overwrite
+
+evaluate-final-retrieval: evaluate-final-dense evaluate-final-bm25 evaluate-final-hybrid evaluate-final-reranker
+
+evaluate-final-routed:
+	PYTHONPATH=src $(BIN)/python scripts/final_benchmark.py --config $(FINAL_BENCHMARK_CONFIG) --routed-only --overwrite
+
+judge-final-answers:
+	PYTHONPATH=src $(BIN)/python scripts/final_benchmark.py --config $(FINAL_BENCHMARK_CONFIG) --judgments-only --overwrite
+
+aggregate-final-benchmark:
+	PYTHONPATH=src $(BIN)/python scripts/final_benchmark.py --config $(FINAL_BENCHMARK_CONFIG) --aggregate-only --overwrite $(FINAL_MLFLOW_URI_FLAG)
+
+final-benchmark: evaluate-final-retrieval
+	PYTHONPATH=src $(BIN)/python scripts/final_benchmark.py --config $(FINAL_BENCHMARK_CONFIG) --overwrite $(FINAL_MLFLOW_URI_FLAG)
+
+analyze-failures:
+	PYTHONPATH=src $(BIN)/python scripts/analyze_failures.py --config $(FAILURE_ANALYSIS_CONFIG) --write --overwrite
+
+validate-failure-analysis:
+	PYTHONPATH=src $(BIN)/python scripts/analyze_failures.py --config $(FAILURE_ANALYSIS_CONFIG)
 
 test-routing-probe:
 	$(BIN)/python -m pytest tests/test_router.py tests/test_query_pipelines.py

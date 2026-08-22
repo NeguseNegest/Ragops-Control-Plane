@@ -56,7 +56,7 @@ This local command is independently tested, including a deliberately permuted de
 | Job | Command | Responsibility |
 | --- | --- | --- |
 | `lint` | `python -m ruff check src tests scripts dashboard` | Repository-wide static checks. |
-| `unit` | `make test-unit-ci PYTHON=python` | 286 hermetic BM25/chunking/citation/evaluation/final-dataset/hybrid/indexing/ingestion/judge/tracking/registry/reranking/label/metric/interface/synthetic-QA and workflow-contract tests. |
+| `unit` | `make test-unit-ci PYTHON=python` | 297 hermetic BM25/chunking/citation/evaluation/final-benchmark/failure-analysis/final-dataset/hybrid/indexing/ingestion/judge/tracking/registry/reranking/label/metric/interface/synthetic-QA and workflow-contract tests. |
 | `api` | `make test-api-ci PYTHON=python` | 179 API integration, API evaluator, routing, refusal, cost, generation, trace, and dense-retrieval tests. |
 | `evaluation-smoke` | `make test-evaluation-smoke EVAL_GATE_PYTHON=python` | Nine strict-input, real-smoke, degraded-pipeline, latency, error, citation, summary, and exit-code tests. |
 | `evaluation-gate` | `make eval-gate EVAL_GATE_PYTHON=python` | The actual five-case compact candidate run and all nine thresholds. |
@@ -77,7 +77,7 @@ make eval-gate
 
 `tests/test_ci_workflow.py` loads the workflow with string-preserving YAML semantics and asserts its triggers, five exact job IDs/commands, read-only permissions, concurrency cancellation, Python/cache setup, common dependency boundary, offline/template environment, absence of secrets/services, and README badge URL. This makes the CI topology itself regression-tested.
 
-A clean temporary Python 3.12 environment containing only the nine direct packages in `requirements-ci.txt` passed the Day 45 baseline: Ruff, all 280 then-current unit tests, all 179 API tests, all nine smoke tests, and the live 9/9 gate. Day 46 adds six hermetic final-dataset tests to the unit job, bringing its current total to 286 without adding a dependency. The clean environment did not install Torch, Transformers, sentence-transformers, MLflow, Streamlit, OpenAI, or Gemini SDK dependencies.
+A clean temporary Python 3.12 environment containing only the nine direct packages in `requirements-ci.txt` passed the Day 45 baseline: Ruff, all 280 then-current unit tests, all 179 API tests, all nine smoke tests, and the live 9/9 gate. Day 46 added six hermetic final-dataset tests, Day 47 added five final-benchmark contract/retry tests, and Day 48 adds six failure-analysis evidence/drift tests, bringing the current unit total to 297 without adding a CI dependency. The clean environment did not install Torch, Transformers, sentence-transformers, MLflow, Streamlit, OpenAI, or Gemini SDK dependencies.
 
 ## Boundary
 

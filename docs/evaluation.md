@@ -539,3 +539,55 @@ Building reconstructs all three snapshots from immutable historical inputs plus 
 Full construction/validation needs the ignored generated `data/processed/chunks.jsonl` to verify source evidence. `tests/test_final_dataset.py` is hermetic: miniature local chunks test the complete curation contract, while a structural test protects the committed final artifacts and hashes without requiring the full corpus in CI.
 
 The set is deliberately capped at 100/50/30 rather than expanded indefinitely. It is large enough to compare five pipeline variants across supported retrieval and refusal behavior, but every row, exclusion, added answer, manual relevance judgment, and adversarial category remains inspectable in a small number of text files. It is still a curated documentation benchmark, not an unbiased sample of production traffic.
+
+## Day 47 final benchmark contract and execution status
+
+`configs/final_benchmark.yaml` is the single contract for the central five-way comparison. It pins the final Day 46 datasets; five distinct pipeline config/report/judgment bundles; a ten-ID supported answer-quality sample; OpenAI generation and cross-provider Gemini judging; a common retrieval depth of five; routed depths; percentile method; the exact reference-answer cost basis; MLflow experiment; and final JSON/CSV/Markdown paths. Strict validation rejects sample IDs outside the retrieval-labeled subset, dataset count drift, duplicate adversarial identities, missing pricing, mismatched report run names, partial rankings/scores, and any question/source/relevance-label mismatch.
+
+The metric scopes are deliberately different where the available labels differ:
+
+- Recall@5 and MRR@5 use all 50 paired supported retrieval labels. MRR is truncated to five for every pipeline.
+- Faithfulness and answer relevance are 1–5 rubric means over the same explicit ten supported questions for every pipeline.
+- Refusal correctness applies to the routed policy over all 30 reviewed unsupported/adversarial prompts. Fixed retrieval pipelines have no explicit refusal policy, so their value is N/A rather than zero.
+- p50/p95 are linear-interpolated retrieval-only wall-clock measurements and include cold starts. Routed timings are documented serial artifact replay.
+- Estimated generation cost/query uses all 50 supported questions, each exact retrieved prompt, the same verified reference answer, the checked model-price table, and the deterministic token estimator. This isolates context-size effects instead of letting different generated prose determine the ablation.
+
+The local phase completed against Qdrant and the 13,481-chunk corpus. Common-depth results are dense `0.5067` Recall@5 / `0.4057` MRR@5, BM25 `0.7767` / `0.5737`, hybrid `0.7267` / `0.5820`, reranked `0.8100` / `0.6473`, and routed `0.6600` / `0.5307`. The controlled reranker ablation records 14 gains, 8 regressions, and 28 ties against its own RRF-25 top-five order. The routed policy selects 2 FAST, 12 STANDARD, 29 CAREFUL, and 7 NO_ANSWER supported cases; on the 30 adversarial cases it correctly refuses 25 and misses five.
+
+The approved external phase completed after Gemini billing became available. OpenAI generated 50 real answers and Gemini produced 50 cross-provider judgments: ten ordered rows for each of dense, BM25, hybrid, reranked, and routed. Mean faithfulness/relevance scores are respectively dense `5.00/4.30`, BM25 `5.00/4.50`, hybrid `4.80/4.30`, reranked `5.00/4.50`, and routed `5.00/4.60`. These are model-based estimates on a fixed ten-question supported sample, not human ground truth. The retained judgments include low-relevance and refusal cases; no missing row was filled with a citation proxy or hand-authored score.
+
+The first attempt exposed a Gemini quota boundary, so the runner now validates and reuses complete pipeline artifacts, atomically checkpoints every completed question, resumes only an ordered valid prefix, and retries only explicit 429/rate-limit/temporary-availability errors with bounded delays. It never retries permanent schema or rubric failures. That checkpoint path was exercised by the completed run: dense was reused, BM25 resumed after its second row, and the other pipelines ran to ten rows.
+
+The final table is available as [Markdown](../reports/final_benchmark.md), [JSON](../reports/evaluations/final_benchmark.json), and [CSV](../reports/evaluations/final_benchmark.csv). Its five exact `ragops-final-benchmark` MLflow run IDs are dense `15d6f764d1ba474ea4556f34948f2444`, BM25 `cc073a8526ee4b809f3d40d891c4be00`, hybrid `a1e0348130a646b8b7b6cf0c02d43f2d`, reranked `aff82d0914f8403e9479812a90096e09`, and routed `45b98920cd68421c8d7094fae7128604`. Because the Docker tracking endpoint on port 5000 was unresponsive during publication, the CLI used its explicit `--mlflow-uri http://127.0.0.1:5001` override with a repository-local tracking server. A strict verification pass confirmed the experiment, finished status, source digest, tags, metrics, direct links, and required source artifacts for all five runs.
+
+Commands are phase-separated so this boundary remains observable:
+
+```bash
+make validate-final-benchmark
+make evaluate-final-retrieval
+make evaluate-final-routed
+make judge-final-answers       # external data sharing and provider usage
+make aggregate-final-benchmark
+make verify-final-benchmark
+make test-final-benchmark
+```
+
+The aggregator refuses incomplete or out-of-order judgment sets. The completed run records the full central table, wording-cohort and supported-query win counts, every BM25-over-dense case, controlled reranker gains/regressions, routed cost reductions, routed quality regressions, exact file paths, source digests, and direct MLflow run URLs. The verifier independently reopens those URLs by run ID and checks that the logged evidence still matches the final source bundle.
+
+## Day 48 failure analysis and regression dataset
+
+`configs/failure_analysis.yaml` is the reviewed contract for converting measured Day 47 failures into engineering diagnoses and future regression inputs. It selects 15 cases across nine categories: one bad dense retrieval, one lexical BM25 miss, two hybrid-fusion failures, three reranker regressions, two incorrect supported refusals, three unsupported router mistakes, one high-latency query, one weak claim-to-citation alignment, and one unexpected answer-level refusal.
+
+Each case records the query, expected behavior, actual behavior, diagnosed root cause, affected component, proposed fix, severity, regression decision, and a machine-checkable evidence assertion. Rank cases recompute relevant rank at the common top-five depth; route cases verify dataset side, exact route, reason code, and incorrect adversarial decision; judgment cases verify pipeline, behavior, faithfulness, relevance, and refusal verdict; the latency case verifies the recorded routed request remains above its declared analysis threshold.
+
+Fourteen cases are written to `data/eval/regression_cases.jsonl`. Each row carries its source failure ID, expected behavior, forbidden measured behavior, evidence guard, proposed fix, provenance, and verified-review status. The `55,600.3 ms` first routed CAREFUL case is not promoted because its serial dense-plus-reranker cold start is host-dependent; it belongs in a separate warm-path performance budget, not a deterministic functional gate.
+
+The generated [failure report](../reports/failures/failure_analysis.md) distinguishes measured facts from engineering inference. Root-cause descriptions are diagnoses based on ranks, routes, timings, retrieved context, and judge rationales; they are not presented as controlled causal experiments. Likewise, regression promotion records what future candidates must improve and does not falsely claim that the proposed fixes are already implemented.
+
+```bash
+make analyze-failures             # rebuild both reviewed outputs
+make validate-failure-analysis    # reconstruct and reject drift/manual edits
+make test-failure-analysis        # six focused contract/evidence tests
+```
+
+The validator reads only frozen local artifacts and makes no Qdrant, Docker, MLflow, model, or provider call. It rejects Day 47 benchmark identity/status drift, missing or duplicate question evidence, changed ranks/routes/reason codes/judgments, a latency case falling below its recorded failure threshold, insufficient category/regression coverage, stale Markdown, and modified JSONL.

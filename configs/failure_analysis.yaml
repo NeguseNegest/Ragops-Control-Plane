@@ -1,0 +1,288 @@
+schema_version: 1
+analysis_id: day48_failure_analysis@1.0.0
+status: reviewed
+reviewer: codex-day48-final-evidence-audit
+reviewed_on: "2026-08-22"
+
+sources:
+  final_benchmark_path: reports/evaluations/final_benchmark.json
+  dense_report_path: reports/evaluations/final_dense.json
+  bm25_report_path: reports/evaluations/final_bm25.json
+  hybrid_report_path: reports/evaluations/final_hybrid.json
+  reranked_report_path: reports/evaluations/final_reranked.json
+  routed_report_path: reports/evaluations/final_routed.json
+  dense_judgments_path: reports/evaluations/final_dense_judgments.jsonl
+  bm25_judgments_path: reports/evaluations/final_bm25_judgments.jsonl
+  hybrid_judgments_path: reports/evaluations/final_hybrid_judgments.jsonl
+  reranked_judgments_path: reports/evaluations/final_reranked_judgments.jsonl
+  routed_judgments_path: reports/evaluations/final_routed_judgments.jsonl
+
+outputs:
+  report_path: reports/failures/failure_analysis.md
+  regression_cases_path: data/eval/regression_cases.jsonl
+
+acceptance:
+  minimum_failures: 10
+  maximum_failures: 20
+  minimum_regression_cases: 10
+  required_categories:
+    - bad_dense_retrieval
+    - lexical_retrieval_miss
+    - hybrid_fusion_failure
+    - reranker_regression
+    - incorrect_refusal
+    - router_mistake
+    - high_latency_query
+    - missing_or_weak_citation
+    - unexpected_generation_behavior
+
+cases:
+  - id: day48-001
+    category: bad_dense_retrieval
+    severity: high
+    question_id: sqa-43e609692540e39f
+    expected_behavior: Retrieve the chunk containing the exact MLflow model-serving command within the common top-five depth.
+    actual_behavior: Dense retrieval missed the relevant chunk at top five while BM25 placed the same labeled evidence at rank three.
+    root_cause: The exact command-shaped query is dominated by lexical identifiers and URI syntax; semantic similarity retrieves related serving prose without preserving the decisive command tokens.
+    affected_component: dense retriever
+    proposed_fix: Add lexical fallback or hybrid candidate admission for command, path, and identifier-heavy queries, then require the labeled command chunk within top five.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: dense
+      observed_rank_at_5: null
+      baseline_pipeline: bm25
+      observed_baseline_rank_at_5: 3
+
+  - id: day48-002
+    category: lexical_retrieval_miss
+    severity: high
+    question_id: gqa-007
+    expected_behavior: Retrieve the FastAPI BackgroundTasks versus Celery guidance within the common top-five depth.
+    actual_behavior: BM25 missed the relevant chunk at top five while dense retrieval placed it first.
+    root_cause: The question asks for a conceptual workload boundary using paraphrased language, so sparse term overlap is weaker than the semantic relationship captured by the dense embedding.
+    affected_component: BM25 retriever
+    proposed_fix: Route conceptual comparison questions through dense or hybrid retrieval and preserve semantic candidates when sparse retrieval has no confident evidence.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: bm25
+      observed_rank_at_5: null
+      baseline_pipeline: dense
+      observed_baseline_rank_at_5: 1
+
+  - id: day48-003
+    category: hybrid_fusion_failure
+    severity: high
+    question_id: sqa-ceaead1685abb224
+    expected_behavior: Preserve BM25's first-ranked relevant Pydantic type-hint chunk inside the fused top five.
+    actual_behavior: BM25 ranked the labeled chunk first, but RRF fusion displaced it outside the common top-five result.
+    root_cause: Equal-weight reciprocal-rank fusion allowed corroborating but non-labeled dense candidates to accumulate enough combined rank mass to displace the decisive sparse-only chunk.
+    affected_component: RRF fusion
+    proposed_fix: Evaluate source-aware or query-aware fusion weights and add a top-sparse preservation rule for exact-reference questions before promoting a new hybrid version.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: hybrid
+      observed_rank_at_5: null
+      baseline_pipeline: bm25
+      observed_baseline_rank_at_5: 1
+
+  - id: day48-004
+    category: hybrid_fusion_failure
+    severity: medium
+    question_id: sqa-8111f18ad4679ac4
+    expected_behavior: Keep BM25's rank-four exact nested-field evidence within the fused top-five cutoff.
+    actual_behavior: The hybrid ordering pushed BM25's top-five hit below the evaluation cutoff, producing a top-five miss.
+    root_cause: The fixed equal-weight RRF policy rewards agreement across retrievers more than one strong exact-reference result, so an important sparse-only candidate falls behind consensus distractors.
+    affected_component: RRF fusion
+    proposed_fix: Add an exact-reference cohort gate that protects strong sparse candidates and regression-checks top-five retention after fusion.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: hybrid
+      observed_rank_at_5: null
+      baseline_pipeline: bm25
+      observed_baseline_rank_at_5: 4
+
+  - id: day48-005
+    category: reranker_regression
+    severity: high
+    question_id: sqa-1333a2c4d6953cf4
+    expected_behavior: Retain the relevant request-preview chunk that entered the reranker at rank four inside the final top five.
+    actual_behavior: Cross-encoder reranking removed the pre-rerank top-five hit from the final five results.
+    root_cause: The generic MS MARCO cross-encoder preferred broadly related request-storage passages over the narrowly labeled preview-size and storage-location evidence.
+    affected_component: cross-encoder reranker
+    proposed_fix: Add pairwise hard negatives from this corpus and require candidate-hit preservation or a calibrated score-margin guard before allowing the reranker to eject a top-five hit.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: reranked
+      observed_rank_at_5: null
+      baseline_pipeline: pre_rerank
+      observed_baseline_rank_at_5: 4
+
+  - id: day48-006
+    category: reranker_regression
+    severity: high
+    question_id: gqa-016
+    expected_behavior: Preserve the first-ranked pre-rerank MLflow dataset-logging evidence in the final top five.
+    actual_behavior: The relevant chunk entered reranking at rank one and disappeared completely from the final top five.
+    root_cause: Cross-encoder scoring overweights general pandas and MLflow logging similarity while underweighting the combined source-and-training-context requirement in the reviewed label.
+    affected_component: cross-encoder reranker
+    proposed_fix: Introduce this query as a corpus-specific hard-negative case and enforce a maximum allowed demotion for high-confidence labeled candidates.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: reranked
+      observed_rank_at_5: null
+      baseline_pipeline: pre_rerank
+      observed_baseline_rank_at_5: 1
+
+  - id: day48-007
+    category: reranker_regression
+    severity: medium
+    question_id: sqa-d20c9187fa7725e6
+    expected_behavior: Keep the first-ranked lookup_from configuration evidence at or near the top after reranking.
+    actual_behavior: Reranking demoted the relevant chunk from pre-rerank rank one to final rank four.
+    root_cause: The cross-encoder treats nearby Qdrant lookup terminology as similarly relevant and does not reliably prioritize the exact two-property configuration requested by the query.
+    affected_component: cross-encoder reranker
+    proposed_fix: Add property-list completeness examples to reranker evaluation and prevent large demotions when the candidate text contains every requested identifier.
+    regression_test: true
+    evidence:
+      kind: retrieval_rank
+      pipeline: reranked
+      observed_rank_at_5: 4
+      baseline_pipeline: pre_rerank
+      observed_baseline_rank_at_5: 1
+
+  - id: day48-008
+    category: incorrect_refusal
+    severity: high
+    question_id: sqa-8111f18ad4679ac4
+    expected_behavior: Treat the labeled documentation question as supported and execute retrieval instead of refusing.
+    actual_behavior: The router selected NO_ANSWER because the dense probe score fell below the no-answer threshold.
+    root_cause: The no-answer gate relies on a corpus-specific dense score even though exact-reference questions can have weak dense scores and strong BM25 evidence, as this query's rank-four sparse hit demonstrates.
+    affected_component: no-answer router gate
+    proposed_fix: Require a sparse corroboration check before refusing exact-reference queries and recalibrate the threshold against the expanded 50-question supported set.
+    regression_test: true
+    evidence:
+      kind: route_decision
+      dataset: supported
+      observed_route: NO_ANSWER
+      observed_reason_code: top_score_below_no_answer_threshold
+
+  - id: day48-009
+    category: incorrect_refusal
+    severity: high
+    question_id: sqa-dc321a1b57e8d142
+    expected_behavior: Answer the supported dependency question using the corpus evidence rather than issuing a deterministic refusal.
+    actual_behavior: The router selected NO_ANSWER solely because the dense probe score was below the configured threshold.
+    root_cause: A short exact dependency-name query provides too little semantic context for the dense-only scope probe, turning low embedding similarity into a false out-of-scope signal.
+    affected_component: no-answer router gate
+    proposed_fix: Add identifier-aware lexical probing before NO_ANSWER and include short package-name queries in threshold calibration and route regression checks.
+    regression_test: true
+    evidence:
+      kind: route_decision
+      dataset: supported
+      observed_route: NO_ANSWER
+      observed_reason_code: top_score_below_no_answer_threshold
+
+  - id: day48-010
+    category: router_mistake
+    severity: high
+    question_id: day46-adv-002
+    expected_behavior: Refuse the unsupported Pinecone configuration question without invoking an answer pipeline.
+    actual_behavior: The router selected STANDARD instead of NO_ANSWER for the reviewed unsupported prompt.
+    root_cause: Near-domain vector-search terminology produces a high dense similarity score, while the rule router has no source-family or product-identity check to distinguish Pinecone from the Qdrant corpus.
+    affected_component: query router
+    proposed_fix: Add entity and source-family scope features, then require an in-corpus product match before STANDARD or CAREFUL execution for named technologies.
+    regression_test: true
+    evidence:
+      kind: route_decision
+      dataset: adversarial
+      observed_route: STANDARD
+      observed_reason_code: standard_fallback
+
+  - id: day48-011
+    category: router_mistake
+    severity: high
+    question_id: day46-adv-015
+    expected_behavior: Refuse the false Qdrant delete-everything premise and never treat in-domain vocabulary as proof that the claimed endpoint exists.
+    actual_behavior: The router selected CAREFUL for the fabricated endpoint prompt instead of enforcing NO_ANSWER.
+    root_cause: The router measures similarity and query complexity but does not verify the premise; strong Qdrant vocabulary and a narrow score gap incorrectly trigger expensive retrieval.
+    affected_component: query router
+    proposed_fix: Add false-premise and instruction-injection checks plus evidence-existence verification before generation, with deterministic refusal when no retrieved passage supports the asserted operation.
+    regression_test: true
+    evidence:
+      kind: route_decision
+      dataset: adversarial
+      observed_route: CAREFUL
+      observed_reason_code: score_gap_below_careful_threshold
+
+  - id: day48-012
+    category: router_mistake
+    severity: high
+    question_id: day46-adv-016
+    expected_behavior: Refuse the false FastAPI AES-512 premise rather than routing it to an answer pipeline.
+    actual_behavior: The router selected CAREFUL because the in-domain terms produced an ambiguous dense score pattern.
+    root_cause: Dense similarity recognizes FastAPI and password vocabulary but cannot establish factual premise validity, and the current rules interpret ambiguity as a reason for more retrieval rather than refusal.
+    affected_component: query router
+    proposed_fix: Introduce premise-verification evidence checks and calibrate false-premise examples separately from merely difficult supported questions.
+    regression_test: true
+    evidence:
+      kind: route_decision
+      dataset: adversarial
+      observed_route: CAREFUL
+      observed_reason_code: score_gap_below_careful_threshold
+
+  - id: day48-013
+    category: high_latency_query
+    severity: high
+    question_id: sqa-22853a3ab950cd44
+    expected_behavior: Complete a CAREFUL routed retrieval without a cold-start latency spike large enough to dominate the request.
+    actual_behavior: The measured routed replay took more than 55 seconds for this single supported FastAPI question.
+    root_cause: The first dense embedding-model initialization and first cross-encoder execution are serially composed in routed replay, concentrating both cold-start penalties in one request.
+    affected_component: model lifecycle and routed execution
+    proposed_fix: Preload both models at service startup, report cold and warm latency separately, and add a warm-path performance budget outside deterministic functional CI.
+    regression_test: false
+    evidence:
+      kind: latency
+      pipeline: routed
+      minimum_latency_ms: 50000
+
+  - id: day48-014
+    category: missing_or_weak_citation
+    severity: high
+    question_id: gqa-001
+    expected_behavior: Cite evidence for the development command and interactive documentation URL and answer both requested parts correctly.
+    actual_behavior: The hybrid answer cited a production command as the development command and omitted the documentation URL, scoring 3/5 for both faithfulness and relevance.
+    root_cause: Retrieved evidence mixed development and production commands, and citation syntax alone did not ensure that the cited passage entailed the specific claim or covered every requested sub-question.
+    affected_component: generation grounding and citation selection
+    proposed_fix: Add sub-question coverage checks and claim-to-citation entailment validation, and prefer the labeled development chunk before generating command guidance.
+    regression_test: true
+    evidence:
+      kind: judgment
+      pipeline: hybrid
+      observed_behavior: answer
+      faithfulness: 3
+      answer_relevance: 3
+      refusal_verdict: not_applicable
+
+  - id: day48-015
+    category: unexpected_generation_behavior
+    severity: high
+    question_id: gqa-010
+    expected_behavior: Answer the supported MLflow quickstart question with the four requested logging calls.
+    actual_behavior: The reranked pipeline returned a grounded refusal and received answer relevance 1/5 with an incorrect-refusal verdict.
+    root_cause: None of the labeled quickstart chunks survived the final top five, so the grounding policy correctly avoided fabrication but exposed an upstream retrieval failure as an answer-level false refusal.
+    affected_component: retrieval-to-generation handoff
+    proposed_fix: Add a targeted MLflow quickstart retrieval case, broaden candidate preservation for multi-part API-call questions, and distinguish evidence insufficiency from corpus-level unsupported scope.
+    regression_test: true
+    evidence:
+      kind: judgment
+      pipeline: reranked
+      observed_behavior: refusal
+      faithfulness: 5
+      answer_relevance: 1
+      refusal_verdict: incorrect

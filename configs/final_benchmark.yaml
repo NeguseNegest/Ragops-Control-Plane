@@ -1,0 +1,89 @@
+schema_version: 1
+name: final_benchmark
+version: 1.0.0
+status: evaluated
+mode: measured_artifact_replay
+
+datasets:
+  golden_path: data/eval/final_golden_qa.jsonl
+  retrieval_labels_path: data/eval/final_retrieval_labels.jsonl
+  adversarial_path: data/eval/final_adversarial_qa.jsonl
+  chunks_path: data/processed/chunks.jsonl
+  expected_retrieval_questions: 50
+  expected_adversarial_questions: 30
+
+pipelines:
+  dense:
+    label: Dense
+    config_path: configs/day47/dense.yaml
+    retrieval_report_path: reports/evaluations/final_dense.json
+    judgments_path: reports/evaluations/final_dense_judgments.jsonl
+  bm25:
+    label: BM25
+    config_path: configs/day47/bm25.yaml
+    retrieval_report_path: reports/evaluations/final_bm25.json
+    judgments_path: reports/evaluations/final_bm25_judgments.jsonl
+  hybrid:
+    label: Hybrid (RRF)
+    config_path: configs/day47/hybrid.yaml
+    retrieval_report_path: reports/evaluations/final_hybrid.json
+    judgments_path: reports/evaluations/final_hybrid_judgments.jsonl
+  reranked:
+    label: Hybrid + reranker
+    config_path: configs/day47/reranked.yaml
+    retrieval_report_path: reports/evaluations/final_reranked.json
+    judgments_path: reports/evaluations/final_reranked_judgments.jsonl
+  routed:
+    label: Routed
+    config_path: configs/routed.yaml
+    retrieval_report_path: reports/evaluations/final_routed.json
+    judgments_path: reports/evaluations/final_routed_judgments.jsonl
+
+answer_quality:
+  sample_question_ids:
+    - gqa-001
+    - gqa-004
+    - gqa-010
+    - gqa-011
+    - gqa-016
+    - gqa-018
+    - gqa-023
+    - gqa-024
+    - sqa-2312659ece1beeb0
+    - sqa-fe6afefa50c92384
+  generation:
+    provider: openai
+    model: gpt-5-nano
+  judge:
+    provider: gemini
+    model: gemini-3.6-flash
+  require_cross_provider_judge: true
+
+retrieval:
+  cutoff: 5
+  routed_fast_depth: 2
+  routed_standard_depth: 10
+  routed_careful_depth: 5
+
+latency:
+  unit: ms
+  percentile_method: linear_interpolation
+  scope: measured_retrieval_only
+  routed_method: measured_serial_artifact_replay
+  include_cold_start: true
+
+cost_projection:
+  provider: openai
+  model: gpt-5-nano
+  model_cost_config: configs/model_costs.yaml
+  token_basis: exact_prompt_plus_verified_reference_answer
+  scope: supported_retrieval_questions
+
+mlflow:
+  tracking_uri: http://127.0.0.1:5000
+  experiment_name: ragops-final-benchmark
+
+output:
+  json_path: reports/evaluations/final_benchmark.json
+  csv_path: reports/evaluations/final_benchmark.csv
+  markdown_path: reports/final_benchmark.md

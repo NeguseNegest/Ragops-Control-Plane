@@ -1,0 +1,2354 @@
+{
+  "comparison_name": "dense_vs_bm25_vs_hybrid",
+  "corpus": {
+    "bm25_document_count": 13476,
+    "bm25_skipped_document_count": 5,
+    "dense_points_count": 13481,
+    "source_record_count": 13481,
+    "source_sha256": "61d97c037bfedda6d4c6ce66127392bc490435d2f475945c845fd28dc450fe50"
+  },
+  "decision": {
+    "best_retriever": "hybrid",
+    "hybrid_improves_over_bm25": true,
+    "hybrid_improves_over_dense": true,
+    "primary_metric": "mrr"
+  },
+  "k_values": [
+    1,
+    3,
+    5,
+    10
+  ],
+  "latency_ms": {
+    "bm25_after_first": {
+      "average": 69.30664057334961,
+      "maximum": 122.15796095551923,
+      "minimum": 40.96157697495073,
+      "question_count": 49,
+      "total": 3396.025388094131
+    },
+    "bm25_baseline": {
+      "average": 69.18484612251632,
+      "maximum": 122.15796095551923,
+      "minimum": 40.96157697495073,
+      "total": 3459.242306125816
+    },
+    "dense_after_first": {
+      "average": 123.1348760205093,
+      "maximum": 313.3211210370064,
+      "minimum": 40.733179019298404,
+      "question_count": 49,
+      "total": 6033.608925004955
+    },
+    "dense_baseline": {
+      "average": 965.4665863804985,
+      "maximum": 42239.72039401997,
+      "minimum": 40.733179019298404,
+      "total": 48273.329319024924
+    },
+    "hybrid": {
+      "average": 700.772478779545,
+      "maximum": 26011.542864958756,
+      "minimum": 91.34114801418036,
+      "total": 35038.62393897725
+    },
+    "hybrid_after_first": {
+      "average": 184.22614436772443,
+      "maximum": 281.96923597715795,
+      "minimum": 91.34114801418036,
+      "question_count": 49,
+      "total": 9027.081074018497
+    },
+    "hybrid_components": {
+      "bm25": {
+        "average": 68.89890148071572,
+        "maximum": 110.51063903141767,
+        "minimum": 38.292195997200906,
+        "total": 3444.945074035786
+      },
+      "dense": {
+        "average": 9.876413696911186,
+        "maximum": 20.65695804776624,
+        "minimum": 6.003783026244491,
+        "total": 493.8206848455593
+      },
+      "fusion": {
+        "average": 0.15685482532717288,
+        "maximum": 0.19506597891449928,
+        "minimum": 0.14151801588013768,
+        "total": 7.842741266358644
+      }
+    }
+  },
+  "metrics": {
+    "hit_rate_at_k": {
+      "1": {
+        "bm25": 0.4,
+        "dense": 0.34,
+        "hybrid": 0.48,
+        "hybrid_delta_bm25": 0.07999999999999996,
+        "hybrid_delta_dense": 0.13999999999999996
+      },
+      "10": {
+        "bm25": 0.84,
+        "dense": 0.68,
+        "hybrid": 0.86,
+        "hybrid_delta_bm25": 0.020000000000000018,
+        "hybrid_delta_dense": 0.17999999999999994
+      },
+      "3": {
+        "bm25": 0.74,
+        "dense": 0.46,
+        "hybrid": 0.66,
+        "hybrid_delta_bm25": -0.07999999999999996,
+        "hybrid_delta_dense": 0.2
+      },
+      "5": {
+        "bm25": 0.82,
+        "dense": 0.54,
+        "hybrid": 0.76,
+        "hybrid_delta_bm25": -0.05999999999999994,
+        "hybrid_delta_dense": 0.21999999999999997
+      }
+    },
+    "mrr": {
+      "bm25": 0.5770000000000001,
+      "dense": 0.42266666666666663,
+      "hybrid": 0.5952142857142857,
+      "hybrid_delta_bm25": 0.018214285714285627,
+      "hybrid_delta_dense": 0.17254761904761906
+    },
+    "ndcg_at_k": {
+      "1": {
+        "bm25": 0.4,
+        "dense": 0.34,
+        "hybrid": 0.48,
+        "hybrid_delta_bm25": 0.07999999999999996,
+        "hybrid_delta_dense": 0.13999999999999996
+      },
+      "10": {
+        "bm25": 0.6358617674318647,
+        "dense": 0.467057688202501,
+        "hybrid": 0.6419433461367484,
+        "hybrid_delta_bm25": 0.006081578704883683,
+        "hybrid_delta_dense": 0.17488565793424743
+      },
+      "3": {
+        "bm25": 0.5875817012229905,
+        "dense": 0.38813564151953883,
+        "hybrid": 0.5675970109508626,
+        "hybrid_delta_bm25": -0.019984690272127903,
+        "hybrid_delta_dense": 0.17946136943132374
+      },
+      "5": {
+        "bm25": 0.6164132989292259,
+        "dense": 0.42171329114863326,
+        "hybrid": 0.6080352417078708,
+        "hybrid_delta_bm25": -0.008378057221355095,
+        "hybrid_delta_dense": 0.18632195055923756
+      }
+    },
+    "recall_at_k": {
+      "1": {
+        "bm25": 0.4,
+        "dense": 0.32666666666666666,
+        "hybrid": 0.4666666666666666,
+        "hybrid_delta_bm25": 0.0666666666666666,
+        "hybrid_delta_dense": 0.13999999999999996
+      },
+      "10": {
+        "bm25": 0.8266666666666667,
+        "dense": 0.6466666666666667,
+        "hybrid": 0.8266666666666667,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.17999999999999994
+      },
+      "3": {
+        "bm25": 0.7066666666666667,
+        "dense": 0.42666666666666664,
+        "hybrid": 0.6266666666666666,
+        "hybrid_delta_bm25": -0.08000000000000007,
+        "hybrid_delta_dense": 0.19999999999999996
+      },
+      "5": {
+        "bm25": 0.7766666666666667,
+        "dense": 0.5066666666666666,
+        "hybrid": 0.7266666666666667,
+        "hybrid_delta_bm25": -0.050000000000000044,
+        "hybrid_delta_dense": 0.22000000000000008
+      }
+    }
+  },
+  "paired": {
+    "hybrid_vs_best_component": {
+      "best_component_wins": 13,
+      "hybrid_wins": 5,
+      "ties": 32
+    },
+    "hybrid_vs_bm25": {
+      "bm25_wins": 10,
+      "hybrid_loses_baseline_hit": 1,
+      "hybrid_recovers_baseline_miss": 2,
+      "hybrid_wins": 14,
+      "ties": 26
+    },
+    "hybrid_vs_dense": {
+      "dense_wins": 3,
+      "hybrid_loses_baseline_hit": 0,
+      "hybrid_recovers_baseline_miss": 9,
+      "hybrid_wins": 24,
+      "ties": 23
+    }
+  },
+  "query_type_method": "Deterministic wording cohorts inherited from the Day 23 paired comparison.",
+  "query_types": {
+    "behavioral/procedural": {
+      "bm25_mrr": 0.5025641025641026,
+      "bm25_vs_hybrid_wins": 2,
+      "dense_mrr": 0.5566239316239316,
+      "hybrid_delta_bm25": 0.06474358974358974,
+      "hybrid_delta_dense": 0.010683760683760646,
+      "hybrid_mrr": 0.5673076923076923,
+      "hybrid_vs_bm25_wins": 6,
+      "question_count": 13,
+      "ties": 5
+    },
+    "conceptual/descriptive": {
+      "bm25_mrr": 0.6681818181818181,
+      "bm25_vs_hybrid_wins": 5,
+      "dense_mrr": 0.4080808080808081,
+      "hybrid_delta_bm25": 0.0016233766233767488,
+      "hybrid_delta_dense": 0.26172438672438675,
+      "hybrid_mrr": 0.6698051948051948,
+      "hybrid_vs_bm25_wins": 5,
+      "question_count": 22,
+      "ties": 12
+    },
+    "exact-reference": {
+      "bm25_mrr": 0.5077777777777778,
+      "bm25_vs_hybrid_wins": 3,
+      "dense_mrr": 0.32796296296296296,
+      "hybrid_delta_bm25": 0.0022222222222222365,
+      "hybrid_delta_dense": 0.18203703703703705,
+      "hybrid_mrr": 0.51,
+      "hybrid_vs_bm25_wins": 3,
+      "question_count": 15,
+      "ties": 9
+    }
+  },
+  "question_count": 50,
+  "questions": [
+    {
+      "best_component_reciprocal_rank": 0.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "What does FastAPI read from the request body when you declare a Python type?",
+      "question_id": "sqa-22853a3ab950cd44",
+      "relevant_chunk_ids": [
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 0.25,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 4,
+      "bm25_reciprocal_rank": 0.25,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 8,
+      "hybrid_reciprocal_rank": 0.125,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "Which nested field key is used in the HTTP, Python, TypeScript, Rust, and Java examples to specify the sightseeing condition?",
+      "question_id": "sqa-8111f18ad4679ac4",
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "relevant_fusion_sources": {
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255": {
+          "bm25": {
+            "rank": 4,
+            "rrf_contribution": 0.015625,
+            "score": 34.12201133763669
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "What HTTP endpoint is shown for scrolling points in a collection?",
+      "question_id": "sqa-54a24f6e54a73e24",
+      "relevant_chunk_ids": [
+        "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Name two advantages of using UploadFile over bytes.",
+      "question_id": "sqa-2312659ece1beeb0",
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "relevant_fusion_sources": {
+        "13b7773d-2090-5219-8877-ba7558da57ac": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 22.930340774727647
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.5377034
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "behavioral/procedural",
+      "question": "What happens to a file once its in-memory size limit is exceeded when using UploadFile?",
+      "question_id": "sqa-8f550fc0f0c97fdf",
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "relevant_fusion_sources": {
+        "13b7773d-2090-5219-8877-ba7558da57ac": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 30.096522370520237
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.5636903
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 2,
+      "dense_reciprocal_rank": 0.5,
+      "expected_source": "fastapi/docs/tutorial/request-files.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What Python object does UploadFile expose that can be passed to libraries expecting a file-like object?",
+      "question_id": "sqa-220fbcfa80439038",
+      "relevant_chunk_ids": [
+        "13b7773d-2090-5219-8877-ba7558da57ac"
+      ],
+      "relevant_fusion_sources": {
+        "13b7773d-2090-5219-8877-ba7558da57ac": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 46.32024516164699
+          },
+          "dense": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 0.6722547
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.3333333333333333,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": 9,
+      "dense_reciprocal_rank": 0.1111111111111111,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hybrid_rank": 2,
+      "hybrid_reciprocal_rank": 0.5,
+      "hybrid_vs_best_component": "hybrid",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "What file format does MLflow use for saving models from a variety of tools?",
+      "question_id": "sqa-7f4b9c901bcac8d2",
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "relevant_fusion_sources": {
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37": {
+          "bm25": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 22.842882451643987
+          },
+          "dense": {
+            "rank": 9,
+            "rrf_contribution": 0.014492753623188406,
+            "score": 0.6471417
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 5,
+      "bm25_reciprocal_rank": 0.2,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Which MLflow flavor can log scikit-learn models as artifacts for serving?",
+      "question_id": "sqa-806e7d79beff73b8",
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "relevant_fusion_sources": {
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37": {
+          "bm25": {
+            "rank": 5,
+            "rrf_contribution": 0.015384615384615385,
+            "score": 31.189995396818986
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.761984
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.3333333333333333,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hybrid_rank": 8,
+      "hybrid_reciprocal_rank": 0.125,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "What is the exact MLflow command to serve a model located at runs:/<RUN_ID>/model?",
+      "question_id": "sqa-43e609692540e39f",
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "relevant_fusion_sources": {
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37": {
+          "bm25": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 32.228219942067454
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/quickstart_drilldown/index.mdx",
+      "hybrid_rank": 5,
+      "hybrid_reciprocal_rank": 0.2,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What does an MLmodel file declare about each model to enable serving it as a Python function?",
+      "question_id": "sqa-fe6afefa50c92384",
+      "relevant_chunk_ids": [
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+      ],
+      "relevant_fusion_sources": {
+        "c62d01b9-14fc-5f93-aa8e-540cd36c9b37": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 28.201572697414562
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "What HTTP method and path are used to observe the cluster state after synchronization?",
+      "question_id": "sqa-ebcd24ac3da514b9",
+      "relevant_chunk_ids": [
+        "6dc03388-cb65-5ba4-bc45-947108709ffc"
+      ],
+      "relevant_fusion_sources": {
+        "6dc03388-cb65-5ba4-bc45-947108709ffc": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 26.81878310780268
+          },
+          "dense": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 0.4796801
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.3333333333333333,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hybrid_rank": 7,
+      "hybrid_reciprocal_rank": 0.14285714285714285,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What warning is given about handling a plain password in this section?",
+      "question_id": "sqa-50e37593177ea153",
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "relevant_fusion_sources": {
+        "60e1a507-5db2-5497-b074-bfa41ae03129": {
+          "bm25": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 16.19377431218388
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/response-model.md",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "Which library should be installed to use EmailStr according to the document?",
+      "question_id": "sqa-dc321a1b57e8d142",
+      "relevant_chunk_ids": [
+        "60e1a507-5db2-5497-b074-bfa41ae03129"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/api_reference/source/rest-api.rst",
+      "hybrid_rank": 5,
+      "hybrid_reciprocal_rank": 0.2,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "What happens to the request_preview size and where is the full request stored?",
+      "question_id": "sqa-1333a2c4d6953cf4",
+      "relevant_chunk_ids": [
+        "c584436b-b86e-5e08-9299-696550b4562e"
+      ],
+      "relevant_fusion_sources": {
+        "c584436b-b86e-5e08-9299-696550b4562e": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 29.251703545953962
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 4,
+      "hybrid_reciprocal_rank": 0.25,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "Which distance measures are given as examples for calculating similarity between embeddings?",
+      "question_id": "sqa-c550d812bb5272e0",
+      "relevant_chunk_ids": [
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9"
+      ],
+      "relevant_fusion_sources": {
+        "edc4b689-6eca-59c2-937a-c48adfe47bd9": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 27.380872702751976
+          },
+          "dense": {
+            "rank": 17,
+            "rrf_contribution": 0.012987012987012988,
+            "score": 0.49545404
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/dependencies/index.mdx",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Which file contains the information required to restore the model environment using virtualenv, and what three things does it specify?",
+      "question_id": "sqa-c00b9f531d2e5586",
+      "relevant_chunk_ids": [
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95"
+      ],
+      "relevant_fusion_sources": {
+        "2a5c50f9-ab41-50a5-b2ec-54a38036aa95": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 40.88085628010327
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.64422697
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 5,
+      "dense_reciprocal_rank": 0.2,
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "Which standards can be used to establish a secure authentication setup in FastAPI according to the tutorial recap?",
+      "question_id": "sqa-ade53f89f8629636",
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "relevant_fusion_sources": {
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 30.277426652959193
+          },
+          "dense": {
+            "rank": 5,
+            "rrf_contribution": 0.015384615384615385,
+            "score": 0.6341695
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 6,
+      "bm25_reciprocal_rank": 0.16666666666666666,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Which specific third-party packages are mentioned as easily usable with FastAPI for security handling?",
+      "question_id": "sqa-52abd01126658d4e",
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "relevant_fusion_sources": {
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86": {
+          "bm25": {
+            "rank": 6,
+            "rrf_contribution": 0.015151515151515152,
+            "score": 25.55123270184068
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7491087
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/security/oauth2-jwt.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What mechanism is used to implement a fine-grained permission system in FastAPI?",
+      "question_id": "sqa-9bbefdf430f9c31f",
+      "relevant_chunk_ids": [
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+      ],
+      "relevant_fusion_sources": {
+        "0421b964-469f-55a3-ae9b-e64ce5cafe86": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 30.364320037063944
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 3,
+      "bm25_reciprocal_rank": 0.3333333333333333,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hybrid_rank": 2,
+      "hybrid_reciprocal_rank": 0.5,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "baseline",
+      "query_type": "behavioral/procedural",
+      "question": "How does MLflow determine the input and output schema when logging a PythonModel that includes type hints?",
+      "question_id": "sqa-5c5e1373d68176f8",
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "relevant_fusion_sources": {
+        "21560148-6a34-5a28-9b74-593b0ac45fef": {
+          "bm25": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 40.86855895583548
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.8521882
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "What occurs if an explicit signature parameter is provided when logging a PythonModel with type hints?",
+      "question_id": "sqa-4d1f9fc474b0154c",
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "relevant_fusion_sources": {
+        "21560148-6a34-5a28-9b74-593b0ac45fef": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 35.7718760105428
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7379672
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model/python_model.mdx",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Where must pydantic model type hints be defined to use pydantic objects as inputs for an MLflow PythonModel?",
+      "question_id": "sqa-ceaead1685abb224",
+      "relevant_chunk_ids": [
+        "21560148-6a34-5a28-9b74-593b0ac45fef"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 4,
+      "dense_reciprocal_rank": 0.25,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "hybrid",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What initial methods can be used to retrieve a subset of documents before applying a reranker?",
+      "question_id": "sqa-673de786b69493ab",
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "relevant_fusion_sources": {
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 24.073292934965586
+          },
+          "dense": {
+            "rank": 4,
+            "rrf_contribution": 0.015625,
+            "score": 0.6081934
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "behavioral/procedural",
+      "question": "What primary trade-off do rerankers make when evaluating document relevance?",
+      "question_id": "sqa-7d97ec3c52aa5853",
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "relevant_fusion_sources": {
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 28.640341869279958
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7351372
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "What is the primary function of a reranker in document search?",
+      "question_id": "sqa-580f65fefad3cf3a",
+      "relevant_chunk_ids": [
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+      ],
+      "relevant_fusion_sources": {
+        "a7ac6e05-1341-56fb-ad86-459a76c59eca": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 23.135308837281002
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7874368
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Which methods can be used to serve static frontend applications in FastAPI?",
+      "question_id": "sqa-bd0d27f9ade799b8",
+      "relevant_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+      ],
+      "relevant_fusion_sources": {
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 27.953948997916385
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.6438581
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 6,
+      "dense_reciprocal_rank": 0.16666666666666666,
+      "expected_source": "fastapi/docs/tutorial/frontend.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "hybrid",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "behavioral/procedural",
+      "question": "In what order does FastAPI evaluate incoming requests when serving static frontend files alongside API routes?",
+      "question_id": "sqa-4cb482f1f218af58",
+      "relevant_chunk_ids": [
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+      ],
+      "relevant_fusion_sources": {
+        "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 27.14349645558293
+          },
+          "dense": {
+            "rank": 6,
+            "rrf_contribution": 0.015151515151515152,
+            "score": 0.58410764
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 4,
+      "dense_reciprocal_rank": 0.25,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "In which section of the MLflow Run details page can a user find and select the model folder to register?",
+      "question_id": "sqa-0962a7db4ec6c78a",
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "relevant_fusion_sources": {
+        "d729a823-3f12-52de-85e0-5c24b872cad4": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 50.785115561292244
+          },
+          "dense": {
+            "rank": 4,
+            "rrf_contribution": 0.015625,
+            "score": 0.7118222
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 9,
+      "dense_reciprocal_rank": 0.1111111111111111,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What options are available in the Model dropdown menu on the model registration form?",
+      "question_id": "sqa-a8ee8614cd6dc87b",
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "relevant_fusion_sources": {
+        "d729a823-3f12-52de-85e0-5c24b872cad4": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 33.72978941931751
+          },
+          "dense": {
+            "rank": 9,
+            "rrf_contribution": 0.014492753623188406,
+            "score": 0.43501633
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/workflow.mdx",
+      "hybrid_rank": 3,
+      "hybrid_reciprocal_rank": 0.3333333333333333,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "behavioral/procedural",
+      "question": "What occurs when a user chooses the \"Create New Model\" option in the Model dropdown menu?",
+      "question_id": "sqa-7622236114712036",
+      "relevant_chunk_ids": [
+        "d729a823-3f12-52de-85e0-5c24b872cad4"
+      ],
+      "relevant_fusion_sources": {
+        "d729a823-3f12-52de-85e0-5c24b872cad4": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 33.18494387772528
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 4,
+      "dense_reciprocal_rank": 0.25,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 2,
+      "hybrid_reciprocal_rank": 0.5,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "Which parameter in a Qdrant query allows retrieving a vector using a point ID located in a different collection?",
+      "question_id": "sqa-6055940f3e30c975",
+      "relevant_chunk_ids": [
+        "d37849c9-2d35-550a-88af-f84edd4d3191"
+      ],
+      "relevant_fusion_sources": {
+        "d37849c9-2d35-550a-88af-f84edd4d3191": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 31.72959222105347
+          },
+          "dense": {
+            "rank": 4,
+            "rrf_contribution": 0.015625,
+            "score": 0.68096346
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 8,
+      "dense_reciprocal_rank": 0.125,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "hybrid",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "What two primary properties are required inside the lookup_from configuration when referencing a point in another collection?",
+      "question_id": "sqa-d20c9187fa7725e6",
+      "relevant_chunk_ids": [
+        "d37849c9-2d35-550a-88af-f84edd4d3191"
+      ],
+      "relevant_fusion_sources": {
+        "d37849c9-2d35-550a-88af-f84edd4d3191": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 23.059672774517416
+          },
+          "dense": {
+            "rank": 8,
+            "rrf_contribution": 0.014705882352941176,
+            "score": 0.41057178
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.2,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 5,
+      "bm25_reciprocal_rank": 0.2,
+      "dense_rank": 10,
+      "dense_reciprocal_rank": 0.1,
+      "expected_source": "fastapi/docs/tutorial/cookie-param-models.md",
+      "hybrid_rank": 5,
+      "hybrid_reciprocal_rank": 0.2,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "exact-reference",
+      "question": "How can extra cookies be forbidden in a FastAPI cookie parameter model?",
+      "question_id": "sqa-8397e93659723d06",
+      "relevant_chunk_ids": [
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+      ],
+      "relevant_fusion_sources": {
+        "221aa309-cce0-5abb-bb6f-af8f90ff696a": {
+          "bm25": {
+            "rank": 5,
+            "rrf_contribution": 0.015384615384615385,
+            "score": 27.443179538368494
+          },
+          "dense": {
+            "rank": 10,
+            "rrf_contribution": 0.014285714285714285,
+            "score": 0.6117251
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 8,
+      "dense_reciprocal_rank": 0.125,
+      "expected_source": "mlflow/docs/docs/self-hosting/security/role-based-access-control.mdx",
+      "hybrid_rank": 3,
+      "hybrid_reciprocal_rank": 0.3333333333333333,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "behavioral/procedural",
+      "question": "What is the main difference between the legacy permission model and the role-based permission model in MLflow?",
+      "question_id": "sqa-a6c95a648b8cccd8",
+      "relevant_chunk_ids": [
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add"
+      ],
+      "relevant_fusion_sources": {
+        "7ae155a1-d81d-5b4c-b57e-97c0c2151add": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 50.24610712996226
+          },
+          "dense": {
+            "rank": 8,
+            "rrf_contribution": 0.014705882352941176,
+            "score": 0.55406976
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/how-to/separate-openapi-schemas.md",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "How does OpenAPI represent an output response field that is always present even if its value is null?",
+      "question_id": "sqa-9663384ed9b2a6ce",
+      "relevant_chunk_ids": [
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666"
+      ],
+      "relevant_fusion_sources": {
+        "fa25335a-b76a-5d78-b9f0-0b6926cec666": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 39.88861758410887
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.684148
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/first-steps.md",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "After saving a minimal FastAPI application as main.py, which command starts the development server, and where can I open the interactive API documentation?",
+      "question_id": "gqa-001",
+      "relevant_chunk_ids": [
+        "4f33db24-e09d-5dd8-a598-9ecbeaceaa67"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 0.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "fastapi/docs/tutorial/body.md",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "behavioral/procedural",
+      "question": "How do I declare a JSON request body in FastAPI, and what does FastAPI do with it?",
+      "question_id": "gqa-004",
+      "relevant_chunk_ids": [
+        "4f9a351b-6185-5c66-8210-39e7f4f3bb6f",
+        "d8f18495-b006-5720-b6e6-3ea7ac1827ef",
+        "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 0.2,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 5,
+      "bm25_reciprocal_rank": 0.2,
+      "dense_rank": 9,
+      "dense_reciprocal_rank": 0.1111111111111111,
+      "expected_source": "fastapi/docs/tutorial/dependencies/index.md",
+      "hybrid_rank": 3,
+      "hybrid_reciprocal_rank": 0.3333333333333333,
+      "hybrid_vs_best_component": "hybrid",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "behavioral/procedural",
+      "question": "How should a callable dependency be passed to FastAPI's Depends, and who invokes it?",
+      "question_id": "gqa-005",
+      "relevant_chunk_ids": [
+        "d4684ab1-2369-5f28-85aa-926a4f7c970c",
+        "c4810e0a-65d1-544a-b36e-e533034be460"
+      ],
+      "relevant_fusion_sources": {
+        "c4810e0a-65d1-544a-b36e-e533034be460": {
+          "bm25": {
+            "rank": 8,
+            "rrf_contribution": 0.014705882352941176,
+            "score": 19.322722489139966
+          },
+          "dense": {
+            "rank": 9,
+            "rrf_contribution": 0.014492753623188406,
+            "score": 0.63837683
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "fastapi/docs/tutorial/background-tasks.md",
+      "hybrid_rank": 4,
+      "hybrid_reciprocal_rank": 0.25,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "baseline",
+      "query_type": "behavioral/procedural",
+      "question": "When should I use FastAPI BackgroundTasks, and when should I consider a tool such as Celery instead?",
+      "question_id": "gqa-007",
+      "relevant_chunk_ids": [
+        "83d9bb57-5787-5922-87b7-bae750a3fb47"
+      ],
+      "relevant_fusion_sources": {
+        "83d9bb57-5787-5922-87b7-bae750a3fb47": {
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7731806
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "fastapi/docs/tutorial/cors.md",
+      "hybrid_rank": 2,
+      "hybrid_reciprocal_rank": 0.5,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "Can I use a wildcard CORS origin in FastAPI when requests include cookies or Authorization headers?",
+      "question_id": "gqa-009",
+      "relevant_chunk_ids": [
+        "b1f5d2b0-7b6f-5c8b-b25a-a876d1ebbebc",
+        "1f008dac-77da-5775-a672-e0f1622677eb"
+      ],
+      "relevant_fusion_sources": {
+        "1f008dac-77da-5775-a672-e0f1622677eb": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 36.015809744335364
+          },
+          "dense": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 0.64939165
+          }
+        },
+        "b1f5d2b0-7b6f-5c8b-b25a-a876d1ebbebc": {
+          "bm25": {
+            "rank": 7,
+            "rrf_contribution": 0.014925373134328358,
+            "score": 26.824169307142057
+          },
+          "dense": {
+            "rank": 12,
+            "rrf_contribution": 0.013888888888888888,
+            "score": 0.54626757
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/quickstart/index.mdx",
+      "hybrid_rank": null,
+      "hybrid_reciprocal_rank": 0.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "Which MLflow calls does the tracking quickstart use to manually record hyperparameters, a scikit-learn model, an accuracy metric, and a descriptive tag?",
+      "question_id": "gqa-010",
+      "relevant_chunk_ids": [
+        "ea0f5abe-3107-544f-bc73-6571d519909a",
+        "aa5665cd-f430-5f1e-a49f-05d2953d9a95",
+        "161dd7b4-71e3-579c-a3ad-55e4717d2cdd",
+        "7c43bcf7-1f9b-548c-b5c6-30c714ed3005"
+      ],
+      "relevant_fusion_sources": {}
+    },
+    {
+      "best_component_reciprocal_rank": 0.3333333333333333,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": null,
+      "bm25_reciprocal_rank": 0.0,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/index.mdx",
+      "hybrid_rank": 8,
+      "hybrid_reciprocal_rank": 0.125,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "baseline",
+      "query_type": "behavioral/procedural",
+      "question": "What is the difference between MLflow's backend store and artifact store?",
+      "question_id": "gqa-011",
+      "relevant_chunk_ids": [
+        "5fac0b1d-2abd-55b8-a0d8-39df149c5c49",
+        "8793a7a9-7a3c-5156-96bc-0865d968fe11"
+      ],
+      "relevant_fusion_sources": {
+        "5fac0b1d-2abd-55b8-a0d8-39df149c5c49": {
+          "dense": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 0.69724
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 2,
+      "dense_reciprocal_rank": 0.5,
+      "expected_source": "mlflow/docs/docs/classic-ml/tracking/autolog/index.mdx",
+      "hybrid_rank": 2,
+      "hybrid_reciprocal_rank": 0.5,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "behavioral/procedural",
+      "question": "How can I enable MLflow autologging only for PyTorch, or disable it for scikit-learn while keeping generic autologging enabled?",
+      "question_id": "gqa-013",
+      "relevant_chunk_ids": [
+        "26ceff1b-d430-51c7-8e56-49dfdf9e593b",
+        "59eeabca-3375-5b9a-9180-71f0c38a8189"
+      ],
+      "relevant_fusion_sources": {
+        "26ceff1b-d430-51c7-8e56-49dfdf9e593b": {
+          "bm25": {
+            "rank": 6,
+            "rrf_contribution": 0.015151515151515152,
+            "score": 37.83536277546287
+          },
+          "dense": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 0.8859466
+          }
+        },
+        "59eeabca-3375-5b9a-9180-71f0c38a8189": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 53.730799229244504
+          },
+          "dense": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 0.8714141
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": null,
+      "dense_reciprocal_rank": 0.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/model-registry/index.mdx",
+      "hybrid_rank": 7,
+      "hybrid_reciprocal_rank": 0.14285714285714285,
+      "hybrid_vs_best_component": "baseline",
+      "hybrid_vs_bm25": "baseline",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What is an MLflow model alias, and how can a champion alias change which model version production loads?",
+      "question_id": "gqa-014",
+      "relevant_chunk_ids": [
+        "b974d384-0c75-58cb-b297-7423ac691b99"
+      ],
+      "relevant_fusion_sources": {
+        "b974d384-0c75-58cb-b297-7423ac691b99": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 42.945156031673676
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "mlflow/docs/docs/classic-ml/dataset/index.mdx",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "tie",
+      "query_type": "behavioral/procedural",
+      "question": "How do I create and log a pandas training dataset with MLflow while retaining its source and training context?",
+      "question_id": "gqa-016",
+      "relevant_chunk_ids": [
+        "a8b07afa-f99c-53df-a53d-b09ae49fff4f",
+        "110eb9fe-7e39-55ce-8680-6536a229ea93",
+        "ac5318b3-539c-5717-bcd1-451aaeca98f8"
+      ],
+      "relevant_fusion_sources": {
+        "110eb9fe-7e39-55ce-8680-6536a229ea93": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 30.154399654269596
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.8235564
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 0.5,
+      "best_components": [
+        "bm25"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 3,
+      "dense_reciprocal_rank": 0.3333333333333333,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 2,
+      "hybrid_reciprocal_rank": 0.5,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "hybrid",
+      "query_type": "conceptual/descriptive",
+      "question": "What dimensionality and distance-metric constraints apply to vectors in one Qdrant collection?",
+      "question_id": "gqa-018",
+      "relevant_chunk_ids": [
+        "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8"
+      ],
+      "relevant_fusion_sources": {
+        "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 29.932326803602276
+          },
+          "dense": {
+            "rank": 3,
+            "rrf_contribution": 0.015873015873015872,
+            "score": 0.70093995
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "When a Qdrant filter is applied to an array-valued payload field, when does the filter succeed?",
+      "question_id": "gqa-021",
+      "relevant_chunk_ids": [
+        "5de07134-aa95-52e2-9348-7ddf755b49ec"
+      ],
+      "relevant_fusion_sources": {
+        "5de07134-aa95-52e2-9348-7ddf755b49ec": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 36.237533767980125
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7645327
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "exact-reference",
+      "question": "What does Qdrant's prefetch parameter do in a hybrid or multi-stage Query API request?",
+      "question_id": "gqa-023",
+      "relevant_chunk_ids": [
+        "005035b2-c646-567f-9606-38891a29a23c"
+      ],
+      "relevant_fusion_sources": {
+        "005035b2-c646-567f-9606-38891a29a23c": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 47.0738732232879
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7464994
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense",
+        "bm25"
+      ],
+      "bm25_rank": 1,
+      "bm25_reciprocal_rank": 1.0,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "tie",
+      "hybrid_vs_dense": "tie",
+      "query_type": "behavioral/procedural",
+      "question": "How do Qdrant's RRF and DBSF fusion methods combine results from multiple queries?",
+      "question_id": "gqa-024",
+      "relevant_chunk_ids": [
+        "1e1ee784-4222-58b0-a79e-5b0cf331deb3"
+      ],
+      "relevant_fusion_sources": {
+        "1e1ee784-4222-58b0-a79e-5b0cf331deb3": {
+          "bm25": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 43.2581894673151
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.7493841
+          }
+        }
+      }
+    },
+    {
+      "best_component_reciprocal_rank": 1.0,
+      "best_components": [
+        "dense"
+      ],
+      "bm25_rank": 2,
+      "bm25_reciprocal_rank": 0.5,
+      "dense_rank": 1,
+      "dense_reciprocal_rank": 1.0,
+      "expected_source": "qdrant/qdrant_llms_full.txt",
+      "hybrid_rank": 1,
+      "hybrid_reciprocal_rank": 1.0,
+      "hybrid_vs_best_component": "tie",
+      "hybrid_vs_bm25": "hybrid",
+      "hybrid_vs_dense": "tie",
+      "query_type": "conceptual/descriptive",
+      "question": "For Qdrant multitenancy, when is one payload-partitioned collection preferred over multiple collections?",
+      "question_id": "gqa-025",
+      "relevant_chunk_ids": [
+        "2218ce03-9b22-5ce9-8603-3b4414670adb"
+      ],
+      "relevant_fusion_sources": {
+        "2218ce03-9b22-5ce9-8603-3b4414670adb": {
+          "bm25": {
+            "rank": 2,
+            "rrf_contribution": 0.016129032258064516,
+            "score": 31.457881424990376
+          },
+          "dense": {
+            "rank": 1,
+            "rrf_contribution": 0.01639344262295082,
+            "score": 0.8180839
+          }
+        }
+      }
+    }
+  ],
+  "relevance_groups": {
+    "group_count": 33,
+    "groups": [
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "005035b2-c646-567f-9606-38891a29a23c"
+        ]
+      },
+      {
+        "bm25_mrr": 0.7222222222222222,
+        "dense_mrr": 0.39999999999999997,
+        "hybrid_delta_bm25": 0.2777777777777778,
+        "hybrid_delta_dense": 0.6000000000000001,
+        "hybrid_mrr": 1.0,
+        "question_count": 3,
+        "relevant_chunk_ids": [
+          "0421b964-469f-55a3-ae9b-e64ce5cafe86"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.5,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "110eb9fe-7e39-55ce-8680-6536a229ea93",
+          "a8b07afa-f99c-53df-a53d-b09ae49fff4f",
+          "ac5318b3-539c-5717-bcd1-451aaeca98f8"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 0.8333333333333334,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.16666666666666663,
+        "hybrid_mrr": 1.0,
+        "question_count": 3,
+        "relevant_chunk_ids": [
+          "13b7773d-2090-5219-8877-ba7558da57ac"
+        ]
+      },
+      {
+        "bm25_mrr": 0.0,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 0.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "161dd7b4-71e3-579c-a3ad-55e4717d2cdd",
+          "7c43bcf7-1f9b-548c-b5c6-30c714ed3005",
+          "aa5665cd-f430-5f1e-a49f-05d2953d9a95",
+          "ea0f5abe-3107-544f-bc73-6571d519909a"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "1e1ee784-4222-58b0-a79e-5b0cf331deb3"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.3333333333333333,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.16666666666666669,
+        "hybrid_mrr": 0.5,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "1f008dac-77da-5775-a672-e0f1622677eb",
+          "b1f5d2b0-7b6f-5c8b-b25a-a876d1ebbebc"
+        ]
+      },
+      {
+        "bm25_mrr": 0.611111111111111,
+        "dense_mrr": 0.6666666666666666,
+        "hybrid_delta_bm25": -0.11111111111111105,
+        "hybrid_delta_dense": -0.16666666666666663,
+        "hybrid_mrr": 0.5,
+        "question_count": 3,
+        "relevant_chunk_ids": [
+          "21560148-6a34-5a28-9b74-593b0ac45fef"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.5,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "2218ce03-9b22-5ce9-8603-3b4414670adb"
+        ]
+      },
+      {
+        "bm25_mrr": 0.2,
+        "dense_mrr": 0.1,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.1,
+        "hybrid_mrr": 0.2,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "221aa309-cce0-5abb-bb6f-af8f90ff696a"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.5,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 0.5,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "26ceff1b-d430-51c7-8e56-49dfdf9e593b",
+          "59eeabca-3375-5b9a-9180-71f0c38a8189"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "2a5c50f9-ab41-50a5-b2ec-54a38036aa95"
+        ]
+      },
+      {
+        "bm25_mrr": 0.0,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 0.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "4f33db24-e09d-5dd8-a598-9ecbeaceaa67"
+        ]
+      },
+      {
+        "bm25_mrr": 0.0,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 0.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "4f9a351b-6185-5c66-8210-39e7f4f3bb6f",
+          "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335",
+          "d8f18495-b006-5720-b6e6-3ea7ac1827ef"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "5de07134-aa95-52e2-9348-7ddf755b49ec"
+        ]
+      },
+      {
+        "bm25_mrr": 0.0,
+        "dense_mrr": 0.3333333333333333,
+        "hybrid_delta_bm25": 0.125,
+        "hybrid_delta_dense": -0.20833333333333331,
+        "hybrid_mrr": 0.125,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "5fac0b1d-2abd-55b8-a0d8-39df149c5c49",
+          "8793a7a9-7a3c-5156-96bc-0865d968fe11"
+        ]
+      },
+      {
+        "bm25_mrr": 0.16666666666666666,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": -0.09523809523809523,
+        "hybrid_delta_dense": 0.07142857142857142,
+        "hybrid_mrr": 0.07142857142857142,
+        "question_count": 2,
+        "relevant_chunk_ids": [
+          "60e1a507-5db2-5497-b074-bfa41ae03129"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 0.3333333333333333,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.6666666666666667,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "6dc03388-cb65-5ba4-bc45-947108709ffc"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.125,
+        "hybrid_delta_bm25": -0.16666666666666669,
+        "hybrid_delta_dense": 0.20833333333333331,
+        "hybrid_mrr": 0.3333333333333333,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "7ae155a1-d81d-5b4c-b57e-97c0c2151add"
+        ]
+      },
+      {
+        "bm25_mrr": 0.0,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.25,
+        "hybrid_delta_dense": -0.75,
+        "hybrid_mrr": 0.25,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "83d9bb57-5787-5922-87b7-bae750a3fb47"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.5833333333333334,
+        "hybrid_delta_bm25": 0.5,
+        "hybrid_delta_dense": 0.41666666666666663,
+        "hybrid_mrr": 1.0,
+        "question_count": 2,
+        "relevant_chunk_ids": [
+          "88db2e09-9fe8-5b0d-a66f-b0a278fea3cf"
+        ]
+      },
+      {
+        "bm25_mrr": 0.8333333333333334,
+        "dense_mrr": 0.75,
+        "hybrid_delta_bm25": 0.16666666666666663,
+        "hybrid_delta_dense": 0.25,
+        "hybrid_mrr": 1.0,
+        "question_count": 3,
+        "relevant_chunk_ids": [
+          "a7ac6e05-1341-56fb-ad86-459a76c59eca"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": -0.35714285714285715,
+        "hybrid_delta_dense": 0.14285714285714285,
+        "hybrid_mrr": 0.14285714285714285,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "b974d384-0c75-58cb-b297-7423ac691b99"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.3333333333333333,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.16666666666666669,
+        "hybrid_mrr": 0.5,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "bf9e0b10-1bd4-58d1-9333-01afe8f0e2f8"
+        ]
+      },
+      {
+        "bm25_mrr": 0.2,
+        "dense_mrr": 0.1111111111111111,
+        "hybrid_delta_bm25": 0.1333333333333333,
+        "hybrid_delta_dense": 0.2222222222222222,
+        "hybrid_mrr": 0.3333333333333333,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "c4810e0a-65d1-544a-b36e-e533034be460",
+          "d4684ab1-2369-5f28-85aa-926a4f7c970c"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": -0.8,
+        "hybrid_delta_dense": 0.2,
+        "hybrid_mrr": 0.2,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "c584436b-b86e-5e08-9299-696550b4562e"
+        ]
+      },
+      {
+        "bm25_mrr": 0.4666666666666667,
+        "dense_mrr": 0.2777777777777778,
+        "hybrid_delta_bm25": -0.010416666666666685,
+        "hybrid_delta_dense": 0.1784722222222222,
+        "hybrid_mrr": 0.45625,
+        "question_count": 4,
+        "relevant_chunk_ids": [
+          "c62d01b9-14fc-5f93-aa8e-540cd36c9b37"
+        ]
+      },
+      {
+        "bm25_mrr": 0.0,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 0.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "cb4cd8b6-6c0d-535e-ac26-f6b00cfe2335"
+        ]
+      },
+      {
+        "bm25_mrr": 0.5,
+        "dense_mrr": 0.1875,
+        "hybrid_delta_bm25": 0.25,
+        "hybrid_delta_dense": 0.5625,
+        "hybrid_mrr": 0.75,
+        "question_count": 2,
+        "relevant_chunk_ids": [
+          "d37849c9-2d35-550a-88af-f84edd4d3191"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 0.12037037037037036,
+        "hybrid_delta_bm25": -0.2222222222222222,
+        "hybrid_delta_dense": 0.6574074074074074,
+        "hybrid_mrr": 0.7777777777777778,
+        "question_count": 3,
+        "relevant_chunk_ids": [
+          "d729a823-3f12-52de-85e0-5c24b872cad4"
+        ]
+      },
+      {
+        "bm25_mrr": 0.125,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": -0.0625,
+        "hybrid_delta_dense": 0.0625,
+        "hybrid_mrr": 0.0625,
+        "question_count": 2,
+        "relevant_chunk_ids": [
+          "ddc4a2f7-ceb0-5fb1-a906-f0521bc57255"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 0.0,
+        "hybrid_delta_bm25": -0.75,
+        "hybrid_delta_dense": 0.25,
+        "hybrid_mrr": 0.25,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "edc4b689-6eca-59c2-937a-c48adfe47bd9"
+        ]
+      },
+      {
+        "bm25_mrr": 1.0,
+        "dense_mrr": 1.0,
+        "hybrid_delta_bm25": 0.0,
+        "hybrid_delta_dense": 0.0,
+        "hybrid_mrr": 1.0,
+        "question_count": 1,
+        "relevant_chunk_ids": [
+          "fa25335a-b76a-5d78-b9f0-0b6926cec666"
+        ]
+      }
+    ],
+    "hybrid_vs_bm25": {
+      "bm25_wins": 9,
+      "hybrid_wins": 9,
+      "ties": 15
+    },
+    "macro_mrr": {
+      "bm25": 0.5401515151515152,
+      "dense": 0.423891694725028,
+      "hybrid": 0.5440145502645503,
+      "hybrid_delta_bm25": 0.003863035113035096,
+      "hybrid_delta_dense": 0.12012285553952223
+    }
+  },
+  "report_paths": {
+    "bm25": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_bm25.json",
+    "dense": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_dense.json",
+    "hybrid": "/Users/hej/Ragops-Control-Plane/reports/evaluations/final_hybrid.json"
+  },
+  "run_names": {
+    "bm25": "final_bm25",
+    "dense": "final_dense",
+    "hybrid": "final_hybrid"
+  },
+  "schema_version": 1
+}

@@ -37,7 +37,7 @@ The primary outputs are reproducible pipeline comparisons and promotion decision
 
 ## Current Implementation
 
-Implementation is complete through Day 46. The current baseline includes:
+Planned milestones are complete through Day 48. The final five-way benchmark, cross-provider semantic judging, cost projection, ablation report, verified MLflow evidence, and evidence-backed failure/regression review are complete. The current baseline includes:
 
 - loaders for Markdown, MDX, RST, text, HTML, and selected Python files
 - deterministic fixed, overlapping, and heading-aware chunking with UUID5 identifiers and SHA256 hashes
@@ -56,6 +56,7 @@ Implementation is complete through Day 46. The current baseline includes:
 - local and Docker Qdrant configuration through `QDRANT_URL`
 - request validation, API error translation, and dashboard error handling
 - immutable historical 80-question/45-label evaluation inputs plus reviewed final snapshots containing 100 golden questions, 50 retrieval labels, and 30 adversarial or unsupported prompts
+- a deterministic 15-case failure analysis spanning nine categories, with 14 evidence-guarded cases promoted to the reviewed regression dataset and one host-dependent latency outlier retained as analysis-only
 - deterministic retrieval metrics and a real dense-baseline evaluation CLI
 - a provenance-checked BM25 evaluation CLI, paired per-question comparison, wording-cohort analysis, and reproducible JSON/CSV/Markdown reports
 - a live hybrid evaluator with dense/BM25/fusion component timings, strict corpus and label parity checks, three-way paired outcomes, relevance-group analysis, and failure reporting
@@ -66,7 +67,7 @@ Implementation is complete through Day 46. The current baseline includes:
 - a monotonic trace context that captures embedding, dense search, BM25, RRF fusion, cross-encoder, and generation latency, retains partial timings on failure, and returns the timing shape through both online endpoints
 - a feedback table linked to traces, schema/version validation, a migration path, and a persistent Docker volume
 - a checked-in four-document vector fixture, deterministic query embeddings, in-memory Qdrant, temporary SQLite, and end-to-end `/health`, `/retrieve`, `/query`, and invalid-request integration tests
-- five independent GitHub Actions checks for Ruff, 286 hermetic unit tests, 179 API/control-plane tests, the 9-test compact evaluation smoke suite, and the live nine-threshold evaluation gate, all without Docker, model downloads, external APIs, or the full ML dependency stack
+- five independent GitHub Actions checks for Ruff, 297 hermetic unit tests, 179 API/control-plane tests, the 9-test compact evaluation smoke suite, and the live nine-threshold evaluation gate, all without Docker, model downloads, external APIs, or the full ML dependency stack
 - a live HTTP evaluation runner that checks all 45 dense top-10 rankings against the offline baseline, verifies every returned SQLite trace, and revalidates the exact four-run MLflow evidence suite
 - a CPU-only API image with deployment-safe project-root resolution, an internal health check, a configurable host port, a persistent Hugging Face cache, and separate API/tracking/dashboard dependency boundaries
 - a strict `rule_router@0.2.0` draft design with FAST/STANDARD/CAREFUL/NO_ANSWER definitions, ordered threshold bands, route execution intent, calibration provenance, and pipeline-registry lifecycle guards
@@ -86,7 +87,7 @@ Current limitations:
 - The cross-encoder is the strongest measured top-five pipeline on the current labels, but its warmed reranker stage averages about 4.27 seconds per query. Day 33 makes it explicitly callable for testing; it is not the default and still needs latency optimization or selective routing.
 - The default offline template client returns a fixed placeholder answer; OpenAI and Gemini generation are implemented but only one provider is selected per API process.
 - Explicit `/query` generation still relies on grounding instructions, but the NO_ANSWER branch on `/route` is policy-enforced and never calls a generation provider. This does not yet protect callers that bypass routing and invoke `/query` directly.
-- Generation evaluation is currently a 10-question LLM-as-judge acceptance sample, not a statistically robust benchmark. Per-query generation cost is returned and persisted; Day 41 aggregates a controlled reference-answer projection for comparison, but production costs are not budget-enforced, invoice-reconciled, or logged to MLflow. The Day 44 compact gate now runs in GitHub Actions, but it remains a five-case deterministic smoke suite rather than the final benchmark. Automatic non-refusal route execution remains required work. Semantic caching, canary simulation, automated failure mining, and a large monitoring stack are deliberately deferred to Future Work.
+- Final answer quality is a cross-provider LLM-as-judge sample of ten paired supported questions per pipeline, not a statistically robust or human-adjudicated benchmark. Day 47 logs the five final quality/cost bundles to MLflow, but production costs are not budget-enforced or invoice-reconciled. The Day 44 compact gate remains a five-case deterministic CI smoke suite rather than enforcement of the full benchmark. Automatic non-refusal route execution remains required work. Semantic caching, canary simulation, automated failure mining, and a large monitoring stack are deliberately deferred to Future Work.
 - The Day 35 API evaluation is a dense retrieval parity check using the deterministic template generator. It does not repeat external-provider generation judging or the expensive 45-question reranker benchmark through HTTP.
 - Raw corpora and generated embeddings are local artifacts and are not committed.
 
@@ -354,6 +355,54 @@ make test-final-dataset
 ```
 
 The full validation requires `data/processed/chunks.jsonl` because it verifies every source path and labeled chunk ID. The hermetic tests use miniature checked fixtures and also protect the committed 100/50/30 dimensions, metadata, category coverage, and artifact hashes in CI. The deterministic audit report is `reports/evaluations/final_dataset_review.json`.
+
+### Run the Day 47 final benchmark
+
+Day 47 has a separate, non-destructive benchmark family under `configs/day47/` plus the cross-pipeline contract in `configs/final_benchmark.yaml`. Historical 45-question reports are not reused as final results and are never overwritten. The [complete central report](reports/final_benchmark.md) combines the final retrieval, semantic, refusal, latency, and controlled generation-cost evidence:
+
+| Pipeline | Recall@5 | MRR@5 | Faithfulness | Relevance | Refusal | p50 / p95 | Cost/query |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Dense | 0.5067 | 0.4057 | 5.00 | 4.30 | N/A | 119.2 / 226.0 ms | $0.000067 |
+| BM25 | 0.7767 | 0.5737 | 5.00 | 4.50 | N/A | 67.9 / 93.0 ms | $0.000083 |
+| RRF hybrid | 0.7267 | 0.5820 | 4.80 | 4.30 | N/A | 174.5 / 272.6 ms | $0.000080 |
+| Hybrid + reranker | **0.8100** | **0.6473** | 5.00 | 4.50 | N/A | 4,014.8 / 7,669.2 ms | $0.000084 |
+| Routed | 0.6600 | 0.5307 | 5.00 | **4.60** | 0.8333 | 3,109.8 / 7,821.4 ms | $0.000076 |
+
+The routed supported distribution is 2 FAST, 12 STANDARD, 29 CAREFUL, and 7 NO_ANSWER. Against all 30 reviewed adversarial prompts, the draft policy refuses 25 correctly (`0.8333` refusal correctness) and misses five. Routed latency is disclosed artifact composition, not a simultaneous online load test: FAST reuses dense latency, STANDARD counts dense latency twice as the probe-plus-full-retrieval proxy, CAREFUL adds dense probe and reranked latency, and NO_ANSWER stops after dense.
+
+Validate the contract, run each local phase, or aggregate already-complete artifacts with:
+
+```bash
+make validate-final-benchmark
+make evaluate-final-retrieval
+make evaluate-final-routed
+make test-final-benchmark
+make judge-final-answers
+make aggregate-final-benchmark
+make verify-final-benchmark
+```
+
+When tracking is intentionally served at a non-contract URI, pass the make override, for example `make verify-final-benchmark FINAL_MLFLOW_URI=http://127.0.0.1:5001`.
+
+`make judge-final-answers` is intentionally separate because it sends the ten configured questions and their retrieved documentation excerpts to the configured OpenAI generator and Gemini judge for every pipeline: 50 generation requests plus 50 judgment requests. Do not rerun it without explicit authorization to share that public-corpus payload and incur provider usage. The completed run contains ten ordered judgment rows for each pipeline. The runner atomically checkpoints each row, resumes only a valid ordered prefix, retries bounded transient throttles, and refuses incomplete or fabricated semantic evidence.
+
+Aggregation writes `reports/evaluations/final_benchmark.json`, its CSV companion, and `reports/final_benchmark.md`. Five exact bundles were logged and then revalidated in the `ragops-final-benchmark` experiment: dense `15d6f764`, BM25 `cc073a85`, hybrid `a1e03481`, reranked `aff82d09`, and routed `45b98920`. Docker's port-5000 tracking service was unresponsive during publication, so this execution used the supported CLI tracking override and a repository-local MLflow server on port 5001; the report records those exact run URLs. The verifier checks finished status, bundle digest, tags, metrics, links, and artifacts rather than trusting URL presence alone.
+
+### Analyze Day 48 failures and regression cases
+
+Day 48 turns the frozen Day 47 results into a reviewed engineering artifact rather than selecting anecdotes by hand. `configs/failure_analysis.yaml` declares 15 failures and the exact evidence each must retain: top-five rank comparisons, route/reason decisions, a latency threshold, or cross-provider judgment scores. The builder verifies every question against the final reports, records source SHA256s, and writes the [complete failure analysis](reports/failures/failure_analysis.md) plus 14 promoted rows in `data/eval/regression_cases.jsonl`.
+
+The selected inventory contains one dense miss, one BM25 miss, two fusion failures, three reranker regressions, two supported false refusals, three unsupported router misses, one 55.6-second cold-start outlier, one citation/grounding failure, and one answer-level false refusal. The latency outlier is intentionally analysis-only because host-dependent wall-clock timing is not a stable functional assertion. The other cases retain reviewed expected behavior, forbidden measured behavior, component ownership, proposed fixes, and evidence guards for future candidate evaluation.
+
+Build or independently validate the exact outputs with:
+
+```bash
+make analyze-failures
+make validate-failure-analysis
+make test-failure-analysis
+```
+
+Validation rejects changed ranks, routes, reason codes, judgments, missing questions, stale outputs, and hand edits. Passing it proves that the review still matches the frozen evidence; it does not claim that the proposed remediations have already been implemented.
 
 ### Compute deterministic retrieval metrics
 
@@ -626,7 +675,7 @@ Every push, pull request, and manual workflow dispatch runs five independent Pyt
 | Job | Local equivalent | Scope |
 | --- | --- | --- |
 | `lint` | `make lint` | Ruff over `src`, `tests`, `scripts`, and `dashboard`. |
-| `unit` | `make test-unit-ci PYTHON=.venv/bin/python` | 286 hermetic non-API unit, dataset-curation, and workflow-contract tests. |
+| `unit` | `make test-unit-ci PYTHON=.venv/bin/python` | 291 hermetic non-API unit, final-benchmark-contract, dataset-curation, and workflow-contract tests. |
 | `api` | `make test-api-ci PYTHON=.venv/bin/python` | 179 API, routing, generation, tracing, and serving-path tests. |
 | `evaluation-smoke` | `make test-evaluation-smoke` | Nine gate validation, real-smoke, degraded-pipeline, latency, error, and exit-code tests. |
 | `evaluation-gate` | `make eval-gate` | The actual five-case run and nine configured thresholds. |
@@ -767,14 +816,14 @@ query -> BM25 top 25 ---+
 - `src/ragops/routing`: strict router config/policy validation, supported/unsupported calibration provenance, dense initial-probe orchestration, the schema-v1 feature contract, and deterministic route/reason selection
 - `src/ragops/api`: strict request/response schemas plus the selectable pipeline runtime and resource lifecycle
 - `src/ragops/generation`: citations, grounded prompts, deterministic no-answer refusal, provider selection, template/OpenAI/Gemini clients, provider usage normalization, heuristic token estimation, strict model-cost loading, and auditable cost calculation
-- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, deterministic router tuning/distribution, the compact threshold gate, comparisons, and LLM-as-judge orchestration
+- `src/ragops/evaluation`: synthetic QA handling, retrieval labels/metrics, dense/BM25/RRF/reranker/live-API evaluation, no-answer calibration/refusal metrics, routed-versus-fixed quality/latency/cost replay, deterministic router tuning/distribution, the compact threshold gate, final benchmarking, evidence-backed failure analysis, comparisons, and LLM-as-judge orchestration
 - `src/ragops/tracking`: strict MLflow configuration, parameter/metric flattening, artifact validation, idempotent run logging, and acceptance verification
 - `src/ragops/tracing`: request-scoped component timing plus validated SQLite schemas and atomic trace, generation-cost, retrieved-evidence, and feedback persistence
 - `src/ragops/pipeline_registry.py`: semantic-version and lifecycle schemas, evidence-backed registry generation, alias policy, checksums, atomic writes, and stale-artifact validation
 - `src/ragops/app.py`: FastAPI endpoints, end-to-end request flow, and success/error trace integration
 - `dashboard/app.py`: Streamlit query playground
-- `scripts`: implemented ingestion, indexing, dense/BM25/hybrid/reranked retrieval, router/no-answer validation and evaluation, model-cost validation, initial probe/decision commands, dataset review/labeling, offline/API evaluation and gating, MLflow import, registry, and trace-store commands
-- `tests`: implemented unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, cost, metric, evaluation-runner/gate, LLM-judge, registry, and tracing coverage; future test modules are created only with their implementations
+- `scripts`: implemented ingestion, indexing, dense/BM25/hybrid/reranked retrieval, router/no-answer validation and evaluation, model-cost validation, initial probe/decision commands, dataset review/labeling, offline/API evaluation and gating, final failure analysis, MLflow import, registry, and trace-store commands
+- `tests`: implemented unit, API integration, dashboard, dataset, retrieval/fusion/reranking/routing-probe, cost, metric, evaluation-runner/gate, final-benchmark/failure-analysis, LLM-judge, registry, and tracing coverage; future test modules are created only with their implementations
 - `docs/architecture.md`: current data flow, request flow, configuration, and limitations
 
 ## Future Work
@@ -793,4 +842,4 @@ These are architectural extensions, not partially implemented repository feature
 
 ## Next Milestone
 
-Proceed to Day 47: run the final dense, BM25, hybrid, hybrid-plus-reranker, and routed benchmark against the reviewed Day 46 snapshots, recording common quality, refusal, latency, and cost evidence without rewriting the historical benchmark artifacts.
+Proceed to Day 49: reduce the Streamlit application to the planned Query Playground and Engineering tabs, exposing the completed benchmark, route, latency, cost, and failure evidence without building a large frontend.
